@@ -1,32 +1,37 @@
 import {
-  LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, Menu,
+  LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, UserCog,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, useSidebar,
 } from "@/components/ui/sidebar";
 
-const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "New Invoice", url: "/invoices/new", icon: FileText },
-  { title: "Invoices", url: "/invoices", icon: Receipt },
-  { title: "Customers", url: "/customers", icon: Users },
-];
-
-const inventoryItems = [
-  { title: "Inventory", url: "/inventory", icon: Package },
-  { title: "Purchases", url: "/purchases", icon: ShoppingCart },
-];
-
-const financeItems = [
-  { title: "Profit & Loss", url: "/finance", icon: TrendingUp },
-];
-
 export function AppSidebar() {
   const { state } = useSidebar();
+  const { isAdmin } = useAuth();
   const collapsed = state === "collapsed";
+
+  const mainItems = [
+    { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "New Invoice", url: "/invoices/new", icon: FileText },
+    { title: "Invoices", url: "/invoices", icon: Receipt },
+    { title: "Customers", url: "/customers", icon: Users },
+  ];
+
+  const inventoryItems = isAdmin ? [
+    { title: "Inventory", url: "/inventory", icon: Package },
+    { title: "Purchases", url: "/purchases", icon: ShoppingCart },
+  ] : [];
+
+  const financeItems = isAdmin ? [
+    { title: "Profit & Loss", url: "/finance", icon: TrendingUp },
+  ] : [];
+
+  const adminItems = isAdmin ? [
+    { title: "User Management", url: "/users", icon: UserCog },
+  ] : [];
 
   return (
     <Sidebar collapsible="icon">
@@ -46,14 +51,15 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <NavGroup label="Main" items={mainItems} collapsed={collapsed} />
-        <NavGroup label="Stock" items={inventoryItems} collapsed={collapsed} />
-        <NavGroup label="Finance" items={financeItems} collapsed={collapsed} />
+        {inventoryItems.length > 0 && <NavGroup label="Stock" items={inventoryItems} collapsed={collapsed} />}
+        {financeItems.length > 0 && <NavGroup label="Finance" items={financeItems} collapsed={collapsed} />}
+        {adminItems.length > 0 && <NavGroup label="Admin" items={adminItems} collapsed={collapsed} />}
       </SidebarContent>
     </Sidebar>
   );
 }
 
-function NavGroup({ label, items, collapsed }: { label: string; items: typeof mainItems; collapsed: boolean }) {
+function NavGroup({ label, items, collapsed }: { label: string; items: { title: string; url: string; icon: any }[]; collapsed: boolean }) {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
