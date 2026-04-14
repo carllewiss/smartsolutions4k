@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.49.4/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -18,7 +22,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify calling user is admin
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -32,7 +35,6 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Check caller is admin
     const { data: callerRole } = await adminClient
       .from("user_roles")
       .select("role")
@@ -63,7 +65,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create user
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -78,13 +79,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update display name in profile
     await adminClient
       .from("profiles")
       .update({ display_name: displayName })
       .eq("user_id", newUser.user.id);
 
-    // Assign role
     await adminClient
       .from("user_roles")
       .insert({ user_id: newUser.user.id, role });

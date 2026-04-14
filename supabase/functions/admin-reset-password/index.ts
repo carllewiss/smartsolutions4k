@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.49.4/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -53,7 +57,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate temporary password
     const temporaryPassword = "Temp" + Math.random().toString(36).slice(2, 8) + "!";
 
     const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
@@ -67,7 +70,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Unlock the account
     await adminClient
       .from("profiles")
       .update({ is_locked: false, failed_login_attempts: 0, locked_at: null })
