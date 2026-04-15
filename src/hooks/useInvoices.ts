@@ -50,7 +50,6 @@ export function useCreateInvoice() {
 
       // Deduct stock via FIFO and create items
       for (const item of params.items) {
-        // Call FIFO deduction function
         const { data: cogs, error: cogsErr } = await supabase.rpc("deduct_stock_fifo", {
           p_product_id: item.product_id,
           p_quantity: item.quantity,
@@ -70,17 +69,21 @@ export function useCreateInvoice() {
       }
 
       // Update customer balance & stats
-      if (params.invoice.balance && params.invoice.balance > 0) {
-        await supabase.rpc("update_customer_after_sale", {
-          p_customer_id: params.invoice.customer_id,
-          p_paid: params.invoice.paid_amount || 0,
-          p_balance: params.invoice.balance || 0,
-        }).catch(() => {
-          // Fallback: direct update
-          supabase.from("customers").update({
-            current_balance: supabase.rpc as any, // handled below
-          });
-        });
+      const balance = params.invoice.balance || 0;
+      const paid = params.invoice.paid_amount || 0;
+      if (balance > 0 || paid > 0) {
+        const { data: cust } = await supabase
+          .from("customers")
+          .select("current_balance, total_spent, visit_count")
+          .eq("id", params.invoice.customer_id)
+          .single();
+        if (cust) {
+          await supabase.from("customers").update({
+            current_balance: Number(cust.current_balance) + balance,
+            total_spent: Number(cust.total_spent) + paid,
+            visit_count: Number(cust.visit_count) + 1,
+          }).eq("id", params.invoice.customer_id);
+        }
       }
 
       return inv;

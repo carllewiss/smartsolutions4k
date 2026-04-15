@@ -28,11 +28,6 @@ export function useCreatePayment() {
       }
 
       // Update customer balance
-      await supabase.from("customers").update({
-        current_balance: supabase.rpc as any, // we'll do raw
-      }).eq("id", payment.customer_id);
-
-      // Simpler: just reduce balance
       const { data: cust } = await supabase.from("customers").select("current_balance, total_spent").eq("id", payment.customer_id).single();
       if (cust) {
         await supabase.from("customers").update({
