@@ -1,44 +1,44 @@
-import { useStore } from "@/lib/store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useCustomers } from "@/hooks/useCustomers";
+import { useInvoices } from "@/hooks/useInvoices";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { differenceInDays, parseISO } from "date-fns";
+import { differenceInDays } from "date-fns";
 
 export default function Customers() {
-  const { customers, invoices, products } = useStore();
+  const { data: customers = [], isLoading } = useCustomers();
+  const { data: invoices = [] } = useInvoices();
   const today = new Date();
 
-  const getCustomerDebt = (custId: string) => invoices.filter(i => i.customerId === custId && i.balance > 0).reduce((s, i) => s + i.balance, 0);
-
   const getDebtAging = (custId: string) => {
-    const unpaid = invoices.filter(i => i.customerId === custId && i.balance > 0);
+    const unpaid = invoices.filter(i => i.customer_id === custId && Number(i.balance) > 0);
     let d14 = 0, d30 = 0, d60 = 0;
     unpaid.forEach(i => {
-      const days = differenceInDays(today, parseISO(i.createdAt));
-      if (days <= 14) d14 += i.balance;
-      else if (days <= 30) d30 += i.balance;
-      else d60 += i.balance;
+      const days = differenceInDays(today, new Date(i.created_at));
+      if (days <= 14) d14 += Number(i.balance);
+      else if (days <= 30) d30 += Number(i.balance);
+      else d60 += Number(i.balance);
     });
-    return { d14, d30, d60 };
+    return { d14, d30, d60, total: d14 + d30 + d60 };
   };
 
   const getTopProducts = (custId: string) => {
     const map: Record<string, number> = {};
-    invoices.filter(i => i.customerId === custId).forEach(i => i.items.forEach(item => {
-      map[item.productName] = (map[item.productName] || 0) + item.quantity;
+    invoices.filter(i => i.customer_id === custId).forEach(i => i.invoice_items?.forEach(item => {
+      const name = item.product_id; // We'll show product ID for now
+      map[name] = (map[name] || 0) + item.quantity;
     }));
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
   };
+
+  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold font-heading">Customers</h1>
 
       <div className="grid gap-4">
-        {customers.filter(c => c.id !== "c1").map(cust => {
-          const debt = getCustomerDebt(cust.id);
+        {customers.filter(c => c.customer_type !== "walk_in").map(cust => {
           const aging = getDebtAging(cust.id);
-          const topProds = getTopProducts(cust.id);
 
           return (
             <Card key={cust.id}>
@@ -47,22 +47,17 @@ export default function Customers() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold font-heading">{cust.name}</h3>
-                      {cust.isTaxable && <Badge variant="outline" className="text-xs">Taxable</Badge>}
-                      {cust.visitCount >= 3 && <Badge className="bg-primary/10 text-primary text-xs">Repeat</Badge>}
+                      <Badge variant="outline" className="text-xs">{cust.customer_code}</Badge>
+                      {cust.kra_pin && <Badge variant="outline" className="text-xs">Taxable</Badge>}
+                      {cust.visit_count >= 3 && <Badge className="bg-primary/10 text-primary text-xs">Repeat</Badge>}
                     </div>
-                    <p className="text-xs text-muted-foreground">{cust.phone || "No phone"} {cust.pin ? `· PIN: ${cust.pin}` : ""}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{cust.visitCount} visits · KES {cust.totalSpent.toLocaleString()} total spent</p>
-                    {topProds.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        <span className="text-xs text-muted-foreground">Top:</span>
-                        {topProds.map(p => <Badge key={p} variant="secondary" className="text-xs">{p}</Badge>)}
-                      </div>
-                    )}
+                    <p className="text-xs text-muted-foreground">{cust.phone || "No phone"} {cust.kra_pin ? `· PIN: ${cust.kra_pin}` : ""}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{cust.visit_count} visits · KES {Number(cust.total_spent).toLocaleString()} total spent</p>
                   </div>
                   <div className="text-right space-y-1">
-                    {debt > 0 ? (
+                    {aging.total > 0 ? (
                       <>
-                        <p className="text-sm font-bold text-destructive">Owes: KES {debt.toLocaleString()}</p>
+                        <p className="text-sm font-bold text-destructive">Owes: KES {aging.total.toLocaleString()}</p>
                         <div className="flex gap-2 text-xs justify-end">
                           {aging.d14 > 0 && <span className="text-success">14d: {aging.d14.toLocaleString()}</span>}
                           {aging.d30 > 0 && <span className="text-warning">30d: {aging.d30.toLocaleString()}</span>}
@@ -78,6 +73,9 @@ export default function Customers() {
             </Card>
           );
         })}
+        {customers.filter(c => c.customer_type !== "walk_in").length === 0 && (
+          <p className="text-center text-muted-foreground py-8">No customers yet. Create one from the invoice screen.</p>
+        )}
       </div>
     </div>
   );

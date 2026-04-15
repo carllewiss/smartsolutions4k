@@ -1,42 +1,45 @@
-import { useStore } from "@/lib/store";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useProductWithStock } from "@/hooks/useProducts";
+import { useExpenses } from "@/hooks/useExpenses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Users, Package, AlertTriangle, TrendingUp, TrendingDown, Receipt } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { format, subDays, isAfter, parseISO, differenceInDays } from "date-fns";
+import { DollarSign, Package, AlertTriangle, TrendingUp, Receipt } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { format, subDays, differenceInDays } from "date-fns";
 
 const COLORS = ["hsl(243 75% 59%)", "hsl(167 72% 60%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)", "hsl(142 71% 45%)"];
 
 export default function Dashboard() {
-  const { invoices, products, customers, expenses, purchases } = useStore();
+  const { data: invoices = [], isLoading: invLoading } = useInvoices();
+  const { data: products = [] } = useProductWithStock();
+  const { data: expenses = [] } = useExpenses();
 
   const today = new Date();
-  const todaySales = invoices.filter(i => i.createdAt.startsWith(format(today, "yyyy-MM-dd")));
-  const todayRevenue = todaySales.reduce((s, i) => s + i.paidAmount, 0);
-  const totalDebt = invoices.reduce((s, i) => s + i.balance, 0);
+  const todayStr = format(today, "yyyy-MM-dd");
+  const todaySales = invoices.filter(i => i.created_at?.startsWith(todayStr));
+  const todayRevenue = todaySales.reduce((s, i) => s + Number(i.paid_amount), 0);
+  const totalDebt = invoices.reduce((s, i) => s + Number(i.balance), 0);
 
-  const unpaidInvoices = invoices.filter(i => i.balance > 0);
-  const debt14 = unpaidInvoices.filter(i => differenceInDays(today, parseISO(i.createdAt)) <= 14).reduce((s, i) => s + i.balance, 0);
-  const debt30 = unpaidInvoices.filter(i => { const d = differenceInDays(today, parseISO(i.createdAt)); return d > 14 && d <= 30; }).reduce((s, i) => s + i.balance, 0);
-  const debt60 = unpaidInvoices.filter(i => differenceInDays(today, parseISO(i.createdAt)) > 30).reduce((s, i) => s + i.balance, 0);
+  const unpaidInvoices = invoices.filter(i => Number(i.balance) > 0);
+  const debt14 = unpaidInvoices.filter(i => differenceInDays(today, new Date(i.created_at)) <= 14).reduce((s, i) => s + Number(i.balance), 0);
+  const debt30 = unpaidInvoices.filter(i => { const d = differenceInDays(today, new Date(i.created_at)); return d > 14 && d <= 30; }).reduce((s, i) => s + Number(i.balance), 0);
+  const debt60 = unpaidInvoices.filter(i => differenceInDays(today, new Date(i.created_at)) > 30).reduce((s, i) => s + Number(i.balance), 0);
 
-  const lowStockProducts = products.filter(p => p.quantity <= p.minStock && p.minStock > 0);
+  const lowStockProducts = products.filter(p => p.stock_on_hand <= p.min_stock && p.min_stock > 0);
 
-  const totalSalesRevenue = invoices.reduce((s, i) => s + i.total, 0);
-  const totalCOGS = invoices.reduce((s, i) => s + i.items.reduce((is, item) => {
-    const prod = products.find(p => p.id === item.productId);
-    return is + (prod ? prod.buyPrice * item.quantity : 0);
-  }, 0), 0);
-  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
-  const grossProfit = totalSalesRevenue - totalCOGS;
-  const netProfit = grossProfit - totalExpenses;
+  // COGS from invoice_items
+  const totalCOGS = invoices.reduce((s, inv) => s + (inv.invoice_items?.reduce((is, item) => is + Number(item.cogs || 0), 0) || 0), 0);
+  const totalRevenue = invoices.reduce((s, i) => s + Number(i.total), 0);
+  const totalExp = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  const grossProfit = totalRevenue - totalCOGS;
+  const netProfit = grossProfit - totalExp;
 
   // Sales by category
   const catMap: Record<string, number> = {};
-  invoices.forEach(inv => inv.items.forEach(item => {
-    const prod = products.find(p => p.id === item.productId);
+  invoices.forEach(inv => inv.invoice_items?.forEach(item => {
+    const prod = products.find(p => p.id === item.product_id);
     const cat = prod?.category || "Other";
-    catMap[cat] = (catMap[cat] || 0) + item.total;
+    catMap[cat] = (catMap[cat] || 0) + Number(item.total);
   }));
   const categoryData = Object.entries(catMap).map(([name, value]) => ({ name: name.replace(" Services", "").replace(" Accessories", ""), value }));
 
@@ -45,9 +48,13 @@ export default function Dashboard() {
     const d = subDays(today, 6 - i);
     const ds = format(d, "yyyy-MM-dd");
     const label = format(d, "EEE");
-    const revenue = invoices.filter(inv => inv.createdAt.startsWith(ds)).reduce((s, inv) => s + inv.total, 0);
+    const revenue = invoices.filter(inv => inv.created_at?.startsWith(ds)).reduce((s, inv) => s + Number(inv.total), 0);
     return { name: label, revenue };
   });
+
+  if (invLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -65,24 +72,9 @@ export default function Dashboard() {
 
       {/* Debt Aging */}
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">0-14 Days</p>
-            <p className="text-lg font-bold text-success">KES {debt14.toLocaleString()}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">15-30 Days</p>
-            <p className="text-lg font-bold text-warning">KES {debt30.toLocaleString()}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">31-60+ Days</p>
-            <p className="text-lg font-bold text-destructive">KES {debt60.toLocaleString()}</p>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-xs text-muted-foreground mb-1">0-14 Days</p><p className="text-lg font-bold text-success">KES {debt14.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-xs text-muted-foreground mb-1">15-30 Days</p><p className="text-lg font-bold text-warning">KES {debt30.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-xs text-muted-foreground mb-1">31-60+ Days</p><p className="text-lg font-bold text-destructive">KES {debt60.toLocaleString()}</p></CardContent></Card>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -102,7 +94,6 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-base">Sales by Category</CardTitle></CardHeader>
           <CardContent>
@@ -120,7 +111,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Low stock alert */}
       {lowStockProducts.length > 0 && (
         <Card className="border-destructive/30">
           <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-destructive" /> Low Stock Alert</CardTitle></CardHeader>
@@ -128,7 +118,7 @@ export default function Dashboard() {
             <div className="flex flex-wrap gap-2">
               {lowStockProducts.map(p => (
                 <Badge key={p.id} variant="destructive" className="text-xs">
-                  {p.name}: {p.quantity} left
+                  {p.name}: {p.stock_on_hand} left
                 </Badge>
               ))}
             </div>
