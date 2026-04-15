@@ -1,13 +1,15 @@
-import { useStore } from "@/lib/store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useInvoices } from "@/hooks/useInvoices";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 
 export default function Invoices() {
-  const { invoices } = useStore();
+  const { data: invoices = [], isLoading } = useInvoices();
 
   const statusColor = (s: string) => s === "paid" ? "bg-success/10 text-success border-success/20" : s === "partial" ? "bg-warning/10 text-warning border-warning/20" : "bg-destructive/10 text-destructive border-destructive/20";
+
+  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   return (
     <div className="space-y-6">
@@ -21,13 +23,13 @@ export default function Invoices() {
             <TableBody>
               {invoices.map(inv => (
                 <TableRow key={inv.id}>
-                  <TableCell className="font-medium text-sm">{inv.invoiceNumber}</TableCell>
-                  <TableCell className="text-sm">{inv.customerName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{format(parseISO(inv.createdAt), "dd MMM yyyy")}</TableCell>
-                  <TableCell className="text-right text-sm">KES {inv.total.toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-sm">KES {inv.paidAmount.toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-sm font-medium">{inv.balance > 0 ? `KES ${inv.balance.toLocaleString()}` : "—"}</TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs capitalize">{inv.paymentMethod.replace("_", " ")}</Badge></TableCell>
+                  <TableCell className="font-medium text-sm">{inv.invoice_number}</TableCell>
+                  <TableCell className="text-sm">{inv.customer_name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{format(new Date(inv.created_at), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="text-right text-sm">KES {Number(inv.total).toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-sm">KES {Number(inv.paid_amount).toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-sm font-medium">{Number(inv.balance) > 0 ? `KES ${Number(inv.balance).toLocaleString()}` : "—"}</TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs capitalize">{inv.payment_method.replace("_", " ")}</Badge></TableCell>
                   <TableCell><Badge className={`text-xs capitalize ${statusColor(inv.status)}`}>{inv.status}</Badge></TableCell>
                 </TableRow>
               ))}

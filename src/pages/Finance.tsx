@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useExpenses, useCreateExpense } from "@/hooks/useExpenses";
+import { usePurchases } from "@/hooks/usePurchases";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,41 +10,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, TrendingUp, TrendingDown } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 
 const EXPENSE_CATEGORIES = ["Electricity", "Rent", "Internet", "Stock Purchase", "Transport", "Salary", "Marketing", "Maintenance", "Other"];
 
 export default function Finance() {
-  const store = useStore();
+  const { data: invoices = [] } = useInvoices();
+  const { data: expenses = [], isLoading } = useExpenses();
+  const { data: purchases = [] } = usePurchases();
+  const createExpense = useCreateExpense();
+
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState("Electricity");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState(0);
 
-  const totalRevenue = store.invoices.reduce((s, i) => s + i.total, 0);
-  const totalCOGS = store.invoices.reduce((s, i) => s + i.items.reduce((is, item) => {
-    const prod = store.products.find(p => p.id === item.productId);
-    return is + (prod ? prod.buyPrice * item.quantity : 0);
-  }, 0), 0);
-  const totalExpenses = store.expenses.reduce((s, e) => s + e.amount, 0);
-  const purchaseCost = store.purchases.reduce((s, p) => s + p.total, 0);
+  const totalRevenue = invoices.reduce((s, i) => s + Number(i.total), 0);
+  // COGS from FIFO-tracked invoice items
+  const totalCOGS = invoices.reduce((s, inv) => s + (inv.invoice_items?.reduce((is, item) => is + Number(item.cogs || 0), 0) || 0), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  const purchaseCost = purchases.reduce((s, p) => s + Number(p.total), 0);
   const grossProfit = totalRevenue - totalCOGS;
   const netProfit = grossProfit - totalExpenses;
 
   const expenseByCategory: Record<string, number> = {};
-  store.expenses.forEach(e => { expenseByCategory[e.category] = (expenseByCategory[e.category] || 0) + e.amount; });
+  expenses.forEach(e => { expenseByCategory[e.category] = (expenseByCategory[e.category] || 0) + Number(e.amount); });
   const chartData = Object.entries(expenseByCategory).map(([name, amount]) => ({ name, amount }));
 
-  const submit = () => {
+  const submit = async () => {
     if (!description.trim() || amount <= 0) { toast.error("Fill all fields"); return; }
-    store.addExpense({ id: `e${Date.now()}`, category, description, amount, date: new Date().toISOString().split("T")[0] });
-    toast.success("Expense recorded");
-    setOpen(false);
-    setDescription("");
-    setAmount(0);
+    try {
+      await createExpense.mutateAsync({ category, description, amount, expense_date: new Date().toISOString().split("T")[0] });
+      toast.success("Expense recorded");
+      setOpen(false);
+      setDescription("");
+      setAmount(0);
+    } catch (e: any) { toast.error(e.message); }
   };
+
+  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   return (
     <div className="space-y-6">
@@ -61,7 +69,7 @@ export default function Finance() {
               </div>
               <div><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
               <div><Label>Amount (KES)</Label><Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} /></div>
-              <Button className="w-full" onClick={submit}>Save Expense</Button>
+              <Button className="w-full" onClick={submit} disabled={createExpense.isPending}>Save Expense</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -69,7 +77,7 @@ export default function Finance() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Total Revenue</p><p className="text-xl font-bold">KES {totalRevenue.toLocaleString()}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Cost of Goods</p><p className="text-xl font-bold text-warning">KES {totalCOGS.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">COGS (FIFO)</p><p className="text-xl font-bold text-warning">KES {totalCOGS.toLocaleString()}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Expenses</p><p className="text-xl font-bold text-destructive">KES {totalExpenses.toLocaleString()}</p></CardContent></Card>
         <Card className={netProfit >= 0 ? "border-success/30" : "border-destructive/30"}>
           <CardContent className="p-4">
@@ -105,12 +113,12 @@ export default function Finance() {
                 <TableHead>Date</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Amount</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {store.expenses.slice(0, 10).map(e => (
+                {expenses.slice(0, 10).map(e => (
                   <TableRow key={e.id}>
-                    <TableCell className="text-xs text-muted-foreground">{format(parseISO(e.date), "dd MMM")}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{format(new Date(e.expense_date), "dd MMM")}</TableCell>
                     <TableCell className="text-xs">{e.category}</TableCell>
                     <TableCell className="text-sm">{e.description}</TableCell>
-                    <TableCell className="text-right text-sm font-medium">KES {e.amount.toLocaleString()}</TableCell>
+                    <TableCell className="text-right text-sm font-medium">KES {Number(e.amount).toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
