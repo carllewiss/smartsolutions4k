@@ -26,6 +26,7 @@ export default function Inventory() {
   const [unit, setUnit] = useState("pcs");
   const [minStock, setMinStock] = useState(0);
   const [isService, setIsService] = useState(false);
+  const [taxCategory, setTaxCategory] = useState<"standard" | "zero_rated" | "exempt">("standard");
 
   const classifyStock = (stock: number, minStk: number) => {
     if (stock === 0) return "Dead Stock";
