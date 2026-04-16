@@ -49,8 +49,9 @@ export function useCreateProduct() {
       unit: string;
       min_stock: number;
       is_service: boolean;
+      tax_category?: string;
     }) => {
-      const { data, error } = await supabase.from("products").insert(product).select().single();
+      const { data, error } = await supabase.from("products").insert(product as any).select().single();
       if (error) throw error;
       return data;
     },

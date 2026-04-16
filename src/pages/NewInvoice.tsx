@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useProductWithStock } from "@/hooks/useProducts";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
 import { useCreateInvoice } from "@/hooks/useInvoices";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Search, AlertTriangle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 type PaymentMethod = "cash" | "mpesa" | "cash_mpesa" | "partial_debt";
@@ -20,31 +22,76 @@ interface LineItem {
   name: string;
   quantity: number;
   unit_price: number;
+  original_price: number;
   total: number;
   stock: number;
   floor_price: number;
+  tax_category: string;
 }
 
 export default function NewInvoice() {
   const { data: products = [] } = useProductWithStock();
   const { data: customers = [] } = useCustomers();
+  const { data: settings = {} } = useSystemSettings();
   const createInvoice = useCreateInvoice();
   const createCustomer = useCreateCustomer();
   const { user } = useAuth();
 
+  const etimsEnabled = settings.etims_enabled === "true";
+  const vatRate = Number(settings.default_tax_rate || 16) / 100;
+
+  // Customer state
+  const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [isNewCustomer, setIsNewCustomer] = useState(false);
   const [newCustName, setNewCustName] = useState("");
   const [newCustPhone, setNewCustPhone] = useState("");
   const [custPin, setCustPin] = useState("");
+  const [showCustDropdown, setShowCustDropdown] = useState(false);
+
+  // Product state
+  const [productSearch, setProductSearch] = useState("");
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+
+  // Invoice state
   const [items, setItems] = useState<LineItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [cashAmount, setCashAmount] = useState(0);
   const [mpesaAmount, setMpesaAmount] = useState(0);
 
-  const isTaxable = !!custPin || !!customers.find(c => c.id === selectedCustomerId)?.kra_pin;
+  // Customer search (fuzzy)
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch.trim()) return customers.filter(c => c.customer_type !== "walk_in").slice(0, 10);
+    const q = customerSearch.toLowerCase();
+    return customers.filter(c =>
+      c.customer_type !== "walk_in" && (
+        c.name.toLowerCase().includes(q) ||
+        c.customer_code.toLowerCase().includes(q) ||
+        (c.phone && c.phone.includes(q)) ||
+        (c.kra_pin && c.kra_pin.toLowerCase().includes(q))
+      )
+    ).slice(0, 10);
+  }, [customerSearch, customers]);
+
+  // Product search (fuzzy)
+  const filteredProducts = useMemo(() => {
+    if (!productSearch.trim()) return products;
+    const q = productSearch.toLowerCase();
+    return products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+  }, [productSearch, products]);
+
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+  const customerHasPin = !!custPin || !!selectedCustomer?.kra_pin;
+
+  // VAT logic: only apply if eTIMS is on
+  const calculateItemVAT = useCallback((item: LineItem) => {
+    if (!etimsEnabled) return 0;
+    if (item.tax_category === "exempt" || item.tax_category === "zero_rated") return 0;
+    return item.total * vatRate;
+  }, [etimsEnabled, vatRate]);
+
   const subtotal = items.reduce((s, i) => s + i.total, 0);
-  const tax = isTaxable ? subtotal * 0.16 : 0;
+  const tax = etimsEnabled ? items.reduce((s, i) => s + calculateItemVAT(i), 0) : 0;
   const total = subtotal + tax;
 
   const paidAmount = paymentMethod === "cash" ? cashAmount
@@ -52,22 +99,50 @@ export default function NewInvoice() {
     : cashAmount + mpesaAmount;
   const balance = Math.max(0, total - paidAmount);
 
+  // Credit limit check
+  const creditWarning = useMemo(() => {
+    if (!selectedCustomer) return null;
+    const debtLimit = Number(selectedCustomer.debt_limit);
+    if (debtLimit <= 0) return null;
+    const currentDebt = Number(selectedCustomer.current_balance);
+    const newTotal = currentDebt + balance;
+    if (newTotal > debtLimit) {
+      return `Credit limit exceeded! Limit: KES ${debtLimit.toLocaleString()}, Current debt: KES ${currentDebt.toLocaleString()}, New balance would be: KES ${newTotal.toLocaleString()}`;
+    }
+    return null;
+  }, [selectedCustomer, balance]);
+
+  const selectCustomer = (id: string) => {
+    setSelectedCustomerId(id);
+    const c = customers.find(c => c.id === id);
+    if (c) setCustomerSearch(c.name);
+    setShowCustDropdown(false);
+    setIsNewCustomer(false);
+  };
+
   const addItem = (productId: string) => {
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
     if (items.find(i => i.product_id === productId)) {
-      setItems(items.map(i => i.product_id === productId ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unit_price } : i));
+      setItems(items.map(i => i.product_id === productId
+        ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unit_price }
+        : i));
     } else {
+      const price = Number(prod.base_sell_price);
       setItems([...items, {
         product_id: prod.id,
         name: prod.name,
         quantity: 1,
-        unit_price: Number(prod.base_sell_price),
-        total: Number(prod.base_sell_price),
+        unit_price: price,
+        original_price: price,
+        total: price,
         stock: prod.stock_on_hand,
         floor_price: Number(prod.floor_price),
+        tax_category: (prod as any).tax_category || "standard",
       }]);
     }
+    setProductSearch("");
+    setShowProductDropdown(false);
   };
 
   const updateItemQty = (productId: string, qty: number) => {
@@ -88,7 +163,22 @@ export default function NewInvoice() {
 
   const submitInvoice = async () => {
     if (items.length === 0) { toast.error("Add at least one item"); return; }
-    if (paymentMethod !== "partial_debt" && balance > 0) { toast.error("Amount doesn't cover total. Use 'Pay Later (Debt)' option."); return; }
+    if (paymentMethod !== "partial_debt" && balance > 0) {
+      toast.error("Amount doesn't cover total. Use 'Pay Later (Debt)' option.");
+      return;
+    }
+
+    // Credit limit block
+    if (creditWarning && paymentMethod === "partial_debt") {
+      toast.error("Cannot proceed — customer has exceeded their credit limit.");
+      return;
+    }
+
+    // eTIMS KRA PIN check
+    if (etimsEnabled && selectedCustomer && selectedCustomer.customer_type === "regular" && !customerHasPin) {
+      toast.error("eTIMS is enabled — KRA PIN is required for repeat customers.");
+      return;
+    }
 
     let customerId = selectedCustomerId;
 
@@ -109,68 +199,88 @@ export default function NewInvoice() {
     }
 
     if (!customerId) {
-      // Use or create walk-in
       const walkin = customers.find(c => c.customer_type === "walk_in");
-      if (walkin) {
-        customerId = walkin.id;
-      } else {
+      if (walkin) { customerId = walkin.id; }
+      else {
         const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
         customerId = w.id;
       }
     }
 
-    const invoiceData = {
-      customer_id: customerId,
-      subtotal,
-      tax,
-      total,
-      paid_amount: Math.min(paidAmount, total),
-      balance,
-      payment_method: paymentMethod as any,
-      cash_amount: paymentMethod === "mpesa" ? 0 : cashAmount,
-      mpesa_amount: paymentMethod === "cash" ? 0 : mpesaAmount,
-      status: (balance === 0 ? "paid" : paidAmount > 0 ? "partial" : "unpaid") as any,
-      created_by: user?.id,
-    };
-
     try {
       await createInvoice.mutateAsync({
-        invoice: invoiceData,
+        invoice: {
+          customer_id: customerId,
+          subtotal,
+          tax,
+          total,
+          paid_amount: Math.min(paidAmount, total),
+          balance,
+          payment_method: paymentMethod as any,
+          cash_amount: paymentMethod === "mpesa" ? 0 : cashAmount,
+          mpesa_amount: paymentMethod === "cash" ? 0 : mpesaAmount,
+          status: (balance === 0 ? "paid" : paidAmount > 0 ? "partial" : "unpaid") as any,
+          created_by: user?.id,
+        },
         items: items.map(i => ({
           product_id: i.product_id,
           quantity: i.quantity,
           unit_price: i.unit_price,
-          discount: Number(products.find(p => p.id === i.product_id)?.base_sell_price || 0) - i.unit_price > 0
-            ? (Number(products.find(p => p.id === i.product_id)?.base_sell_price || 0) - i.unit_price) * i.quantity : 0,
+          discount: i.original_price > i.unit_price ? (i.original_price - i.unit_price) * i.quantity : 0,
           total: i.total,
         })),
       });
-      toast.success("Invoice created successfully!");
+      toast.success("Invoice created!");
       setItems([]);
       setCashAmount(0);
       setMpesaAmount(0);
-    } catch (e: any) {
-      toast.error("Failed: " + e.message);
-    }
+      setSelectedCustomerId("");
+      setCustomerSearch("");
+    } catch (e: any) { toast.error("Failed: " + e.message); }
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold font-heading">New Invoice</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold font-heading">New Invoice</h1>
+        {etimsEnabled && <Badge className="bg-success/10 text-success">eTIMS Active</Badge>}
+      </div>
 
       <div className="grid md:grid-cols-3 gap-6">
+        {/* Left: Product search + items */}
         <div className="md:col-span-2 space-y-4">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Add Products / Services</CardTitle></CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {products.map(p => (
-                  <Button key={p.id} variant="outline" className="h-auto py-3 px-3 flex flex-col items-start text-left" onClick={() => addItem(p.id)}>
-                    <span className="text-xs font-medium truncate w-full">{p.name}</span>
-                    <span className="text-xs text-muted-foreground">KES {Number(p.base_sell_price).toLocaleString()} · {p.is_service ? "Service" : `${p.stock_on_hand} in stock`}</span>
-                  </Button>
-                ))}
-                {products.length === 0 && <p className="col-span-full text-center text-muted-foreground text-sm py-4">No products. Admin needs to add inventory first.</p>}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products by name or category..."
+                  className="pl-9"
+                  value={productSearch}
+                  onChange={e => { setProductSearch(e.target.value); setShowProductDropdown(true); }}
+                  onFocus={() => setShowProductDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
+                />
+                {showProductDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-64 overflow-y-auto">
+                    {filteredProducts.map(p => (
+                      <button key={p.id} className="w-full px-3 py-2 text-left hover:bg-accent flex justify-between items-center" onMouseDown={() => addItem(p.id)}>
+                        <div>
+                          <p className="text-sm font-medium">{p.name}</p>
+                          <p className="text-xs text-muted-foreground">{p.category} · {p.is_service ? "Service" : `${p.stock_on_hand} in stock`}</p>
+                        </div>
+                        <span className="text-sm font-medium">
+                          KES {etimsEnabled && (p as any).tax_category === "standard"
+                            ? Math.round(Number(p.base_sell_price) * (1 + vatRate)).toLocaleString()
+                            : Number(p.base_sell_price).toLocaleString()}
+                          {etimsEnabled && (p as any).tax_category === "standard" && <span className="text-xs text-muted-foreground ml-1">inc. VAT</span>}
+                        </span>
+                      </button>
+                    ))}
+                    {filteredProducts.length === 0 && <p className="text-center text-muted-foreground text-sm py-4">No products found</p>}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -181,14 +291,24 @@ export default function NewInvoice() {
               <CardContent className="p-0">
                 <Table>
                   <TableHeader><TableRow>
-                    <TableHead>Item</TableHead><TableHead className="w-20">Qty</TableHead><TableHead className="w-24">Price</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="w-10"></TableHead>
+                    <TableHead>Item</TableHead><TableHead className="w-20">Qty</TableHead><TableHead className="w-24">Price</TableHead>
+                    {items.some(i => i.unit_price < i.original_price) && <TableHead className="w-20">Discount</TableHead>}
+                    <TableHead className="text-right">Total</TableHead><TableHead className="w-10"></TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
                     {items.map(item => (
                       <TableRow key={item.product_id}>
-                        <TableCell className="text-sm">{item.name}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">{item.name}</div>
+                          {etimsEnabled && <span className="text-xs text-muted-foreground capitalize">{item.tax_category.replace("_", "-")}</span>}
+                        </TableCell>
                         <TableCell><Input type="number" min={1} value={item.quantity} onChange={e => updateItemQty(item.product_id, parseInt(e.target.value) || 0)} className="h-8 w-16" /></TableCell>
                         <TableCell><Input type="number" value={item.unit_price} onChange={e => updateItemPrice(item.product_id, Number(e.target.value))} className="h-8 w-20" /></TableCell>
+                        {items.some(i => i.unit_price < i.original_price) && (
+                          <TableCell className="text-xs text-destructive">
+                            {item.unit_price < item.original_price ? `-${((item.original_price - item.unit_price) * item.quantity).toLocaleString()}` : "—"}
+                          </TableCell>
+                        )}
                         <TableCell className="text-right font-medium text-sm">{item.total.toLocaleString()}</TableCell>
                         <TableCell><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(item.product_id)}><Trash2 className="h-3 w-3" /></Button></TableCell>
                       </TableRow>
@@ -200,14 +320,16 @@ export default function NewInvoice() {
           )}
         </div>
 
+        {/* Right: Customer + Payment */}
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Customer</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2">
-                <Switch checked={isNewCustomer} onCheckedChange={setIsNewCustomer} />
+                <Switch checked={isNewCustomer} onCheckedChange={v => { setIsNewCustomer(v); if (v) setSelectedCustomerId(""); }} />
                 <Label className="text-xs">New customer</Label>
               </div>
+
               {isNewCustomer ? (
                 <>
                   <Input placeholder="Customer name" value={newCustName} onChange={e => setNewCustName(e.target.value)} />
@@ -215,12 +337,52 @@ export default function NewInvoice() {
                   <Input placeholder="KRA PIN (optional, enables VAT)" value={custPin} onChange={e => setCustPin(e.target.value)} />
                 </>
               ) : (
-                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                  <SelectTrigger><SelectValue placeholder="Walk-in (no customer)" /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name} ({c.customer_code})</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, code, phone, PIN..."
+                    className="pl-9"
+                    value={customerSearch}
+                    onChange={e => { setCustomerSearch(e.target.value); setShowCustDropdown(true); setSelectedCustomerId(""); }}
+                    onFocus={() => setShowCustDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowCustDropdown(false), 200)}
+                  />
+                  {showCustDropdown && customerSearch.trim() && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCustomers.map(c => (
+                        <button key={c.id} className="w-full px-3 py-2 text-left hover:bg-accent" onMouseDown={() => selectCustomer(c.id)}>
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-sm font-medium">{c.name}</p>
+                              <p className="text-xs text-muted-foreground">{c.customer_code} {c.phone ? `· ${c.phone}` : ""}</p>
+                            </div>
+                            {Number(c.current_balance) > 0 && (
+                              <Badge variant="destructive" className="text-xs">Owes {Number(c.current_balance).toLocaleString()}</Badge>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                      {filteredCustomers.length === 0 && (
+                        <button className="w-full px-3 py-2 text-left hover:bg-accent flex items-center gap-2" onMouseDown={() => { setIsNewCustomer(true); setNewCustName(customerSearch); }}>
+                          <UserPlus className="h-4 w-4" />
+                          <span className="text-sm">Add "{customerSearch}" as new customer</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedCustomer && (
+                <div className="text-xs space-y-1 bg-muted/50 rounded-md p-2">
+                  <p>{selectedCustomer.customer_code} {selectedCustomer.kra_pin ? `· PIN: ${selectedCustomer.kra_pin}` : ""}</p>
+                  {Number(selectedCustomer.current_balance) > 0 && (
+                    <p className="text-destructive font-medium">Outstanding: KES {Number(selectedCustomer.current_balance).toLocaleString()}</p>
+                  )}
+                  {Number(selectedCustomer.debt_limit) > 0 && (
+                    <p>Credit Limit: KES {Number(selectedCustomer.debt_limit).toLocaleString()}</p>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -230,8 +392,10 @@ export default function NewInvoice() {
             <CardContent className="space-y-3">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>KES {subtotal.toLocaleString()}</span></div>
-                {isTaxable && <div className="flex justify-between"><span className="text-muted-foreground">VAT (16%)</span><span>KES {tax.toLocaleString()}</span></div>}
-                <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>KES {total.toLocaleString()}</span></div>
+                {etimsEnabled && tax > 0 && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">VAT ({(vatRate * 100).toFixed(0)}%)</span><span>KES {Math.round(tax).toLocaleString()}</span></div>
+                )}
+                <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>KES {Math.round(total).toLocaleString()}</span></div>
               </div>
 
               <Select value={paymentMethod} onValueChange={v => setPaymentMethod(v as PaymentMethod)}>
@@ -253,11 +417,18 @@ export default function NewInvoice() {
 
               {balance > 0 && (
                 <div className="bg-warning/10 border border-warning/30 rounded-md p-2 text-center">
-                  <p className="text-xs text-warning font-medium">Balance: KES {balance.toLocaleString()}</p>
+                  <p className="text-xs text-warning font-medium">Balance: KES {Math.round(balance).toLocaleString()}</p>
                 </div>
               )}
 
-              <Button className="w-full" onClick={submitInvoice} disabled={items.length === 0 || createInvoice.isPending}>
+              {creditWarning && (
+                <div className="bg-destructive/10 border border-destructive/30 rounded-md p-2 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-xs text-destructive">{creditWarning}</p>
+                </div>
+              )}
+
+              <Button className="w-full" onClick={submitInvoice} disabled={items.length === 0 || createInvoice.isPending || (!!creditWarning && paymentMethod === "partial_debt")}>
                 {createInvoice.isPending ? "Creating..." : "Create Invoice"}
               </Button>
             </CardContent>
