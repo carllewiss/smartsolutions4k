@@ -17,6 +17,7 @@ export type Database = {
       customers: {
         Row: {
           created_at: string
+          credit_terms: number
           current_balance: number
           customer_code: string
           customer_type: Database["public"]["Enums"]["customer_type"]
@@ -31,6 +32,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credit_terms?: number
           current_balance?: number
           customer_code?: string
           customer_type?: Database["public"]["Enums"]["customer_type"]
@@ -45,6 +47,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credit_terms?: number
           current_balance?: number
           customer_code?: string
           customer_type?: Database["public"]["Enums"]["customer_type"]
@@ -276,6 +279,7 @@ export type Database = {
           is_service: boolean
           min_stock: number
           name: string
+          tax_category: Database["public"]["Enums"]["tax_category"]
           unit: string
           updated_at: string
         }
@@ -288,6 +292,7 @@ export type Database = {
           is_service?: boolean
           min_stock?: number
           name: string
+          tax_category?: Database["public"]["Enums"]["tax_category"]
           unit?: string
           updated_at?: string
         }
@@ -300,6 +305,7 @@ export type Database = {
           is_service?: boolean
           min_stock?: number
           name?: string
+          tax_category?: Database["public"]["Enums"]["tax_category"]
           unit?: string
           updated_at?: string
         }
@@ -512,6 +518,33 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -558,6 +591,7 @@ export type Database = {
         | "Internet Services"
         | "Printing Services"
         | "Other Services"
+      tax_category: "standard" | "zero_rated" | "exempt"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -695,6 +729,7 @@ export const Constants = {
         "Printing Services",
         "Other Services",
       ],
+      tax_category: ["standard", "zero_rated", "exempt"],
     },
   },
 } as const
