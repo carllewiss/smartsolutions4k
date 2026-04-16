@@ -5,7 +5,7 @@ export function useSystemSettings() {
   return useQuery({
     queryKey: ["system-settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("system_settings")
         .select("*");
       if (error) throw error;
@@ -20,7 +20,7 @@ export function useUpdateSetting() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("system_settings")
         .update({ value })
         .eq("key", key);
