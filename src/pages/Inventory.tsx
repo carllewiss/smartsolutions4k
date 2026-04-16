@@ -50,7 +50,7 @@ export default function Inventory() {
   const addProduct = async () => {
     if (!name.trim()) { toast.error("Enter product name"); return; }
     try {
-      await createProduct.mutateAsync({ name, category, base_sell_price: sellPrice, floor_price: floorPrice, unit, min_stock: minStock, is_service: isService });
+      await createProduct.mutateAsync({ name, category, base_sell_price: sellPrice, floor_price: floorPrice, unit, min_stock: minStock, is_service: isService, tax_category: taxCategory });
       toast.success("Product added!");
       setOpen(false);
       setName("");
