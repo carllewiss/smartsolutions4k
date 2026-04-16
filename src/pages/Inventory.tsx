@@ -90,6 +90,17 @@ export default function Inventory() {
                 <div><Label>Unit</Label><Input value={unit} onChange={e => setUnit(e.target.value)} /></div>
                 <div><Label>Min Stock</Label><Input type="number" value={minStock} onChange={e => setMinStock(Number(e.target.value))} /></div>
               </div>
+              <div>
+                <Label>Tax Category</Label>
+                <Select value={taxCategory} onValueChange={v => setTaxCategory(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard (16% VAT)</SelectItem>
+                    <SelectItem value="zero_rated">Zero-Rated (0%)</SelectItem>
+                    <SelectItem value="exempt">Exempt (0%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2">
                 <Switch checked={isService} onCheckedChange={setIsService} />
                 <Label className="text-xs">This is a service (no stock tracking)</Label>
@@ -112,8 +123,8 @@ export default function Inventory() {
       <Card>
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow>
-              <TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Stock</TableHead><TableHead className="text-right">Sell Price</TableHead><TableHead className="text-right">Floor</TableHead><TableHead>Status</TableHead><TableHead>Level</TableHead>
+             <TableHeader><TableRow>
+              <TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Tax</TableHead><TableHead className="text-right">Stock</TableHead><TableHead className="text-right">Sell Price</TableHead><TableHead className="text-right">Floor</TableHead><TableHead>Status</TableHead><TableHead>Level</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {products.map(p => {
@@ -123,6 +134,7 @@ export default function Inventory() {
                   <TableRow key={p.id}>
                     <TableCell className="font-medium text-sm">{p.name}</TableCell>
                     <TableCell><Badge variant="outline" className="text-xs">{p.category}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs capitalize">{((p as any).tax_category || "standard").replace("_", "-")}</Badge></TableCell>
                     <TableCell className="text-right text-sm">{p.is_service ? "∞" : `${p.stock_on_hand} ${p.unit}`}</TableCell>
                     <TableCell className="text-right text-sm">{Number(p.base_sell_price).toLocaleString()}</TableCell>
                     <TableCell className="text-right text-sm text-muted-foreground">{Number(p.floor_price).toLocaleString()}</TableCell>
