@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          note: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          note?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
@@ -160,11 +187,18 @@ export type Database = {
           created_at: string
           created_by: string | null
           customer_id: string
+          etims_error: string | null
+          etims_qr_data: string | null
+          etims_signature: string | null
+          etims_status: Database["public"]["Enums"]["etims_status"]
+          etims_synced_at: string | null
           id: string
           invoice_number: string
+          last_reprinted_at: string | null
           mpesa_amount: number
           paid_amount: number
           payment_method: Database["public"]["Enums"]["payment_method"]
+          reprint_count: number
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           tax: number
@@ -177,11 +211,18 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id: string
+          etims_error?: string | null
+          etims_qr_data?: string | null
+          etims_signature?: string | null
+          etims_status?: Database["public"]["Enums"]["etims_status"]
+          etims_synced_at?: string | null
           id?: string
           invoice_number?: string
+          last_reprinted_at?: string | null
           mpesa_amount?: number
           paid_amount?: number
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          reprint_count?: number
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax?: number
@@ -194,11 +235,18 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          etims_error?: string | null
+          etims_qr_data?: string | null
+          etims_signature?: string | null
+          etims_status?: Database["public"]["Enums"]["etims_status"]
+          etims_synced_at?: string | null
           id?: string
           invoice_number?: string
+          last_reprinted_at?: string | null
           mpesa_amount?: number
           paid_amount?: number
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          reprint_count?: number
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax?: number
@@ -584,6 +632,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "sales_agent"
       customer_type: "walk_in" | "regular"
+      etims_status: "not_required" | "pending_sync" | "signed" | "failed"
       invoice_status: "paid" | "partial" | "unpaid"
       payment_method: "cash" | "mpesa" | "cash_mpesa" | "partial_debt"
       product_category:
@@ -721,6 +770,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "sales_agent"],
       customer_type: ["walk_in", "regular"],
+      etims_status: ["not_required", "pending_sync", "signed", "failed"],
       invoice_status: ["paid", "partial", "unpaid"],
       payment_method: ["cash", "mpesa", "cash_mpesa", "partial_debt"],
       product_category: [

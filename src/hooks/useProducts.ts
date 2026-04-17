@@ -38,6 +38,97 @@ export function useProductWithStock() {
   });
 }
 
+export function useProduct(id: string | undefined) {
+  return useQuery({
+    queryKey: ["products", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("*").eq("id", id!).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useProductBatches(productId: string | undefined) {
+  return useQuery({
+    queryKey: ["product-batches", productId],
+    enabled: !!productId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stock_batches")
+        .select("*, suppliers(name)")
+        .eq("product_id", productId!)
+        .order("purchase_date", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+export function useProductMovements(productId: string | undefined) {
+  return useQuery({
+    queryKey: ["product-movements", productId],
+    enabled: !!productId,
+    queryFn: async () => {
+      // SALE rows from invoice_items
+      const { data: sales, error: sErr } = await supabase
+        .from("invoice_items")
+        .select("id, quantity, unit_price, cogs, created_at, invoices(invoice_number, customers(name, customer_code))")
+        .eq("product_id", productId!)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (sErr) throw sErr;
+
+      // REC rows from stock_batches (purchases)
+      const { data: receipts, error: rErr } = await supabase
+        .from("stock_batches")
+        .select("id, quantity_bought, cost_price, purchase_date, created_at, suppliers(name)")
+        .eq("product_id", productId!)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (rErr) throw rErr;
+
+      type Row = {
+        id: string;
+        type: "SALE" | "REC";
+        date: string;
+        reference: string;
+        qtyChange: number;
+        unitValue: number;
+        narration: string;
+        invoiceNumber?: string;
+      };
+
+      const rows: Row[] = [
+        ...(sales || []).map((s: any) => ({
+          id: s.id,
+          type: "SALE" as const,
+          date: s.created_at,
+          reference: s.invoices?.invoice_number || "—",
+          qtyChange: -Number(s.quantity),
+          unitValue: Number(s.unit_price),
+          narration: s.invoices?.customers
+            ? `Sold to: ${s.invoices.customers.name} (${s.invoices.customers.customer_code})`
+            : "Sale",
+          invoiceNumber: s.invoices?.invoice_number,
+        })),
+        ...(receipts || []).map((r: any) => ({
+          id: r.id,
+          type: "REC" as const,
+          date: r.created_at,
+          reference: r.purchase_date,
+          qtyChange: Number(r.quantity_bought),
+          unitValue: Number(r.cost_price),
+          narration: r.suppliers ? `Supplier: ${r.suppliers.name}` : "Stock receipt",
+        })),
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      return rows;
+    },
+  });
+}
+
 export function useCreateProduct() {
   const qc = useQueryClient();
   return useMutation({
@@ -54,6 +145,59 @@ export function useCreateProduct() {
       const { data, error } = await supabase.from("products").insert(product as any).select().single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["products-with-stock"] });
+    },
+  });
+}
+
+export function useUpdateProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: {
+      id: string;
+      name?: string;
+      category?: "Phone Accessories" | "Internet Services" | "Printing Services" | "Other Services";
+      base_sell_price?: number;
+      floor_price?: number;
+      unit?: string;
+      min_stock?: number;
+      is_service?: boolean;
+      tax_category?: string;
+    }) => {
+      const { error } = await supabase.from("products").update(updates as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["products-with-stock"] });
+    },
+  });
+}
+
+export function useDeleteProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Block delete if invoice_items or batches exist
+      const { count: invCount } = await supabase
+        .from("invoice_items")
+        .select("id", { count: "exact", head: true })
+        .eq("product_id", id);
+      if ((invCount || 0) > 0) {
+        throw new Error("Cannot delete: product has sales history. Consider hiding instead.");
+      }
+      const { count: batchCount } = await supabase
+        .from("stock_batches")
+        .select("id", { count: "exact", head: true })
+        .eq("product_id", id);
+      if ((batchCount || 0) > 0) {
+        throw new Error("Cannot delete: product has stock batches. Clear batches first.");
+      }
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] });

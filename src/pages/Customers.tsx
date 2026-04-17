@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { differenceInDays } from "date-fns";
-import { Search, CreditCard } from "lucide-react";
+import { Search, CreditCard, ChevronRight } from "lucide-react";
 import PaymentDialog from "@/components/PaymentDialog";
 
 export default function Customers() {
+  const navigate = useNavigate();
   const { data: customers = [], isLoading } = useCustomers();
   const { data: invoices = [] } = useInvoices();
   const [search, setSearch] = useState("");
@@ -53,7 +55,7 @@ export default function Customers() {
         {filtered.map(cust => {
           const aging = getDebtAging(cust.id);
           return (
-            <Card key={cust.id}>
+            <Card key={cust.id} className="hover:shadow-elegant transition-shadow cursor-pointer" onClick={() => navigate(`/customers/${cust.id}`)}>
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <div>
@@ -70,7 +72,7 @@ export default function Customers() {
                       {(cust as any).credit_terms && ` · ${(cust as any).credit_terms}d terms`}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                     <div className="text-right space-y-1">
                       {aging.total > 0 ? (
                         <>
@@ -90,6 +92,7 @@ export default function Customers() {
                         <CreditCard className="h-3 w-3 mr-1" /> Pay
                       </Button>
                     )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
               </CardContent>

@@ -10,11 +10,14 @@ import Dashboard from "./pages/Dashboard";
 import NewInvoice from "./pages/NewInvoice";
 import Invoices from "./pages/Invoices";
 import Customers from "./pages/Customers";
+import CustomerQuery from "./pages/CustomerQuery";
 import Inventory from "./pages/Inventory";
+import StockQuery from "./pages/StockQuery";
 import Purchases from "./pages/Purchases";
 import Finance from "./pages/Finance";
 import UserManagement from "./pages/UserManagement";
 import Settings from "./pages/Settings";
+import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,11 +66,14 @@ function AppRoutes() {
         <Route path="/invoices/new" element={<NewInvoice />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/customers" element={<Customers />} />
+        <Route path="/customers/:customerId" element={<CustomerQuery />} />
         <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
+        <Route path="/inventory/:productId" element={<StockQuery />} />
         <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
         <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
+        <Route path="/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

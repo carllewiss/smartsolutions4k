@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Search, AlertTriangle, UserPlus } from "lucide-react";
+import { StockSearchAutocomplete } from "@/components/StockSearchAutocomplete";
 import { toast } from "sonner";
 
 type PaymentMethod = "cash" | "mpesa" | "cash_mpesa" | "partial_debt";
@@ -252,36 +253,11 @@ export default function NewInvoice() {
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Add Products / Services</CardTitle></CardHeader>
             <CardContent>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products by name or category..."
-                  className="pl-9"
-                  value={productSearch}
-                  onChange={e => { setProductSearch(e.target.value); setShowProductDropdown(true); }}
-                  onFocus={() => setShowProductDropdown(true)}
-                  onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
-                />
-                {showProductDropdown && (
-                  <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-64 overflow-y-auto">
-                    {filteredProducts.map(p => (
-                      <button key={p.id} className="w-full px-3 py-2 text-left hover:bg-accent flex justify-between items-center" onMouseDown={() => addItem(p.id)}>
-                        <div>
-                          <p className="text-sm font-medium">{p.name}</p>
-                          <p className="text-xs text-muted-foreground">{p.category} · {p.is_service ? "Service" : `${p.stock_on_hand} in stock`}</p>
-                        </div>
-                        <span className="text-sm font-medium">
-                          KES {etimsEnabled && (p as any).tax_category === "standard"
-                            ? Math.round(Number(p.base_sell_price) * (1 + vatRate)).toLocaleString()
-                            : Number(p.base_sell_price).toLocaleString()}
-                          {etimsEnabled && (p as any).tax_category === "standard" && <span className="text-xs text-muted-foreground ml-1">inc. VAT</span>}
-                        </span>
-                      </button>
-                    ))}
-                    {filteredProducts.length === 0 && <p className="text-center text-muted-foreground text-sm py-4">No products found</p>}
-                  </div>
-                )}
-              </div>
+              <StockSearchAutocomplete
+                etimsEnabled={etimsEnabled}
+                vatRate={vatRate}
+                onSelect={(p) => addItem(p.id)}
+              />
             </CardContent>
           </Card>
 
