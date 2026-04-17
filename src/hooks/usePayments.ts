@@ -1,5 +1,19 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+export function usePayments() {
+  return useQuery({
+    queryKey: ["payments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("*")
+        .order("payment_date", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
 
 export function useCreatePayment() {
   const qc = useQueryClient();
