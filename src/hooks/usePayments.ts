@@ -55,6 +55,7 @@ export function useCreatePayment() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["customers"] });
+      qc.invalidateQueries({ queryKey: ["payments"] });
     },
   });
 }

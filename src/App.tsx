@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import NewInvoice from "./pages/NewInvoice";
 import Invoices from "./pages/Invoices";
 import Customers from "./pages/Customers";
+import CustomerQuery from "./pages/CustomerQuery";
 import Inventory from "./pages/Inventory";
 import StockQuery from "./pages/StockQuery";
 import Purchases from "./pages/Purchases";
@@ -64,6 +65,7 @@ function AppRoutes() {
         <Route path="/invoices/new" element={<NewInvoice />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/customers" element={<Customers />} />
+        <Route path="/customers/:customerId" element={<CustomerQuery />} />
         <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
         <Route path="/inventory/:productId" element={<StockQuery />} />
         <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
