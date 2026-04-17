@@ -11,6 +11,7 @@ import NewInvoice from "./pages/NewInvoice";
 import Invoices from "./pages/Invoices";
 import Customers from "./pages/Customers";
 import Inventory from "./pages/Inventory";
+import StockQuery from "./pages/StockQuery";
 import Purchases from "./pages/Purchases";
 import Finance from "./pages/Finance";
 import UserManagement from "./pages/UserManagement";
@@ -64,6 +65,7 @@ function AppRoutes() {
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
+        <Route path="/inventory/:productId" element={<StockQuery />} />
         <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
         <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
