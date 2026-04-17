@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, UserCog, Settings,
+  LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +30,7 @@ export function AppSidebar() {
   ] : [];
 
   const adminItems = isAdmin ? [
+    { title: "eTIMS Sync", url: "/etims", icon: ShieldCheck },
     { title: "User Management", url: "/users", icon: UserCog },
     { title: "Settings", url: "/settings", icon: Settings },
   ] : [];
