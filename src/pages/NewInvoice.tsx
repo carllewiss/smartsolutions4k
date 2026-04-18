@@ -375,7 +375,12 @@ export default function NewInvoice() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>KES {subtotal.toLocaleString()}</span></div>
                 {etimsEnabled && tax > 0 && (
-                  <div className="flex justify-between"><span className="text-muted-foreground">VAT ({(vatRate * 100).toFixed(0)}%)</span><span>KES {Math.round(tax).toLocaleString()}</span></div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      VAT{items.some(i => i.vat_rate !== null) ? " (mixed rates)" : ` (${(vatRate * 100).toFixed(0)}%)`}
+                    </span>
+                    <span>KES {Math.round(tax).toLocaleString()}</span>
+                  </div>
                 )}
                 <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>KES {Math.round(total).toLocaleString()}</span></div>
               </div>
