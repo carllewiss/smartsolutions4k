@@ -28,6 +28,8 @@ interface LineItem {
   stock: number;
   floor_price: number;
   tax_category: string;
+  /** Per-product VAT % override; null = use system default */
+  vat_rate: number | null;
 }
 
 export default function NewInvoice() {
@@ -84,11 +86,14 @@ export default function NewInvoice() {
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
   const customerHasPin = !!custPin || !!selectedCustomer?.kra_pin;
 
-  // VAT logic: only apply if eTIMS is on
+  // VAT logic: only apply if eTIMS is on. Per-product vat_rate overrides default.
   const calculateItemVAT = useCallback((item: LineItem) => {
     if (!etimsEnabled) return 0;
     if (item.tax_category === "exempt" || item.tax_category === "zero_rated") return 0;
-    return item.total * vatRate;
+    const effective = item.vat_rate !== null && item.vat_rate !== undefined
+      ? Number(item.vat_rate) / 100
+      : vatRate;
+    return item.total * effective;
   }, [etimsEnabled, vatRate]);
 
   const subtotal = items.reduce((s, i) => s + i.total, 0);
@@ -140,6 +145,7 @@ export default function NewInvoice() {
         stock: prod.stock_on_hand,
         floor_price: Number(prod.floor_price),
         tax_category: (prod as any).tax_category || "standard",
+        vat_rate: (prod as any).vat_rate ?? null,
       }]);
     }
     setProductSearch("");

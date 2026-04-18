@@ -141,6 +141,7 @@ export function useCreateProduct() {
       min_stock: number;
       is_service: boolean;
       tax_category?: string;
+      vat_rate?: number | null;
     }) => {
       const { data, error } = await supabase.from("products").insert(product as any).select().single();
       if (error) throw error;
@@ -166,6 +167,7 @@ export function useUpdateProduct() {
       min_stock?: number;
       is_service?: boolean;
       tax_category?: string;
+      vat_rate?: number | null;
     }) => {
       const { error } = await supabase.from("products").update(updates as any).eq("id", id);
       if (error) throw error;
