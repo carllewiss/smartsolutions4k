@@ -213,11 +213,6 @@ export default function StockQuery() {
               )}
             </TabsContent>
           )}
-        </Tabs>
-      </Card>
-
-            </TabsContent>
-          )}
 
           {isAdmin && (
             <TabsContent value="prices" className="m-0 max-h-[60vh] overflow-auto">
