@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Database, Edit3, Trash2, Lock } from "lucide-react";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
+import { usePriceHistory } from "@/hooks/usePriceHistory";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -22,6 +24,7 @@ export default function StockQuery() {
   const { data: product, isLoading } = useProduct(productId);
   const { data: batches = [] } = useProductBatches(productId);
   const { data: movements = [] } = useProductMovements(productId);
+  const { data: priceHistory = [] } = usePriceHistory(isAdmin ? productId : undefined);
   const del = useDeleteProduct();
   const [editOpen, setEditOpen] = useState(false);
 
@@ -126,7 +129,10 @@ export default function StockQuery() {
           <TabsList className="rounded-none border-b w-full justify-start bg-muted/30 h-auto p-0">
             <TabsTrigger value="movements" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Movements</TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="batches" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Warehouse Values</TabsTrigger>
+              <>
+                <TabsTrigger value="batches" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Warehouse Values</TabsTrigger>
+                <TabsTrigger value="prices" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Price History</TabsTrigger>
+              </>
             )}
           </TabsList>
 
