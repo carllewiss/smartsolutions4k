@@ -1,19 +1,34 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProductWithStock, useDeleteProduct } from "@/hooks/useProducts";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit3, Trash2, ChevronRight } from "lucide-react";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
+import { VirtualizedTable } from "@/components/VirtualizedTable";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+
+type ProductRow = {
+  id: string;
+  name: string;
+  category: string;
+  tax_category: string;
+  vat_rate: number | null;
+  is_service: boolean;
+  stock_on_hand: number;
+  base_sell_price: number;
+  floor_price: number;
+  unit: string;
+  min_stock: number;
+};
 
 export default function Inventory() {
   const navigate = useNavigate();
@@ -40,8 +55,14 @@ export default function Inventory() {
     }
   };
 
-  const totalValue = products.reduce((s, p) => s + p.stock_on_hand * Number(p.base_sell_price), 0);
-  const lowStockCount = products.filter(p => p.stock_on_hand <= p.min_stock && p.min_stock > 0).length;
+  // Stock value: services (∞) excluded
+  const totalValue = products.reduce(
+    (s, p) => (p.is_service ? s : s + p.stock_on_hand * Number(p.base_sell_price)),
+    0
+  );
+  const lowStockCount = products.filter(
+    p => !p.is_service && p.stock_on_hand <= p.min_stock && p.min_stock > 0
+  ).length;
 
   const handleDelete = async (id: string) => {
     try {
@@ -49,6 +70,127 @@ export default function Inventory() {
       toast.success("Product deleted");
     } catch (e: any) { toast.error(e.message); }
   };
+
+  const columns = useMemo<ColumnDef<ProductRow>[]>(() => {
+    const cols: ColumnDef<ProductRow>[] = [
+      {
+        accessorKey: "name",
+        header: "Product",
+        cell: ({ row }) => <span className="font-medium text-sm">{row.original.name}</span>,
+        size: 240,
+      },
+      {
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => <Badge variant="outline" className="text-xs">{row.original.category}</Badge>,
+      },
+      {
+        id: "tax",
+        header: "Tax",
+        enableSorting: false,
+        cell: ({ row }) => {
+          const cat = row.original.tax_category || "standard";
+          const rate = row.original.vat_rate;
+          const label = cat === "standard"
+            ? rate !== null && rate !== undefined ? `Std ${rate}%` : "Std"
+            : cat.replace("_", "-");
+          return <Badge variant="outline" className="text-xs capitalize">{label}</Badge>;
+        },
+      },
+      {
+        accessorKey: "stock_on_hand",
+        header: () => <span className="block text-right w-full">Stock</span>,
+        cell: ({ row }) => (
+          <div className="text-right text-sm">
+            {row.original.is_service ? "∞" : `${row.original.stock_on_hand} ${row.original.unit}`}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "base_sell_price",
+        header: () => <span className="block text-right w-full">Sell Price</span>,
+        cell: ({ row }) => (
+          <div className="text-right text-sm">{Number(row.original.base_sell_price).toLocaleString()}</div>
+        ),
+      },
+    ];
+
+    if (isAdmin) {
+      cols.push({
+        accessorKey: "floor_price",
+        header: () => <span className="block text-right w-full">Floor</span>,
+        cell: ({ row }) => (
+          <div className="text-right text-sm text-muted-foreground">
+            {Number(row.original.floor_price).toLocaleString()}
+          </div>
+        ),
+      });
+    }
+
+    cols.push(
+      {
+        id: "status",
+        header: "Status",
+        enableSorting: false,
+        cell: ({ row }) => {
+          const cls = row.original.is_service ? "Service" : classifyStock(row.original.stock_on_hand, row.original.min_stock);
+          return <Badge className={`text-xs ${stockBadge(cls)}`}>{cls}</Badge>;
+        },
+      },
+      {
+        id: "level",
+        header: "Level",
+        enableSorting: false,
+        size: 130,
+        cell: ({ row }) => {
+          if (row.original.is_service) return <span className="text-xs text-muted-foreground italic">N/A</span>;
+          const stockPct = row.original.min_stock > 0
+            ? Math.min(100, (row.original.stock_on_hand / (row.original.min_stock * 3)) * 100)
+            : 100;
+          return <Progress value={stockPct} className="h-2 w-24" />;
+        },
+      },
+      {
+        id: "actions",
+        header: () => <span className="block text-right w-full">Actions</span>,
+        enableSorting: false,
+        size: 130,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            {isAdmin && (
+              <>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditProduct(row.original); setOpen(true); }}>
+                  <Edit3 className="h-3.5 w-3.5" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {row.original.name}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This is permanent. Blocked if the product has any sales history or stock batches.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(row.original.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </div>
+        ),
+      }
+    );
+
+    return cols;
+  }, [isAdmin]);
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
@@ -72,70 +214,14 @@ export default function Inventory() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Tax</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead className="text-right">Sell Price</TableHead>
-                {isAdmin && <TableHead className="text-right">Floor</TableHead>}
-                <TableHead>Status</TableHead>
-                <TableHead>Level</TableHead>
-                <TableHead className="text-right w-32">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map(p => {
-                const cls = p.is_service ? "Service" : classifyStock(p.stock_on_hand, p.min_stock);
-                const stockPct = p.min_stock > 0 ? Math.min(100, (p.stock_on_hand / (p.min_stock * 3)) * 100) : 100;
-                return (
-                  <TableRow key={p.id} className="cursor-pointer" onClick={() => navigate(`/inventory/${p.id}`)}>
-                    <TableCell className="font-medium text-sm">{p.name}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs">{p.category}</Badge></TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs capitalize">{((p as any).tax_category || "standard").replace("_", "-")}</Badge></TableCell>
-                    <TableCell className="text-right text-sm">{p.is_service ? "∞" : `${p.stock_on_hand} ${p.unit}`}</TableCell>
-                    <TableCell className="text-right text-sm">{Number(p.base_sell_price).toLocaleString()}</TableCell>
-                    {isAdmin && <TableCell className="text-right text-sm text-muted-foreground">{Number(p.floor_price).toLocaleString()}</TableCell>}
-                    <TableCell><Badge className={`text-xs ${stockBadge(cls)}`}>{cls}</Badge></TableCell>
-                    <TableCell className="w-32">{!p.is_service && <Progress value={stockPct} className="h-2" />}</TableCell>
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
-                        {isAdmin && (
-                          <>
-                            <Button size="icon" variant="ghost" onClick={() => { setEditProduct(p); setOpen(true); }}>
-                              <Edit3 className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete {p.name}?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This is permanent. Blocked if the product has any sales history or stock batches.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(p.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        )}
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <VirtualizedTable<ProductRow>
+            data={products as ProductRow[]}
+            columns={columns}
+            rowHeight={48}
+            height="65vh"
+            onRowClick={(p) => navigate(`/inventory/${p.id}`)}
+            empty="No products yet."
+          />
         </CardContent>
       </Card>
 

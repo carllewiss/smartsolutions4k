@@ -28,6 +28,8 @@ interface LineItem {
   stock: number;
   floor_price: number;
   tax_category: string;
+  /** Per-product VAT % override; null = use system default */
+  vat_rate: number | null;
 }
 
 export default function NewInvoice() {
@@ -84,11 +86,14 @@ export default function NewInvoice() {
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
   const customerHasPin = !!custPin || !!selectedCustomer?.kra_pin;
 
-  // VAT logic: only apply if eTIMS is on
+  // VAT logic: only apply if eTIMS is on. Per-product vat_rate overrides default.
   const calculateItemVAT = useCallback((item: LineItem) => {
     if (!etimsEnabled) return 0;
     if (item.tax_category === "exempt" || item.tax_category === "zero_rated") return 0;
-    return item.total * vatRate;
+    const effective = item.vat_rate !== null && item.vat_rate !== undefined
+      ? Number(item.vat_rate) / 100
+      : vatRate;
+    return item.total * effective;
   }, [etimsEnabled, vatRate]);
 
   const subtotal = items.reduce((s, i) => s + i.total, 0);
@@ -140,6 +145,7 @@ export default function NewInvoice() {
         stock: prod.stock_on_hand,
         floor_price: Number(prod.floor_price),
         tax_category: (prod as any).tax_category || "standard",
+        vat_rate: (prod as any).vat_rate ?? null,
       }]);
     }
     setProductSearch("");
@@ -369,7 +375,12 @@ export default function NewInvoice() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>KES {subtotal.toLocaleString()}</span></div>
                 {etimsEnabled && tax > 0 && (
-                  <div className="flex justify-between"><span className="text-muted-foreground">VAT ({(vatRate * 100).toFixed(0)}%)</span><span>KES {Math.round(tax).toLocaleString()}</span></div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      VAT{items.some(i => i.vat_rate !== null) ? " (mixed rates)" : ` (${(vatRate * 100).toFixed(0)}%)`}
+                    </span>
+                    <span>KES {Math.round(tax).toLocaleString()}</span>
+                  </div>
                 )}
                 <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>KES {Math.round(total).toLocaleString()}</span></div>
               </div>

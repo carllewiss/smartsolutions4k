@@ -371,6 +371,7 @@ export type Database = {
           tax_category: Database["public"]["Enums"]["tax_category"]
           unit: string
           updated_at: string
+          vat_rate: number | null
         }
         Insert: {
           base_sell_price?: number
@@ -384,6 +385,7 @@ export type Database = {
           tax_category?: Database["public"]["Enums"]["tax_category"]
           unit?: string
           updated_at?: string
+          vat_rate?: number | null
         }
         Update: {
           base_sell_price?: number
@@ -397,6 +399,7 @@ export type Database = {
           tax_category?: Database["public"]["Enums"]["tax_category"]
           unit?: string
           updated_at?: string
+          vat_rate?: number | null
         }
         Relationships: []
       }

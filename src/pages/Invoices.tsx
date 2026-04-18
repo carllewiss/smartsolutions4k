@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useMarkReprint } from "@/hooks/useEtims";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Printer, ShieldCheck, Clock, AlertCircle } from "lucide-react";
 import { InvoicePrintView } from "@/components/InvoicePrintView";
+import { VirtualizedTable } from "@/components/VirtualizedTable";
+import { ColumnDef } from "@tanstack/react-table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -70,6 +71,98 @@ export default function Invoices() {
     });
   };
 
+  const columns = useMemo<ColumnDef<any>[]>(() => [
+    {
+      accessorKey: "invoice_number",
+      header: "Invoice #",
+      size: 160,
+      cell: ({ row }) => (
+        <span className="font-medium text-sm">
+          {row.original.invoice_number}
+          {(row.original.reprint_count || 0) > 0 && (
+            <Badge variant="outline" className="ml-2 text-[10px] text-destructive border-destructive/30">
+              REPRINT ×{row.original.reprint_count}
+            </Badge>
+          )}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "customer_name",
+      header: "Customer",
+      cell: ({ row }) => <span className="text-sm">{row.original.customer_name}</span>,
+    },
+    {
+      accessorKey: "created_at",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {format(new Date(row.original.created_at), "dd MMM yyyy")}
+        </span>
+      ),
+      size: 120,
+    },
+    {
+      accessorKey: "total",
+      header: () => <span className="block text-right w-full">Total</span>,
+      cell: ({ row }) => (
+        <div className="text-right text-sm">KES {Number(row.original.total).toLocaleString()}</div>
+      ),
+    },
+    {
+      accessorKey: "balance",
+      header: () => <span className="block text-right w-full">Balance</span>,
+      cell: ({ row }) => (
+        <div className="text-right text-sm font-medium">
+          {Number(row.original.balance) > 0 ? `KES ${Number(row.original.balance).toLocaleString()}` : "—"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "payment_method",
+      header: "Payment",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="text-xs capitalize">
+          {row.original.payment_method.replace("_", " ")}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge className={`text-xs capitalize ${statusColor(row.original.status)}`}>
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "etims_status",
+      header: "eTIMS",
+      cell: ({ row }) => etimsBadge(row.original.etims_status),
+    },
+    {
+      id: "actions",
+      header: () => <span className="block text-right w-full">Actions</span>,
+      enableSorting: false,
+      size: 110,
+      cell: ({ row }) => (
+        <div className="text-right">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              openPrint(row.original, (row.original.reprint_count || 0) > 0 || row.original.etims_status === "signed");
+            }}
+          >
+            <Printer className="h-3 w-3 mr-1" /> Print
+          </Button>
+        </div>
+      ),
+    },
+  ], []);
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   return (
@@ -77,41 +170,13 @@ export default function Invoices() {
       <h1 className="text-2xl font-bold font-heading">Invoices</h1>
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead>Invoice #</TableHead><TableHead>Customer</TableHead><TableHead>Date</TableHead>
-              <TableHead className="text-right">Total</TableHead><TableHead className="text-right">Balance</TableHead>
-              <TableHead>Payment</TableHead><TableHead>Status</TableHead><TableHead>eTIMS</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {invoices.map((inv: any) => (
-                <TableRow key={inv.id}>
-                  <TableCell className="font-medium text-sm">
-                    {inv.invoice_number}
-                    {(inv.reprint_count || 0) > 0 && (
-                      <Badge variant="outline" className="ml-2 text-[10px] text-destructive border-destructive/30">
-                        REPRINT ×{inv.reprint_count}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">{inv.customer_name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{format(new Date(inv.created_at), "dd MMM yyyy")}</TableCell>
-                  <TableCell className="text-right text-sm">KES {Number(inv.total).toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-sm font-medium">{Number(inv.balance) > 0 ? `KES ${Number(inv.balance).toLocaleString()}` : "—"}</TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs capitalize">{inv.payment_method.replace("_", " ")}</Badge></TableCell>
-                  <TableCell><Badge className={`text-xs capitalize ${statusColor(inv.status)}`}>{inv.status}</Badge></TableCell>
-                  <TableCell>{etimsBadge(inv.etims_status)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" onClick={() => openPrint(inv, (inv.reprint_count || 0) > 0 || inv.etims_status === "signed")}>
-                      <Printer className="h-3 w-3 mr-1" /> Print
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {invoices.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No invoices yet</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+          <VirtualizedTable
+            data={invoices}
+            columns={columns}
+            rowHeight={48}
+            height="70vh"
+            empty="No invoices yet."
+          />
         </CardContent>
       </Card>
 
