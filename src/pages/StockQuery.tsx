@@ -216,6 +216,63 @@ export default function StockQuery() {
         </Tabs>
       </Card>
 
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="prices" className="m-0 max-h-[60vh] overflow-auto">
+              {priceHistory.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground text-sm">
+                  No price changes logged yet. Every edit to selling or floor price will appear here.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader className="sticky top-0 bg-muted/50">
+                    <TableRow>
+                      <TableHead className="text-[10px] uppercase">When</TableHead>
+                      <TableHead className="text-[10px] uppercase">Field</TableHead>
+                      <TableHead className="text-[10px] uppercase text-right">Old</TableHead>
+                      <TableHead className="text-[10px] uppercase text-right">New</TableHead>
+                      <TableHead className="text-[10px] uppercase text-right">Δ</TableHead>
+                      <TableHead className="text-[10px] uppercase">Changed By</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {priceHistory.map((p) => {
+                      const delta = Number(p.new_value) - Number(p.old_value);
+                      const up = delta > 0;
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {new Date(p.changed_at).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {p.field_changed === "base_sell_price" ? "Selling Price" : "Floor Price"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs text-muted-foreground line-through">
+                            KES {Number(p.old_value).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-bold">
+                            KES {Number(p.new_value).toLocaleString()}
+                          </TableCell>
+                          <TableCell className={`text-right font-mono text-xs font-bold flex items-center justify-end gap-1 ${up ? "text-success" : "text-destructive"}`}>
+                            {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                            {up ? "+" : ""}{delta.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-sm">{p.changed_by_name || "System"}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+          )}
+        </Tabs>
+      </Card>
+
       <ProductFormDialog open={editOpen} onOpenChange={setEditOpen} product={product as any} />
     </div>
   );
