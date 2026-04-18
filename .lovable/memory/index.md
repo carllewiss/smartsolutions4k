@@ -11,6 +11,7 @@ Cost prices visible to admin only; sales agents see selling price + stock only.
 ## Memories
 - [ERP Architecture](mem://features/erp-architecture) — Database schema, FIFO batches, React Query hooks, price override logic
 - [Invoicing & Payments](mem://features/invoicing-payments) — Cash/M-Pesa/split/debt payment flows, VAT on KRA PIN
+- [Custom VAT per Product](mem://features/custom-vat) — products.vat_rate overrides system default; only for tax_category=standard
 - [Debt Tracking](mem://features/debt-tracking) — 14/30/60-day aging reports for customer debts
 - [Inventory Analytics](mem://features/inventory-analytics) — Stock classification, low stock alerts, batch-based stock levels
 - [Financial Reporting](mem://features/financial-reporting) — P&L with FIFO COGS, expense tracking, gross/net profit
