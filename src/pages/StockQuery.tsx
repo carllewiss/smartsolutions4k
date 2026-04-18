@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Database, Edit3, Trash2, Lock } from "lucide-react";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
+import { usePriceHistory } from "@/hooks/usePriceHistory";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -22,6 +24,7 @@ export default function StockQuery() {
   const { data: product, isLoading } = useProduct(productId);
   const { data: batches = [] } = useProductBatches(productId);
   const { data: movements = [] } = useProductMovements(productId);
+  const { data: priceHistory = [] } = usePriceHistory(isAdmin ? productId : undefined);
   const del = useDeleteProduct();
   const [editOpen, setEditOpen] = useState(false);
 
@@ -126,7 +129,10 @@ export default function StockQuery() {
           <TabsList className="rounded-none border-b w-full justify-start bg-muted/30 h-auto p-0">
             <TabsTrigger value="movements" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Movements</TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="batches" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Warehouse Values</TabsTrigger>
+              <>
+                <TabsTrigger value="batches" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Warehouse Values</TabsTrigger>
+                <TabsTrigger value="prices" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Price History</TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -202,6 +208,58 @@ export default function StockQuery() {
                         <TableCell className="text-right font-mono text-xs">KES {(b.quantity_remaining * Number(b.cost_price)).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="prices" className="m-0 max-h-[60vh] overflow-auto">
+              {priceHistory.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground text-sm">
+                  No price changes logged yet. Every edit to selling or floor price will appear here.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader className="sticky top-0 bg-muted/50">
+                    <TableRow>
+                      <TableHead className="text-[10px] uppercase">When</TableHead>
+                      <TableHead className="text-[10px] uppercase">Field</TableHead>
+                      <TableHead className="text-[10px] uppercase text-right">Old</TableHead>
+                      <TableHead className="text-[10px] uppercase text-right">New</TableHead>
+                      <TableHead className="text-[10px] uppercase text-right">Δ</TableHead>
+                      <TableHead className="text-[10px] uppercase">Changed By</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {priceHistory.map((p) => {
+                      const delta = Number(p.new_value) - Number(p.old_value);
+                      const up = delta > 0;
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {new Date(p.changed_at).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {p.field_changed === "base_sell_price" ? "Selling Price" : "Floor Price"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs text-muted-foreground line-through">
+                            KES {Number(p.old_value).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-bold">
+                            KES {Number(p.new_value).toLocaleString()}
+                          </TableCell>
+                          <TableCell className={`text-right font-mono text-xs font-bold flex items-center justify-end gap-1 ${up ? "text-success" : "text-destructive"}`}>
+                            {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                            {up ? "+" : ""}{delta.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-sm">{p.changed_by_name || "System"}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}

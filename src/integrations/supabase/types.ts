@@ -317,6 +317,47 @@ export type Database = {
           },
         ]
       }
+      price_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          field_changed: string
+          id: string
+          new_value: number
+          old_value: number
+          product_id: string
+          reason: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          field_changed: string
+          id?: string
+          new_value: number
+          old_value: number
+          product_id: string
+          reason?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          field_changed?: string
+          id?: string
+          new_value?: number
+          old_value?: number
+          product_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           base_sell_price: number

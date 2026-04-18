@@ -18,3 +18,4 @@ Cost prices visible to admin only; sales agents see selling price + stock only.
 - [Project Scope](mem://project/scope) — ERP for 4K Smart Solutions Ltd
 - [Stock Query & Customer 360](mem://features/query-modules) — Master-detail pages at /inventory/:id and /customers/:id with movements feed, aging chart, notes
 - [eTIMS Scaffold](mem://features/etims-scaffold) — Pending sync queue at /etims, reprint watermark, simulated KRA signer until device certs provisioned
+- [Pricing Audit](mem://features/pricing-audit) — Mutable selling price + immutable FIFO cost. price_history table auto-logged via trigger, surfaced in StockQuery admin tab.
