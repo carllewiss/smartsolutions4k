@@ -24,6 +24,7 @@ interface Props {
     min_stock: number;
     is_service: boolean;
     tax_category: string;
+    vat_rate?: number | null;
   } | null;
 }
 
@@ -40,6 +41,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
   const [minStock, setMinStock] = useState(0);
   const [isService, setIsService] = useState(false);
   const [taxCategory, setTaxCategory] = useState<Tax>("standard");
+  const [vatRate, setVatRate] = useState<string>(""); // string so empty = "use default"
 
   useEffect(() => {
     if (product) {
@@ -51,26 +53,41 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
       setMinStock(product.min_stock);
       setIsService(product.is_service);
       setTaxCategory((product.tax_category as Tax) || "standard");
+      setVatRate(
+        product.vat_rate === null || product.vat_rate === undefined ? "" : String(product.vat_rate)
+      );
     } else {
       setName(""); setCategory("Phone Accessories"); setSellPrice(0); setFloorPrice(0);
       setUnit("pcs"); setMinStock(0); setIsService(false); setTaxCategory("standard");
+      setVatRate("");
     }
   }, [product, open]);
 
   const submit = async () => {
     if (!name.trim()) { toast.error("Enter product name"); return; }
+
+    // Validate optional VAT rate
+    let vatRateValue: number | null = null;
+    if (vatRate.trim() !== "") {
+      const parsed = Number(vatRate);
+      if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
+        toast.error("Custom VAT rate must be between 0 and 100");
+        return;
+      }
+      vatRateValue = parsed;
+    }
+
     try {
+      const payload: any = {
+        name, category, base_sell_price: sellPrice, floor_price: floorPrice,
+        unit, min_stock: minStock, is_service: isService, tax_category: taxCategory,
+        vat_rate: taxCategory === "standard" ? vatRateValue : null,
+      };
       if (isEdit && product) {
-        await update.mutateAsync({
-          id: product.id, name, category, base_sell_price: sellPrice, floor_price: floorPrice,
-          unit, min_stock: minStock, is_service: isService, tax_category: taxCategory,
-        });
+        await update.mutateAsync({ id: product.id, ...payload });
         toast.success("Product updated");
       } else {
-        await create.mutateAsync({
-          name, category, base_sell_price: sellPrice, floor_price: floorPrice,
-          unit, min_stock: minStock, is_service: isService, tax_category: taxCategory,
-        });
+        await create.mutateAsync(payload);
         toast.success("Product added");
       }
       onOpenChange(false);
@@ -105,16 +122,34 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
             <div><Label>Unit</Label><Input value={unit} onChange={e => setUnit(e.target.value)} /></div>
             <div><Label>Min Stock</Label><Input type="number" value={minStock} onChange={e => setMinStock(Number(e.target.value))} /></div>
           </div>
-          <div>
-            <Label>Tax Category</Label>
-            <Select value={taxCategory} onValueChange={v => setTaxCategory(v as Tax)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="standard">Standard (16% VAT)</SelectItem>
-                <SelectItem value="zero_rated">Zero-Rated (0%)</SelectItem>
-                <SelectItem value="exempt">Exempt (0%)</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Tax Category</Label>
+              <Select value={taxCategory} onValueChange={v => setTaxCategory(v as Tax)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard VAT</SelectItem>
+                  <SelectItem value="zero_rated">Zero-Rated (0%)</SelectItem>
+                  <SelectItem value="exempt">Exempt (0%)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Custom VAT % {taxCategory !== "standard" && <span className="text-muted-foreground">(N/A)</span>}</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={vatRate}
+                onChange={e => setVatRate(e.target.value)}
+                placeholder="Default"
+                disabled={taxCategory !== "standard"}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Leave empty to use system default. Range 0–100.
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={isService} onCheckedChange={setIsService} />
