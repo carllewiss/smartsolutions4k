@@ -112,13 +112,21 @@ export default function StockQuery() {
           </div>
         </div>
         <div className="bg-accent-soft border border-accent/30 rounded-lg p-4 flex flex-col justify-center items-center">
-          <p className="text-xs text-primary font-bold uppercase tracking-widest">Total On-Hand</p>
-          <h2 className="text-4xl font-black text-primary font-heading">
-            {product.is_service ? "∞" : onHand}{" "}
-            <span className="text-sm font-normal">{!product.is_service && product.unit}</span>
-          </h2>
+          <p className="text-xs text-primary font-bold uppercase tracking-widest">
+            {product.is_service ? "Service" : "Total On-Hand"}
+          </p>
+          {product.is_service ? (
+            <h2 className="text-3xl font-black text-primary font-heading">∞</h2>
+          ) : (
+            <h2 className="text-4xl font-black text-primary font-heading">
+              {onHand} <span className="text-sm font-normal">{product.unit}</span>
+            </h2>
+          )}
           {isAdmin && !product.is_service && (
             <p className="text-xs text-muted-foreground mt-2">Stock value: KES {stockValueAtCost.toLocaleString()}</p>
+          )}
+          {product.is_service && (
+            <p className="text-xs text-muted-foreground mt-2 italic">No stock tracking</p>
           )}
         </div>
       </Card>
@@ -127,12 +135,14 @@ export default function StockQuery() {
       <Card className="overflow-hidden">
         <Tabs defaultValue="movements">
           <TabsList className="rounded-none border-b w-full justify-start bg-muted/30 h-auto p-0">
-            <TabsTrigger value="movements" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Movements</TabsTrigger>
+            <TabsTrigger value="movements" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">
+              {product.is_service ? "Invoices" : "Movements"}
+            </TabsTrigger>
+            {isAdmin && !product.is_service && (
+              <TabsTrigger value="batches" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Warehouse Values</TabsTrigger>
+            )}
             {isAdmin && (
-              <>
-                <TabsTrigger value="batches" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Warehouse Values</TabsTrigger>
-                <TabsTrigger value="prices" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Price History</TabsTrigger>
-              </>
+              <TabsTrigger value="prices" className="data-[state=active]:bg-background data-[state=active]:border-t-2 data-[state=active]:border-t-primary rounded-none px-6 py-3 text-xs font-bold uppercase">Price History</TabsTrigger>
             )}
           </TabsList>
 
@@ -181,7 +191,7 @@ export default function StockQuery() {
             )}
           </TabsContent>
 
-          {isAdmin && (
+          {isAdmin && !product.is_service && (
             <TabsContent value="batches" className="m-0 max-h-[60vh] overflow-auto">
               {batches.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground text-sm">No stock batches.</div>
