@@ -129,11 +129,22 @@ export default function NewInvoice() {
   const addItem = (productId: string) => {
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
-    if (items.find(i => i.product_id === productId)) {
+    const isService = (prod as any).is_service === true;
+    const existing = items.find(i => i.product_id === productId);
+    if (existing) {
+      const nextQty = existing.quantity + 1;
+      if (!isService && nextQty > prod.stock_on_hand) {
+        toast.error(`Only ${prod.stock_on_hand} ${prod.unit} of ${prod.name} in stock`);
+        return;
+      }
       setItems(items.map(i => i.product_id === productId
-        ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unit_price }
+        ? { ...i, quantity: nextQty, total: nextQty * i.unit_price }
         : i));
     } else {
+      if (!isService && prod.stock_on_hand <= 0) {
+        toast.error(`${prod.name} is out of stock`);
+        return;
+      }
       const price = Number(prod.base_sell_price);
       setItems([...items, {
         product_id: prod.id,
@@ -142,7 +153,7 @@ export default function NewInvoice() {
         unit_price: price,
         original_price: price,
         total: price,
-        stock: prod.stock_on_hand,
+        stock: isService ? Number.POSITIVE_INFINITY : prod.stock_on_hand,
         floor_price: Number(prod.floor_price),
         tax_category: (prod as any).tax_category || "standard",
         vat_rate: (prod as any).vat_rate ?? null,
@@ -154,6 +165,11 @@ export default function NewInvoice() {
 
   const updateItemQty = (productId: string, qty: number) => {
     if (qty <= 0) { setItems(items.filter(i => i.product_id !== productId)); return; }
+    const item = items.find(i => i.product_id === productId);
+    if (item && Number.isFinite(item.stock) && qty > item.stock) {
+      toast.error(`Only ${item.stock} units of ${item.name} in stock`);
+      return;
+    }
     setItems(items.map(i => i.product_id === productId ? { ...i, quantity: qty, total: qty * i.unit_price } : i));
   };
 
