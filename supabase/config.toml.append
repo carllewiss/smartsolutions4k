@@ -1,0 +1,5 @@
+[functions.shop-checkout-stk]
+verify_jwt = false
+
+[functions.shop-mpesa-callback]
+verify_jwt = false
