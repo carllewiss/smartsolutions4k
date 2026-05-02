@@ -27,6 +27,13 @@ export default {
         warning: { DEFAULT: "hsl(var(--warning))", foreground: "hsl(var(--warning-foreground))" },
         muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
         accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))", soft: "hsl(var(--accent-soft))" },
+        shop: {
+          deep: "hsl(var(--shop-deep))",
+          "deep-foreground": "hsl(var(--shop-deep-foreground))",
+          accent: "hsl(var(--shop-accent))",
+          "accent-foreground": "hsl(var(--shop-accent-foreground))",
+          soft: "hsl(var(--shop-soft))",
+        },
         popover: { DEFAULT: "hsl(var(--popover))", foreground: "hsl(var(--popover-foreground))" },
         card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
         primary: {
@@ -60,5 +67,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
