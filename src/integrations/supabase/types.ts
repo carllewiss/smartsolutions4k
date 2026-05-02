@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          content: Json
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          content?: Json
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          content?: Json
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       customer_notes: {
         Row: {
           created_at: string
@@ -363,11 +411,15 @@ export type Database = {
           base_sell_price: number
           category: Database["public"]["Enums"]["product_category"]
           created_at: string
+          description: string | null
           floor_price: number
           id: string
+          image_url: string | null
           is_service: boolean
           min_stock: number
           name: string
+          shop_featured: boolean
+          shop_visible: boolean
           tax_category: Database["public"]["Enums"]["tax_category"]
           unit: string
           updated_at: string
@@ -377,11 +429,15 @@ export type Database = {
           base_sell_price?: number
           category?: Database["public"]["Enums"]["product_category"]
           created_at?: string
+          description?: string | null
           floor_price?: number
           id?: string
+          image_url?: string | null
           is_service?: boolean
           min_stock?: number
           name: string
+          shop_featured?: boolean
+          shop_visible?: boolean
           tax_category?: Database["public"]["Enums"]["tax_category"]
           unit?: string
           updated_at?: string
@@ -391,11 +447,15 @@ export type Database = {
           base_sell_price?: number
           category?: Database["public"]["Enums"]["product_category"]
           created_at?: string
+          description?: string | null
           floor_price?: number
           id?: string
+          image_url?: string | null
           is_service?: boolean
           min_stock?: number
           name?: string
+          shop_featured?: boolean
+          shop_visible?: boolean
           tax_category?: Database["public"]["Enums"]["tax_category"]
           unit?: string
           updated_at?: string
@@ -528,6 +588,199 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_inquiries: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          notes: string | null
+          service_key: string
+          service_name: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string | null
+          whatsapp_message: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          notes?: string | null
+          service_key: string
+          service_name: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          whatsapp_message?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          notes?: string | null
+          service_key?: string
+          service_name?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          whatsapp_message?: string | null
+        }
+        Relationships: []
+      }
+      shop_customers: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          erp_customer_id: string | null
+          full_name: string
+          id: string
+          phone: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          erp_customer_id?: string | null
+          full_name: string
+          id?: string
+          phone: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          erp_customer_id?: string | null
+          full_name?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      shop_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_orders: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_address: string | null
+          id: string
+          invoice_id: string | null
+          mpesa_checkout_request_id: string | null
+          mpesa_phone: string | null
+          mpesa_receipt: string | null
+          notes: string | null
+          order_number: string
+          shop_customer_id: string | null
+          status: Database["public"]["Enums"]["shop_order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_address?: string | null
+          id?: string
+          invoice_id?: string | null
+          mpesa_checkout_request_id?: string | null
+          mpesa_phone?: string | null
+          mpesa_receipt?: string | null
+          notes?: string | null
+          order_number?: string
+          shop_customer_id?: string | null
+          status?: Database["public"]["Enums"]["shop_order_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          delivery_address?: string | null
+          id?: string
+          invoice_id?: string | null
+          mpesa_checkout_request_id?: string | null
+          mpesa_phone?: string | null
+          mpesa_receipt?: string | null
+          notes?: string | null
+          order_number?: string
+          shop_customer_id?: string | null
+          status?: Database["public"]["Enums"]["shop_order_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_orders_shop_customer_id_fkey"
+            columns: ["shop_customer_id"]
+            isOneToOne: false
+            referencedRelation: "shop_customers"
             referencedColumns: ["id"]
           },
         ]
@@ -684,6 +937,12 @@ export type Database = {
         | "Internet Services"
         | "Printing Services"
         | "Other Services"
+      shop_order_status:
+        | "pending"
+        | "paid"
+        | "failed"
+        | "cancelled"
+        | "fulfilled"
       tax_category: "standard" | "zero_rated" | "exempt"
     }
     CompositeTypes: {
@@ -822,6 +1081,13 @@ export const Constants = {
         "Internet Services",
         "Printing Services",
         "Other Services",
+      ],
+      shop_order_status: [
+        "pending",
+        "paid",
+        "failed",
+        "cancelled",
+        "fulfilled",
       ],
       tax_category: ["standard", "zero_rated", "exempt"],
     },
