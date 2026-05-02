@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShopLayout } from "@/components/shop/ShopLayout";
 import { ProductCard } from "@/components/shop/ProductCard";
-import { useShopFeatured, usePublishedPosts } from "@/hooks/useShop";
+import { useShopFeatured } from "@/hooks/useShop";
 import { usePublishedPosts as useBlogPosts } from "@/hooks/useBlog";
 import { ArrowRight, Truck, ShieldCheck, Headphones, BadgePercent } from "lucide-react";
 

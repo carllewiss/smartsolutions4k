@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Search, User as UserIcon, Menu, X, Facebook, Instagram, Youtube, Twitter } from "lucide-react";
+import { ShoppingCart, Search, User as UserIcon, Menu, X } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -141,8 +141,11 @@ export function ShopLayout({ children }: { children: ReactNode }) {
             <div>
               <div className="bg-card text-foreground inline-block px-3 py-1 rounded font-bold mb-4">4K SMART</div>
               <p className="opacity-70 mb-4">Phone accessories, internet, printing & government services in Kenya.</p>
-              <div className="flex gap-3">
-                <Facebook className="h-5 w-5" /><Twitter className="h-5 w-5" /><Youtube className="h-5 w-5" /><Instagram className="h-5 w-5" />
+              <div className="flex gap-3 opacity-80">
+                <span className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs">f</span>
+                <span className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs">𝕏</span>
+                <span className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs">▶</span>
+                <span className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs">◎</span>
               </div>
             </div>
             <div>
