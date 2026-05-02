@@ -56,6 +56,13 @@
     --sidebar-accent-foreground: 165 40% 95%;
     --sidebar-border: 175 50% 22%;
     --sidebar-ring: 165 67% 59%;
+
+    /* Shop (customer-facing) tokens */
+    --shop-deep: 222 47% 14%;
+    --shop-deep-foreground: 0 0% 100%;
+    --shop-accent: 220 90% 56%;
+    --shop-accent-foreground: 0 0% 100%;
+    --shop-soft: 220 40% 95%;
   }
 
   .dark {
