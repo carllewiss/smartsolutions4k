@@ -3,10 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useCreateProduct, useUpdateProduct } from "@/hooks/useProducts";
+import { uploadProductImage, useUpdateProductShop } from "@/hooks/useShop";
 import { toast } from "sonner";
+import { Upload, Loader2 } from "lucide-react";
 
 type Category = "Phone Accessories" | "Internet Services" | "Printing Services" | "Other Services";
 type Tax = "standard" | "zero_rated" | "exempt";
