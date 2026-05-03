@@ -19,6 +19,8 @@ export default function Invoices() {
   const { data: invoices = [], isLoading } = useInvoices();
   const reprint = useMarkReprint();
   const [printData, setPrintData] = useState<any>(null);
+  const [cnInvoiceId, setCnInvoiceId] = useState<string | null>(null);
+  const { isAdmin } = useAuth();
 
   const statusColor = (s: string) =>
     s === "paid"
