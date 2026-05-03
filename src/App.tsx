@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +20,29 @@ import Settings from "./pages/Settings";
 import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import NotFound from "./pages/NotFound";
 
+// Shop (public)
+import ShopHome from "./pages/shop/ShopHome";
+import ShopCatalog from "./pages/shop/ShopCatalog";
+import ShopProductDetail from "./pages/shop/ShopProductDetail";
+import ShopCart from "./pages/shop/ShopCart";
+import ShopCheckout from "./pages/shop/ShopCheckout";
+import ShopOrderSuccess from "./pages/shop/ShopOrderSuccess";
+import ShopServices from "./pages/shop/ShopServices";
+import ShopBlog from "./pages/shop/ShopBlog";
+import ShopBlogPost from "./pages/shop/ShopBlogPost";
+import ShopAbout from "./pages/shop/ShopAbout";
+import ShopContact from "./pages/shop/ShopContact";
+import ShopSignIn from "./pages/shop/ShopSignIn";
+import ShopSignUp from "./pages/shop/ShopSignUp";
+import ShopAccount from "./pages/shop/ShopAccount";
+import ShopOrders from "./pages/shop/ShopOrders";
+
+// Admin extras
+import AdminShopOrders from "./pages/admin/AdminShopOrders";
+import AdminInquiries from "./pages/admin/AdminInquiries";
+import AdminBlog from "./pages/admin/AdminBlog";
+import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -39,26 +62,7 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
   return <>{children}</>;
 }
 
-function AppRoutes() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    );
-  }
-
+function ErpRoutes() {
   return (
     <AppLayout>
       <Routes>
@@ -74,10 +78,69 @@ function AppRoutes() {
         <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
         <Route path="/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />
-        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/admin/shop-orders" element={<ProtectedRoute adminOnly><AdminShopOrders /></ProtectedRoute>} />
+        <Route path="/admin/inquiries" element={<ProtectedRoute adminOnly><AdminInquiries /></ProtectedRoute>} />
+        <Route path="/admin/blog" element={<ProtectedRoute adminOnly><AdminBlog /></ProtectedRoute>} />
+        <Route path="/admin/blog/new" element={<ProtectedRoute adminOnly><AdminBlogEditor /></ProtectedRoute>} />
+        <Route path="/admin/blog/:id" element={<ProtectedRoute adminOnly><AdminBlogEditor /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
+  );
+}
+
+function AppShell() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Public shop routes — accessible to everyone (logged in or not)
+  const isShop = location.pathname === "/shop" || location.pathname.startsWith("/shop/");
+
+  if (isShop) {
+    return (
+      <Routes>
+        <Route path="/shop" element={<ShopCatalog />} />
+        <Route path="/shop/home" element={<ShopHome />} />
+        <Route path="/shop/services" element={<ShopServices />} />
+        <Route path="/shop/blog" element={<ShopBlog />} />
+        <Route path="/shop/blog/:slug" element={<ShopBlogPost />} />
+        <Route path="/shop/about" element={<ShopAbout />} />
+        <Route path="/shop/contact" element={<ShopContact />} />
+        <Route path="/shop/product/:id" element={<ShopProductDetail />} />
+        <Route path="/shop/cart" element={<ShopCart />} />
+        <Route path="/shop/checkout" element={<ShopCheckout />} />
+        <Route path="/shop/order-success/:id" element={<ShopOrderSuccess />} />
+        <Route path="/shop/signin" element={<ShopSignIn />} />
+        <Route path="/shop/signup" element={<ShopSignUp />} />
+        <Route path="/shop/account" element={<ShopAccount />} />
+        <Route path="/shop/account/orders" element={<ShopOrders />} />
+      </Routes>
+    );
+  }
+
+  // Auth gate for ERP
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Navigate to="/" replace />} />
+      <Route path="/*" element={<ErpRoutes />} />
+    </Routes>
   );
 }
 
@@ -88,7 +151,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <AppShell />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

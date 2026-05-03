@@ -27,7 +27,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       <div className="bg-shop-deep text-shop-deep-foreground text-xs">
         <div className="max-w-7xl mx-auto px-4 h-8 flex items-center justify-between">
           <div className="hidden sm:flex gap-4 items-center">
-            <NavLink to="/" className="hover:underline">Home</NavLink>
+            <NavLink to="/shop" className="hover:underline">Home</NavLink>
             <NavLink to="/shop/about" className="hover:underline">About</NavLink>
             <NavLink to="/shop/services" className="hover:underline">Services</NavLink>
             <NavLink to="/shop/blog" className="hover:underline">Blog</NavLink>
@@ -42,7 +42,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       {/* Main header */}
       <header className="border-b bg-card sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+          <Link to="/shop" className="flex items-center gap-2 shrink-0">
             <div className="bg-shop-deep text-shop-deep-foreground px-3 py-2 rounded-md font-bold tracking-tight">
               4K SMART
             </div>
@@ -151,7 +151,7 @@ export function ShopLayout({ children }: { children: ReactNode }) {
             <div>
               <h4 className="font-semibold mb-3">Pages</h4>
               <ul className="space-y-2 opacity-80">
-                <li><Link to="/">Home</Link></li>
+                <li><Link to="/shop">Home</Link></li>
                 <li><Link to="/shop">Shop</Link></li>
                 <li><Link to="/shop/services">Services</Link></li>
                 <li><Link to="/shop/blog">Blog</Link></li>
