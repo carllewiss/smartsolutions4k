@@ -70,6 +70,7 @@ function ErpRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/invoices/new" element={<NewInvoice />} />
         <Route path="/invoices" element={<Invoices />} />
+        <Route path="/credit-notes" element={<ProtectedRoute adminOnly><CreditNotes /></ProtectedRoute>} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/:customerId" element={<CustomerQuery />} />
         <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
