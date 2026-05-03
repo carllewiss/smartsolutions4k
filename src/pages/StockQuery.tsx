@@ -168,6 +168,8 @@ export default function StockQuery() {
                       <TableCell>
                         {m.type === "SALE" ? (
                           <Badge className="bg-destructive/15 text-destructive border-destructive/20 font-bold">SALE</Badge>
+                        ) : m.type === "RTN" ? (
+                          <Badge className="bg-warning/15 text-warning border-warning/30 font-bold">RTN</Badge>
                         ) : (
                           <Badge className="bg-accent/20 text-primary border-accent/30 font-bold">REC</Badge>
                         )}
