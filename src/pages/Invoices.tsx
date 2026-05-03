@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Printer, ShieldCheck, Clock, AlertCircle } from "lucide-react";
+import { Printer, ShieldCheck, Clock, AlertCircle, Undo2 } from "lucide-react";
 import { InvoicePrintView } from "@/components/InvoicePrintView";
+import { CreditNoteDialog } from "@/components/CreditNoteDialog";
 import { VirtualizedTable } from "@/components/VirtualizedTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Invoices() {
   const { data: invoices = [], isLoading } = useInvoices();
