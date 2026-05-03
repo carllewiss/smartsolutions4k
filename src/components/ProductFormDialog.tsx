@@ -39,7 +39,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
   const isEdit = !!product;
   const create = useCreateProduct();
   const update = useUpdateProduct();
-  const updateShop = useUpdateProductShop();
+  
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState<Category>("Phone Accessories");
