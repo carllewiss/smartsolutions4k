@@ -69,12 +69,31 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
       setVatRate(
         product.vat_rate === null || product.vat_rate === undefined ? "" : String(product.vat_rate)
       );
+      setImageUrl(product.image_url || "");
+      setDescription(product.description || "");
+      setShopVisible(!!product.shop_visible);
+      setShopFeatured(!!product.shop_featured);
     } else {
       setName(""); setCategory("Phone Accessories"); setSellPrice(0); setFloorPrice(0);
       setUnit("pcs"); setMinStock(0); setIsService(false); setTaxCategory("standard");
       setVatRate("");
+      setImageUrl(""); setDescription(""); setShopVisible(false); setShopFeatured(false);
     }
   }, [product, open]);
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const id = product?.id || crypto.randomUUID();
+      const url = await uploadProductImage(file, id);
+      setImageUrl(url);
+      toast.success("Image uploaded");
+    } catch (e: any) {
+      toast.error(e.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async () => {
     if (!name.trim()) { toast.error("Enter product name"); return; }
