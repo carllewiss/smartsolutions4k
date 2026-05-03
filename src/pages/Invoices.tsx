@@ -6,17 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Printer, ShieldCheck, Clock, AlertCircle } from "lucide-react";
+import { Printer, ShieldCheck, Clock, AlertCircle, Undo2 } from "lucide-react";
 import { InvoicePrintView } from "@/components/InvoicePrintView";
+import { CreditNoteDialog } from "@/components/CreditNoteDialog";
 import { VirtualizedTable } from "@/components/VirtualizedTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Invoices() {
   const { data: invoices = [], isLoading } = useInvoices();
   const reprint = useMarkReprint();
   const [printData, setPrintData] = useState<any>(null);
+  const [cnInvoiceId, setCnInvoiceId] = useState<string | null>(null);
+  const { isAdmin } = useAuth();
 
   const statusColor = (s: string) =>
     s === "paid"
@@ -158,10 +162,20 @@ export default function Invoices() {
           >
             <Printer className="h-3 w-3 mr-1" /> Print
           </Button>
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+              onClick={(e) => { e.stopPropagation(); setCnInvoiceId(row.original.id); }}
+            >
+              <Undo2 className="h-3 w-3 mr-1" /> Credit
+            </Button>
+          )}
         </div>
       ),
     },
-  ], []);
+  ], [isAdmin]);
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
@@ -195,6 +209,12 @@ export default function Invoices() {
           )}
         </DialogContent>
       </Dialog>
+
+      <CreditNoteDialog
+        open={!!cnInvoiceId}
+        onOpenChange={(o) => !o && setCnInvoiceId(null)}
+        invoiceId={cnInvoiceId}
+      />
     </div>
   );
 }

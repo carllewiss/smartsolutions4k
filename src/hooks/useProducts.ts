@@ -89,9 +89,18 @@ export function useProductMovements(productId: string | undefined) {
         .limit(200);
       if (rErr) throw rErr;
 
+      // RTN rows from credit_note_items (returns restored to stock)
+      const { data: returns, error: cnErr } = await supabase
+        .from("credit_note_items")
+        .select("id, quantity, unit_price, created_at, restored_to_stock, credit_notes(credit_note_number, customers(name, customer_code))")
+        .eq("product_id", productId!)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (cnErr) throw cnErr;
+
       type Row = {
         id: string;
-        type: "SALE" | "REC";
+        type: "SALE" | "REC" | "RTN";
         date: string;
         reference: string;
         qtyChange: number;
@@ -121,6 +130,17 @@ export function useProductMovements(productId: string | undefined) {
           qtyChange: Number(r.quantity_bought),
           unitValue: Number(r.cost_price),
           narration: r.suppliers ? `Supplier: ${r.suppliers.name}` : "Stock receipt",
+        })),
+        ...(returns || []).map((c: any) => ({
+          id: c.id,
+          type: "RTN" as const,
+          date: c.created_at,
+          reference: c.credit_notes?.credit_note_number || "—",
+          qtyChange: c.restored_to_stock ? Number(c.quantity) : 0,
+          unitValue: Number(c.unit_price),
+          narration: c.credit_notes?.customers
+            ? `Return from: ${c.credit_notes.customers.name} (${c.credit_notes.customers.customer_code})`
+            : "Customer return",
         })),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

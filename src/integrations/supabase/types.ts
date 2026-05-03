@@ -62,6 +62,116 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_note_items: {
+        Row: {
+          created_at: string
+          credit_note_id: string
+          id: string
+          invoice_item_id: string | null
+          is_service: boolean
+          product_id: string
+          product_name: string
+          quantity: number
+          restore_batch_id: string | null
+          restored_to_stock: boolean
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          credit_note_id: string
+          id?: string
+          invoice_item_id?: string | null
+          is_service?: boolean
+          product_id: string
+          product_name: string
+          quantity: number
+          restore_batch_id?: string | null
+          restored_to_stock?: boolean
+          total: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          credit_note_id?: string
+          id?: string
+          invoice_item_id?: string | null
+          is_service?: boolean
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          restore_batch_id?: string | null
+          restored_to_stock?: boolean
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_note_items_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credit_note_number: string
+          customer_id: string
+          id: string
+          invoice_id: string
+          last_reprinted_at: string | null
+          reason: string | null
+          refund_amount: number
+          refund_method: Database["public"]["Enums"]["credit_note_refund_method"]
+          reprint_count: number
+          status: Database["public"]["Enums"]["credit_note_status"]
+          subtotal: number
+          tax: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credit_note_number?: string
+          customer_id: string
+          id?: string
+          invoice_id: string
+          last_reprinted_at?: string | null
+          reason?: string | null
+          refund_amount?: number
+          refund_method?: Database["public"]["Enums"]["credit_note_refund_method"]
+          reprint_count?: number
+          status?: Database["public"]["Enums"]["credit_note_status"]
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credit_note_number?: string
+          customer_id?: string
+          id?: string
+          invoice_id?: string
+          last_reprinted_at?: string | null
+          reason?: string | null
+          refund_amount?: number
+          refund_method?: Database["public"]["Enums"]["credit_note_refund_method"]
+          reprint_count?: number
+          status?: Database["public"]["Enums"]["credit_note_status"]
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_notes: {
         Row: {
           created_at: string
@@ -913,6 +1023,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_credit_note: {
+        Args: {
+          p_invoice_id: string
+          p_items: Json
+          p_reason: string
+          p_refund_method: Database["public"]["Enums"]["credit_note_refund_method"]
+        }
+        Returns: string
+      }
       deduct_stock_fifo: {
         Args: { p_product_id: string; p_quantity: number }
         Returns: number
@@ -925,9 +1044,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_credit_note_reprint: { Args: { p_id: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "sales_agent"
+      credit_note_refund_method:
+        | "none"
+        | "credit_balance"
+        | "cash_refund"
+        | "mpesa_refund"
+      credit_note_status: "issued" | "void"
       customer_type: "walk_in" | "regular"
       etims_status: "not_required" | "pending_sync" | "signed" | "failed"
       invoice_status: "paid" | "partial" | "unpaid"
@@ -1072,6 +1198,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "sales_agent"],
+      credit_note_refund_method: [
+        "none",
+        "credit_balance",
+        "cash_refund",
+        "mpesa_refund",
+      ],
+      credit_note_status: ["issued", "void"],
       customer_type: ["walk_in", "regular"],
       etims_status: ["not_required", "pending_sync", "signed", "failed"],
       invoice_status: ["paid", "partial", "unpaid"],

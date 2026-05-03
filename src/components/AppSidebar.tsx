@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, MessageSquare, Newspaper,
+  Store, MessageSquare, Newspaper, Undo2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "New Invoice", url: "/invoices/new", icon: FileText },
     { title: "Invoices", url: "/invoices", icon: Receipt },
+    ...(isAdmin ? [{ title: "Credit Notes", url: "/credit-notes", icon: Undo2 }] : []),
     { title: "Customers", url: "/customers", icon: Users },
   ];
 
