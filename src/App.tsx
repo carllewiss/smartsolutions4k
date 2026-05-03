@@ -18,6 +18,7 @@ import Finance from "./pages/Finance";
 import UserManagement from "./pages/UserManagement";
 import Settings from "./pages/Settings";
 import EtimsSyncQueue from "./pages/EtimsSyncQueue";
+import CreditNotes from "./pages/CreditNotes";
 import NotFound from "./pages/NotFound";
 
 // Shop (public)
