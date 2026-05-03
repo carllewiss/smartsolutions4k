@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,7 +20,7 @@ import Settings from "./pages/Settings";
 import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import NotFound from "./pages/NotFound";
 
-// Shop (public)
+// Public shop
 import ShopHome from "./pages/shop/ShopHome";
 import ShopCatalog from "./pages/shop/ShopCatalog";
 import ShopProductDetail from "./pages/shop/ShopProductDetail";
@@ -45,6 +45,13 @@ import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
 
 const queryClient = new QueryClient();
 
+const SHOP_PATHS = ["/shop", "/services", "/blog", "/about", "/contact"];
+
+function isShopPath(pathname: string): boolean {
+  if (pathname === "/") return true;
+  return SHOP_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading, isAdmin } = useAuth();
 
@@ -57,35 +64,37 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
+  if (adminOnly && !isAdmin) return <Navigate to="/erp" replace />;
 
   return <>{children}</>;
 }
 
-function ErpRoutes() {
+function ErpShell() {
   return (
-    <AppLayout>
-      <Routes>
-        <Route path="/erp" element={<Dashboard />} />
-        <Route path="/erp/invoices/new" element={<NewInvoice />} />
-        <Route path="/erp/invoices" element={<Invoices />} />
-        <Route path="/erp/customers" element={<Customers />} />
-        <Route path="/erp/customers/:customerId" element={<CustomerQuery />} />
-        <Route path="/erp/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
-        <Route path="/erp/inventory/:productId" element={<StockQuery />} />
-        <Route path="/erp/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
-        <Route path="/erp/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
-        <Route path="/erp/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
-        <Route path="/erp/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
-        <Route path="/erp/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />
-        <Route path="/erp/shop-orders" element={<ProtectedRoute adminOnly><AdminShopOrders /></ProtectedRoute>} />
-        <Route path="/erp/inquiries" element={<ProtectedRoute adminOnly><AdminInquiries /></ProtectedRoute>} />
-        <Route path="/erp/blog" element={<ProtectedRoute adminOnly><AdminBlog /></ProtectedRoute>} />
-        <Route path="/erp/blog/new" element={<ProtectedRoute adminOnly><AdminBlogEditor /></ProtectedRoute>} />
-        <Route path="/erp/blog/:id" element={<ProtectedRoute adminOnly><AdminBlogEditor /></ProtectedRoute>} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AppLayout>
+    <ProtectedRoute>
+      <AppLayout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/invoices/new" element={<NewInvoice />} />
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/customers/:customerId" element={<CustomerQuery />} />
+          <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
+          <Route path="/inventory/:productId" element={<StockQuery />} />
+          <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
+          <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
+          <Route path="/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />
+          <Route path="/shop-orders" element={<ProtectedRoute adminOnly><AdminShopOrders /></ProtectedRoute>} />
+          <Route path="/inquiries" element={<ProtectedRoute adminOnly><AdminInquiries /></ProtectedRoute>} />
+          <Route path="/blog" element={<ProtectedRoute adminOnly><AdminBlog /></ProtectedRoute>} />
+          <Route path="/blog/new" element={<ProtectedRoute adminOnly><AdminBlogEditor /></ProtectedRoute>} />
+          <Route path="/blog/:id" element={<ProtectedRoute adminOnly><AdminBlogEditor /></ProtectedRoute>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }
 
@@ -102,18 +111,18 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public shop */}
+      {/* Public shop (root + named) */}
       <Route path="/" element={<ShopHome />} />
       <Route path="/shop" element={<ShopCatalog />} />
       <Route path="/shop/product/:id" element={<ShopProductDetail />} />
       <Route path="/shop/cart" element={<ShopCart />} />
       <Route path="/shop/checkout" element={<ShopCheckout />} />
       <Route path="/shop/order-success/:id" element={<ShopOrderSuccess />} />
-      <Route path="/shop/services" element={<ShopServices />} />
-      <Route path="/shop/blog" element={<ShopBlog />} />
-      <Route path="/shop/blog/:slug" element={<ShopBlogPost />} />
-      <Route path="/shop/about" element={<ShopAbout />} />
-      <Route path="/shop/contact" element={<ShopContact />} />
+      <Route path="/services" element={<ShopServices />} />
+      <Route path="/blog" element={<ShopBlog />} />
+      <Route path="/blog/:slug" element={<ShopBlogPost />} />
+      <Route path="/about" element={<ShopAbout />} />
+      <Route path="/contact" element={<ShopContact />} />
       <Route path="/shop/signin" element={<ShopSignIn />} />
       <Route path="/shop/signup" element={<ShopSignUp />} />
       <Route path="/shop/account" element={<ShopAccount />} />
@@ -122,8 +131,8 @@ function AppRoutes() {
       {/* Staff login */}
       <Route path="/login" element={<Login />} />
 
-      {/* ERP (protected) */}
-      <Route path="/erp/*" element={<ProtectedRoute><ErpRoutes /></ProtectedRoute>} />
+      {/* ERP (protected) — all internal admin tools live under /erp */}
+      <Route path="/erp/*" element={<ErpShell />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
