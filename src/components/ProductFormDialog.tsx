@@ -50,6 +50,11 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
   const [isService, setIsService] = useState(false);
   const [taxCategory, setTaxCategory] = useState<Tax>("standard");
   const [vatRate, setVatRate] = useState<string>(""); // string so empty = "use default"
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [shopVisible, setShopVisible] = useState(false);
+  const [shopFeatured, setShopFeatured] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (product) {
