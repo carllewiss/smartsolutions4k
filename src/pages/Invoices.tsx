@@ -209,6 +209,12 @@ export default function Invoices() {
           )}
         </DialogContent>
       </Dialog>
+
+      <CreditNoteDialog
+        open={!!cnInvoiceId}
+        onOpenChange={(o) => !o && setCnInvoiceId(null)}
+        invoiceId={cnInvoiceId}
+      />
     </div>
   );
 }
