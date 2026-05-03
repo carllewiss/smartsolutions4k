@@ -20,6 +20,29 @@ import Settings from "./pages/Settings";
 import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import NotFound from "./pages/NotFound";
 
+// Shop (public)
+import ShopHome from "./pages/shop/ShopHome";
+import ShopCatalog from "./pages/shop/ShopCatalog";
+import ShopProductDetail from "./pages/shop/ShopProductDetail";
+import ShopCart from "./pages/shop/ShopCart";
+import ShopCheckout from "./pages/shop/ShopCheckout";
+import ShopOrderSuccess from "./pages/shop/ShopOrderSuccess";
+import ShopServices from "./pages/shop/ShopServices";
+import ShopBlog from "./pages/shop/ShopBlog";
+import ShopBlogPost from "./pages/shop/ShopBlogPost";
+import ShopAbout from "./pages/shop/ShopAbout";
+import ShopContact from "./pages/shop/ShopContact";
+import ShopSignIn from "./pages/shop/ShopSignIn";
+import ShopSignUp from "./pages/shop/ShopSignUp";
+import ShopAccount from "./pages/shop/ShopAccount";
+import ShopOrders from "./pages/shop/ShopOrders";
+
+// Admin extras
+import AdminShopOrders from "./pages/admin/AdminShopOrders";
+import AdminInquiries from "./pages/admin/AdminInquiries";
+import AdminBlog from "./pages/admin/AdminBlog";
+import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -39,8 +62,35 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
   return <>{children}</>;
 }
 
+function ErpRoutes() {
+  return (
+    <AppLayout>
+      <Routes>
+        <Route path="/erp" element={<Dashboard />} />
+        <Route path="/erp/invoices/new" element={<NewInvoice />} />
+        <Route path="/erp/invoices" element={<Invoices />} />
+        <Route path="/erp/customers" element={<Customers />} />
+        <Route path="/erp/customers/:customerId" element={<CustomerQuery />} />
+        <Route path="/erp/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
+        <Route path="/erp/inventory/:productId" element={<StockQuery />} />
+        <Route path="/erp/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
+        <Route path="/erp/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
+        <Route path="/erp/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
+        <Route path="/erp/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
+        <Route path="/erp/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />
+        <Route path="/erp/shop-orders" element={<ProtectedRoute adminOnly><AdminShopOrders /></ProtectedRoute>} />
+        <Route path="/erp/inquiries" element={<ProtectedRoute adminOnly><AdminInquiries /></ProtectedRoute>} />
+        <Route path="/erp/blog" element={<ProtectedRoute adminOnly><AdminBlog /></ProtectedRoute>} />
+        <Route path="/erp/blog/new" element={<ProtectedRoute adminOnly><AdminBlogEditor /></ProtectedRoute>} />
+        <Route path="/erp/blog/:id" element={<ProtectedRoute adminOnly><AdminBlogEditor /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AppLayout>
+  );
+}
+
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (
@@ -50,34 +100,33 @@ function AppRoutes() {
     );
   }
 
-  if (!user) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    );
-  }
-
   return (
-    <AppLayout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/invoices/new" element={<NewInvoice />} />
-        <Route path="/invoices" element={<Invoices />} />
-        <Route path="/customers" element={<Customers />} />
-        <Route path="/customers/:customerId" element={<CustomerQuery />} />
-        <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
-        <Route path="/inventory/:productId" element={<StockQuery />} />
-        <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
-        <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
-        <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
-        <Route path="/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />
-        <Route path="/login" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AppLayout>
+    <Routes>
+      {/* Public shop */}
+      <Route path="/" element={<ShopHome />} />
+      <Route path="/shop" element={<ShopCatalog />} />
+      <Route path="/shop/product/:id" element={<ShopProductDetail />} />
+      <Route path="/shop/cart" element={<ShopCart />} />
+      <Route path="/shop/checkout" element={<ShopCheckout />} />
+      <Route path="/shop/order-success/:id" element={<ShopOrderSuccess />} />
+      <Route path="/shop/services" element={<ShopServices />} />
+      <Route path="/shop/blog" element={<ShopBlog />} />
+      <Route path="/shop/blog/:slug" element={<ShopBlogPost />} />
+      <Route path="/shop/about" element={<ShopAbout />} />
+      <Route path="/shop/contact" element={<ShopContact />} />
+      <Route path="/shop/signin" element={<ShopSignIn />} />
+      <Route path="/shop/signup" element={<ShopSignUp />} />
+      <Route path="/shop/account" element={<ShopAccount />} />
+      <Route path="/shop/account/orders" element={<ShopOrders />} />
+
+      {/* Staff login */}
+      <Route path="/login" element={<Login />} />
+
+      {/* ERP (protected) */}
+      <Route path="/erp/*" element={<ProtectedRoute><ErpRoutes /></ProtectedRoute>} />
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
