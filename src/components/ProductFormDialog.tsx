@@ -28,6 +28,10 @@ interface Props {
     is_service: boolean;
     tax_category: string;
     vat_rate?: number | null;
+    image_url?: string | null;
+    description?: string | null;
+    shop_visible?: boolean;
+    shop_featured?: boolean;
   } | null;
 }
 
@@ -35,6 +39,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
   const isEdit = !!product;
   const create = useCreateProduct();
   const update = useUpdateProduct();
+  const updateShop = useUpdateProductShop();
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState<Category>("Phone Accessories");
