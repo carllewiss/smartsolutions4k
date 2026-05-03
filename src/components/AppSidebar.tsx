@@ -31,6 +31,9 @@ export function AppSidebar() {
   ] : [];
 
   const adminItems = isAdmin ? [
+    { title: "Shop Orders", url: "/admin/shop-orders", icon: Store },
+    { title: "Service Inquiries", url: "/admin/inquiries", icon: MessageSquare },
+    { title: "Blog Posts", url: "/admin/blog", icon: Newspaper },
     { title: "eTIMS Sync", url: "/etims", icon: ShieldCheck },
     { title: "User Management", url: "/users", icon: UserCog },
     { title: "Settings", url: "/settings", icon: Settings },
