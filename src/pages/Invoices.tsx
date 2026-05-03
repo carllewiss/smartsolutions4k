@@ -162,10 +162,20 @@ export default function Invoices() {
           >
             <Printer className="h-3 w-3 mr-1" /> Print
           </Button>
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+              onClick={(e) => { e.stopPropagation(); setCnInvoiceId(row.original.id); }}
+            >
+              <Undo2 className="h-3 w-3 mr-1" /> Credit
+            </Button>
+          )}
         </div>
       ),
     },
-  ], []);
+  ], [isAdmin]);
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
