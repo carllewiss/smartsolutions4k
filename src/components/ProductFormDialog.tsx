@@ -114,6 +114,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
         name, category, base_sell_price: sellPrice, floor_price: floorPrice,
         unit, min_stock: minStock, is_service: isService, tax_category: taxCategory,
         vat_rate: taxCategory === "standard" ? vatRateValue : null,
+        description: description || null,
+        image_url: imageUrl || null,
+        shop_visible: shopVisible,
+        shop_featured: shopFeatured,
       };
       if (isEdit && product) {
         await update.mutateAsync({ id: product.id, ...payload });
