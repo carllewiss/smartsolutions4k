@@ -21,15 +21,20 @@ export default function Finance() {
   const { data: invoices = [] } = useInvoices();
   const { data: expenses = [], isLoading } = useExpenses();
   const { data: purchases = [] } = usePurchases();
+  const { data: accounts = [] } = useAccounts();
   const createExpense = useCreateExpense();
 
+  const expenseAccounts = accounts.filter(a => a.type === "expense");
+  const paymentAccounts = accounts.filter(a => ["1000","1010","1020","1030","1040","1050"].includes(a.code));
+
   const [open, setOpen] = useState(false);
-  const [category, setCategory] = useState("Electricity");
+  const [accountId, setAccountId] = useState<string>("");
+  const [paymentAccountId, setPaymentAccountId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState(0);
+  const [vatAmount, setVatAmount] = useState(0);
 
   const totalRevenue = invoices.reduce((s, i) => s + Number(i.total), 0);
-  // COGS from FIFO-tracked invoice items
   const totalCOGS = invoices.reduce((s, inv) => s + (inv.invoice_items?.reduce((is, item) => is + Number(item.cogs || 0), 0) || 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const purchaseCost = purchases.reduce((s, p) => s + Number(p.total), 0);
@@ -41,13 +46,20 @@ export default function Finance() {
   const chartData = Object.entries(expenseByCategory).map(([name, amount]) => ({ name, amount }));
 
   const submit = async () => {
-    if (!description.trim() || amount <= 0) { toast.error("Fill all fields"); return; }
+    if (!accountId || !paymentAccountId || amount <= 0) { toast.error("Select account, payment method and amount"); return; }
+    const acct = expenseAccounts.find(a => a.id === accountId);
     try {
-      await createExpense.mutateAsync({ category, description, amount, expense_date: new Date().toISOString().split("T")[0] });
-      toast.success("Expense recorded");
-      setOpen(false);
-      setDescription("");
-      setAmount(0);
+      await createExpense.mutateAsync({
+        category: acct?.name || "Other",
+        description,
+        amount,
+        vat_amount: vatAmount,
+        account_id: accountId,
+        payment_account_id: paymentAccountId,
+        expense_date: new Date().toISOString().split("T")[0],
+      });
+      toast.success("Expense recorded & posted to GL");
+      setOpen(false); setDescription(""); setAmount(0); setVatAmount(0);
     } catch (e: any) { toast.error(e.message); }
   };
 
@@ -62,15 +74,28 @@ export default function Finance() {
           <DialogContent>
             <DialogHeader><DialogTitle>Record Expense</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <div><Label>Category</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{EXPENSE_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              <div><Label>Expense Account</Label>
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger><SelectValue placeholder="Select expense account..." /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {expenseAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Paid From</Label>
+                <Select value={paymentAccountId} onValueChange={setPaymentAccountId}>
+                  <SelectTrigger><SelectValue placeholder="Cash / Bank / M-Pesa..." /></SelectTrigger>
+                  <SelectContent>
+                    {paymentAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>)}
+                  </SelectContent>
                 </Select>
               </div>
               <div><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
-              <div><Label>Amount (KES)</Label><Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} /></div>
-              <Button className="w-full" onClick={submit} disabled={createExpense.isPending}>Save Expense</Button>
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label>Amount (KES, incl. VAT)</Label><Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} /></div>
+                <div><Label>VAT (KES)</Label><Input type="number" value={vatAmount} onChange={e => setVatAmount(Number(e.target.value))} /></div>
+              </div>
+              <Button className="w-full" onClick={submit} disabled={createExpense.isPending}>Save & Post to GL</Button>
             </div>
           </DialogContent>
         </Dialog>
