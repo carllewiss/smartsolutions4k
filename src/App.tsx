@@ -19,6 +19,7 @@ import UserManagement from "./pages/UserManagement";
 import Settings from "./pages/Settings";
 import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import CreditNotes from "./pages/CreditNotes";
+import Accounting from "./pages/Accounting";
 import NotFound from "./pages/NotFound";
 
 // Shop (public)
@@ -77,6 +78,7 @@ function ErpRoutes() {
         <Route path="/inventory/:productId" element={<StockQuery />} />
         <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
         <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
+        <Route path="/accounting" element={<ProtectedRoute adminOnly><Accounting /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
         <Route path="/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />
