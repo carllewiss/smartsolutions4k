@@ -252,6 +252,7 @@ export type Database = {
           customer_code: string
           customer_type: Database["public"]["Enums"]["customer_type"]
           debt_limit: number
+          email: string | null
           id: string
           kra_pin: string | null
           name: string
@@ -267,6 +268,7 @@ export type Database = {
           customer_code?: string
           customer_type?: Database["public"]["Enums"]["customer_type"]
           debt_limit?: number
+          email?: string | null
           id?: string
           kra_pin?: string | null
           name: string
@@ -282,6 +284,7 @@ export type Database = {
           customer_code?: string
           customer_type?: Database["public"]["Enums"]["customer_type"]
           debt_limit?: number
+          email?: string | null
           id?: string
           kra_pin?: string | null
           name?: string
