@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowLeft, CreditCard, Trash2, Plus, Pencil, Printer, FileText,
   Phone, Mail, Hash, Calendar, ChevronRight,
@@ -166,221 +167,221 @@ export default function CustomerQuery() {
         </div>
       </div>
 
-      {/* Hero header — minimal, no card */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 pb-6 border-b">
-        <div className="flex items-start gap-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-bold shrink-0">
-            {initials}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight">{customer.name}</h1>
-              {customer.kra_pin && <Badge className="bg-primary/10 text-primary hover:bg-primary/15">Taxable</Badge>}
-              {customer.credit_terms > 0 && <Badge variant="outline">{customer.credit_terms}d Terms</Badge>}
-              {customer.visit_count >= 3 && <Badge className="bg-success/10 text-success hover:bg-success/15">Repeat</Badge>}
-            </div>
-            <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
-              <Field icon={<Hash className="h-3.5 w-3.5" />} label="Customer Code" value={customer.customer_code} />
-              <Field icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={customer.phone || "—"} />
-              <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={(customer as any).email || "—"} />
-              <Field icon={<FileText className="h-3.5 w-3.5" />} label="KRA PIN" value={customer.kra_pin || "—"} mono />
-              <Field icon={<CreditCard className="h-3.5 w-3.5" />} label="Credit Limit" value={`KES ${Number(customer.debt_limit).toLocaleString()}`} />
-              <Field icon={<Calendar className="h-3.5 w-3.5" />} label="Payment Terms" value={`${customer.credit_terms || 0} Days`} />
-            </div>
-          </div>
-        </div>
-
-        {/* Outstanding balance — minimalist hero stat */}
-        <div className="lg:text-right border-l-0 lg:border-l lg:pl-8 pt-4 lg:pt-0">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Outstanding Balance</p>
-          {totalDebt > 0 ? (
-            <Link to="/invoices" className="block">
-              <p className="text-3xl font-bold text-destructive hover:underline">KES {totalDebt.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-1">{unpaidInvoices.length} unpaid invoice{unpaidInvoices.length !== 1 ? "s" : ""} · click to view</p>
-            </Link>
-          ) : (
-            <p className="text-3xl font-bold text-success">KES 0</p>
-          )}
-          <div className="mt-3 flex gap-6 lg:justify-end text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground">Total Sales</p>
-              <p className="font-semibold">KES {totalSales.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Total Paid</p>
-              <p className="font-semibold">KES {totalPaid.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick metrics — minimal, borderless */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-border rounded-lg overflow-hidden">
-        <Metric label="Total Invoices" value={customerInvoices.length.toString()} sub={`KES ${totalSales.toLocaleString()}`} />
-        <Metric label="Total Payments" value={customerPayments.length.toString()} sub={`KES ${totalPaid.toLocaleString()}`} />
-        <Metric label="Outstanding" value={unpaidInvoices.length.toString()} sub={`KES ${totalDebt.toLocaleString()}`} accent={totalDebt > 0 ? "destructive" : undefined} />
-        <Metric label="Avg Invoice" value={`KES ${Math.round(avgInvoice).toLocaleString()}`} />
-        <Metric label="Last Payment" value={lastPayment ? format(new Date(lastPayment.payment_date), "dd MMM yy") : "—"} sub={lastPayment ? `KES ${Number(lastPayment.amount).toLocaleString()}` : ""} />
-      </div>
-
-      {/* Charts row — borderless, generous space */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Aging Donut */}
-        <div>
-          <h3 className="text-sm font-semibold mb-4">Aging Summary</h3>
-          <div className="flex items-center gap-4">
-            <div className="h-44 w-44 relative shrink-0">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie data={pieData.filter(d => d.value > 0).length ? pieData : [{ name: "None", value: 1, color: "hsl(var(--muted))" }]}
-                    dataKey="value" innerRadius={50} outerRadius={75} paddingAngle={2}>
-                    {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                <p className="text-base font-bold">KES {(totalDebt / 1000).toFixed(0)}K</p>
-                <p className="text-[10px] text-muted-foreground">Outstanding</p>
+      {/* Hero header card */}
+      <Card className="overflow-hidden">
+        <div className="h-20 bg-gradient-to-r from-primary to-primary-glow" />
+        <CardContent className="p-6 -mt-12">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+            <div className="flex items-end gap-4">
+              <div className="h-20 w-20 rounded-2xl bg-card border-4 border-card shadow-elegant text-primary flex items-center justify-center text-2xl font-bold shrink-0">
+                {initials}
+              </div>
+              <div className="pb-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl font-bold tracking-tight">{customer.name}</h1>
+                  {customer.kra_pin && <Badge className="bg-primary/10 text-primary hover:bg-primary/15">Taxable</Badge>}
+                  {customer.credit_terms > 0 && <Badge variant="outline">{customer.credit_terms}d Terms</Badge>}
+                  {customer.visit_count >= 3 && <Badge className="bg-success/10 text-success hover:bg-success/15">Repeat</Badge>}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 font-mono">{customer.customer_code}</p>
               </div>
             </div>
-            <div className="space-y-2 text-xs flex-1">
-              {BUCKETS.map((b) => (
-                <div key={b.key} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: b.color }} />
-                    <span className="text-muted-foreground">{b.label}</span>
-                  </div>
-                  <span className="font-mono font-medium">KES {(aging[b.key] || 0).toLocaleString()}</span>
-                </div>
-              ))}
+            <div className="lg:text-right">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Outstanding Balance</p>
+              {totalDebt > 0 ? (
+                <Link to="/invoices" className="block">
+                  <p className="text-3xl font-bold text-destructive hover:underline">KES {totalDebt.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{unpaidInvoices.length} unpaid invoice{unpaidInvoices.length !== 1 ? "s" : ""} · click to view</p>
+                </Link>
+              ) : (
+                <p className="text-3xl font-bold text-success">KES 0</p>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Aging Bars */}
-        <div>
-          <h3 className="text-sm font-semibold mb-4">Outstanding by Age</h3>
-          <div className="h-56">
-            <ResponsiveContainer>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis fontSize={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {barData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4 pt-6 border-t">
+            <Field icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={customer.phone || "—"} />
+            <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={(customer as any).email || "—"} />
+            <Field icon={<FileText className="h-3.5 w-3.5" />} label="KRA PIN" value={customer.kra_pin || "—"} mono />
+            <Field icon={<CreditCard className="h-3.5 w-3.5" />} label="Credit Limit" value={`KES ${Number(customer.debt_limit).toLocaleString()}`} />
+            <Field icon={<Calendar className="h-3.5 w-3.5" />} label="Payment Terms" value={`${customer.credit_terms || 0} Days`} />
+            <Field icon={<Hash className="h-3.5 w-3.5" />} label="Total Sales" value={`KES ${totalSales.toLocaleString()}`} />
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Payment History */}
-        <div>
-          <h3 className="text-sm font-semibold mb-4">Payment History (Last 6 Months)</h3>
-          <div className="h-56">
-            <ResponsiveContainer>
-              <BarChart data={paymentHistory}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis fontSize={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
-                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      {/* Quick metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <MetricCard label="Total Invoices" value={customerInvoices.length.toString()} sub={`KES ${totalSales.toLocaleString()}`} />
+        <MetricCard label="Total Payments" value={customerPayments.length.toString()} sub={`KES ${totalPaid.toLocaleString()}`} />
+        <MetricCard label="Outstanding" value={unpaidInvoices.length.toString()} sub={`KES ${totalDebt.toLocaleString()}`} accent={totalDebt > 0 ? "destructive" : undefined} />
+        <MetricCard label="Avg Invoice" value={`KES ${Math.round(avgInvoice).toLocaleString()}`} />
+        <MetricCard label="Last Payment" value={lastPayment ? format(new Date(lastPayment.payment_date), "dd MMM yy") : "—"} sub={lastPayment ? `KES ${Number(lastPayment.amount).toLocaleString()}` : ""} />
       </div>
 
-      {/* Tabbed history — borderless tabs */}
-      <Tabs defaultValue="invoices">
-        <TabsList className="bg-transparent border-b w-full justify-start h-auto p-0 rounded-none">
-          <TabsTrigger value="invoices" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
-            Invoices ({customerInvoices.length})
-          </TabsTrigger>
-          <TabsTrigger value="outstanding" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
-            Outstanding ({unpaidInvoices.length})
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
-            Payments ({customerPayments.length})
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
-            Notes ({notes.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="invoices" className="mt-4">
-          <InvoiceTable invoices={customerInvoices} navigate={navigate} />
-        </TabsContent>
-        <TabsContent value="outstanding" className="mt-4">
-          <InvoiceTable invoices={unpaidInvoices} navigate={navigate} emptyText="No outstanding invoices. 🎉" />
-        </TabsContent>
-        <TabsContent value="payments" className="mt-4">
-          {customerPayments.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-8">No payments yet.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Cash</TableHead>
-                  <TableHead className="text-right">M-Pesa</TableHead>
-                  <TableHead>Notes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customerPayments.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono text-xs">{format(new Date(p.payment_date), "dd/MM/yyyy HH:mm")}</TableCell>
-                    <TableCell className="text-right font-semibold text-success">+ KES {Number(p.amount).toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-sm">{Number(p.cash_amount).toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-sm">{Number(p.mpesa_amount).toLocaleString()}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{p.notes || "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </TabsContent>
-        <TabsContent value="notes" className="mt-4 space-y-4">
-          <div className="flex gap-2 max-w-2xl">
-            <Textarea
-              placeholder="Add a note (e.g. payment terms, special arrangement)..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              rows={2}
-              className="text-sm flex-1"
-            />
-            <Button size="sm" onClick={submitNote} disabled={createNote.isPending || !newNote.trim()}>
-              <Plus className="h-4 w-4 mr-1" /> Add
-            </Button>
-          </div>
-          <div className="space-y-2 max-w-2xl">
-            {notes.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">No notes yet.</p>
-            ) : (
-              notes.map((n: any) => (
-                <div key={n.id} className="p-3 bg-muted/30 border-l-2 border-primary rounded text-sm flex justify-between items-start gap-3">
-                  <div className="flex-1">
-                    <p>{n.note}</p>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {format(new Date(n.created_at), "dd MMM yyyy HH:mm")}
-                    </span>
-                  </div>
-                  {isAdmin && (
-                    <Button size="icon" variant="ghost" className="h-7 w-7"
-                      onClick={() => delNote.mutate({ id: n.id, customerId: customerId! })}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
-                  )}
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Aging Summary</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="h-44 w-44 relative shrink-0">
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie data={pieData.filter(d => d.value > 0).length ? pieData : [{ name: "None", value: 1, color: "hsl(var(--muted))" }]}
+                      dataKey="value" innerRadius={50} outerRadius={75} paddingAngle={2}>
+                      {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                  <p className="text-base font-bold">KES {(totalDebt / 1000).toFixed(0)}K</p>
+                  <p className="text-[10px] text-muted-foreground">Outstanding</p>
                 </div>
-              ))
+              </div>
+              <div className="space-y-2 text-xs flex-1">
+                {BUCKETS.map((b) => (
+                  <div key={b.key} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: b.color }} />
+                      <span className="text-muted-foreground">{b.label}</span>
+                    </div>
+                    <span className="font-mono font-medium">KES {(aging[b.key] || 0).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Outstanding by Age</CardTitle></CardHeader>
+          <CardContent>
+            <div className="h-56">
+              <ResponsiveContainer>
+                <BarChart data={barData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {barData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Payment History (6 mo)</CardTitle></CardHeader>
+          <CardContent>
+            <div className="h-56">
+              <ResponsiveContainer>
+                <BarChart data={paymentHistory}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
+                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabbed history */}
+      <Card>
+        <Tabs defaultValue="invoices">
+          <TabsList className="bg-transparent border-b w-full justify-start h-auto p-0 rounded-none">
+            <TabsTrigger value="invoices" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Invoices ({customerInvoices.length})
+            </TabsTrigger>
+            <TabsTrigger value="outstanding" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Outstanding ({unpaidInvoices.length})
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Payments ({customerPayments.length})
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Notes ({notes.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="invoices" className="m-0 p-2">
+            <InvoiceTable invoices={customerInvoices} navigate={navigate} />
+          </TabsContent>
+          <TabsContent value="outstanding" className="m-0 p-2">
+            <InvoiceTable invoices={unpaidInvoices} navigate={navigate} emptyText="No outstanding invoices. 🎉" />
+          </TabsContent>
+          <TabsContent value="payments" className="m-0 p-2">
+            {customerPayments.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-8">No payments yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Cash</TableHead>
+                    <TableHead className="text-right">M-Pesa</TableHead>
+                    <TableHead>Notes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {customerPayments.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-mono text-xs">{format(new Date(p.payment_date), "dd/MM/yyyy HH:mm")}</TableCell>
+                      <TableCell className="text-right font-semibold text-success">+ KES {Number(p.amount).toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-sm">{Number(p.cash_amount).toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-sm">{Number(p.mpesa_amount).toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{p.notes || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+          <TabsContent value="notes" className="m-0 p-4 space-y-4">
+            <div className="flex gap-2 max-w-2xl">
+              <Textarea
+                placeholder="Add a note (e.g. payment terms, special arrangement)..."
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                rows={2}
+                className="text-sm flex-1"
+              />
+              <Button size="sm" onClick={submitNote} disabled={createNote.isPending || !newNote.trim()}>
+                <Plus className="h-4 w-4 mr-1" /> Add
+              </Button>
+            </div>
+            <div className="space-y-2 max-w-2xl">
+              {notes.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No notes yet.</p>
+              ) : (
+                notes.map((n: any) => (
+                  <div key={n.id} className="p-3 bg-muted/30 border-l-2 border-primary rounded text-sm flex justify-between items-start gap-3">
+                    <div className="flex-1">
+                      <p>{n.note}</p>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {format(new Date(n.created_at), "dd MMM yyyy HH:mm")}
+                      </span>
+                    </div>
+                    {isAdmin && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        onClick={() => delNote.mutate({ id: n.id, customerId: customerId! })}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
 
       {showPay && (
         <PaymentDialog
@@ -423,13 +424,15 @@ function Field({ icon, label, value, mono }: { icon: React.ReactNode; label: str
   );
 }
 
-function Metric({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: "destructive" }) {
+function MetricCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: "destructive" }) {
   return (
-    <div className="bg-background p-4">
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold mt-1 ${accent === "destructive" ? "text-destructive" : ""}`}>{value}</p>
-      {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
-    </div>
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className={`text-lg font-bold mt-1 ${accent === "destructive" ? "text-destructive" : ""}`}>{value}</p>
+        {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+      </CardContent>
+    </Card>
   );
 }
 
