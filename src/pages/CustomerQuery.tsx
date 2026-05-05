@@ -292,94 +292,96 @@ export default function CustomerQuery() {
         </Card>
       </div>
 
-      {/* Tabbed history — borderless tabs */}
-      <Tabs defaultValue="invoices">
-        <TabsList className="bg-transparent border-b w-full justify-start h-auto p-0 rounded-none">
-          <TabsTrigger value="invoices" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
-            Invoices ({customerInvoices.length})
-          </TabsTrigger>
-          <TabsTrigger value="outstanding" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
-            Outstanding ({unpaidInvoices.length})
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
-            Payments ({customerPayments.length})
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
-            Notes ({notes.length})
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabbed history */}
+      <Card>
+        <Tabs defaultValue="invoices">
+          <TabsList className="bg-transparent border-b w-full justify-start h-auto p-0 rounded-none">
+            <TabsTrigger value="invoices" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Invoices ({customerInvoices.length})
+            </TabsTrigger>
+            <TabsTrigger value="outstanding" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Outstanding ({unpaidInvoices.length})
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Payments ({customerPayments.length})
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Notes ({notes.length})
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="invoices" className="mt-4">
-          <InvoiceTable invoices={customerInvoices} navigate={navigate} />
-        </TabsContent>
-        <TabsContent value="outstanding" className="mt-4">
-          <InvoiceTable invoices={unpaidInvoices} navigate={navigate} emptyText="No outstanding invoices. 🎉" />
-        </TabsContent>
-        <TabsContent value="payments" className="mt-4">
-          {customerPayments.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-8">No payments yet.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Cash</TableHead>
-                  <TableHead className="text-right">M-Pesa</TableHead>
-                  <TableHead>Notes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customerPayments.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono text-xs">{format(new Date(p.payment_date), "dd/MM/yyyy HH:mm")}</TableCell>
-                    <TableCell className="text-right font-semibold text-success">+ KES {Number(p.amount).toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-sm">{Number(p.cash_amount).toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-sm">{Number(p.mpesa_amount).toLocaleString()}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{p.notes || "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </TabsContent>
-        <TabsContent value="notes" className="mt-4 space-y-4">
-          <div className="flex gap-2 max-w-2xl">
-            <Textarea
-              placeholder="Add a note (e.g. payment terms, special arrangement)..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              rows={2}
-              className="text-sm flex-1"
-            />
-            <Button size="sm" onClick={submitNote} disabled={createNote.isPending || !newNote.trim()}>
-              <Plus className="h-4 w-4 mr-1" /> Add
-            </Button>
-          </div>
-          <div className="space-y-2 max-w-2xl">
-            {notes.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">No notes yet.</p>
+          <TabsContent value="invoices" className="m-0 p-2">
+            <InvoiceTable invoices={customerInvoices} navigate={navigate} />
+          </TabsContent>
+          <TabsContent value="outstanding" className="m-0 p-2">
+            <InvoiceTable invoices={unpaidInvoices} navigate={navigate} emptyText="No outstanding invoices. 🎉" />
+          </TabsContent>
+          <TabsContent value="payments" className="m-0 p-2">
+            {customerPayments.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-8">No payments yet.</p>
             ) : (
-              notes.map((n: any) => (
-                <div key={n.id} className="p-3 bg-muted/30 border-l-2 border-primary rounded text-sm flex justify-between items-start gap-3">
-                  <div className="flex-1">
-                    <p>{n.note}</p>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {format(new Date(n.created_at), "dd MMM yyyy HH:mm")}
-                    </span>
-                  </div>
-                  {isAdmin && (
-                    <Button size="icon" variant="ghost" className="h-7 w-7"
-                      onClick={() => delNote.mutate({ id: n.id, customerId: customerId! })}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              ))
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Cash</TableHead>
+                    <TableHead className="text-right">M-Pesa</TableHead>
+                    <TableHead>Notes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {customerPayments.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-mono text-xs">{format(new Date(p.payment_date), "dd/MM/yyyy HH:mm")}</TableCell>
+                      <TableCell className="text-right font-semibold text-success">+ KES {Number(p.amount).toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-sm">{Number(p.cash_amount).toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-sm">{Number(p.mpesa_amount).toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{p.notes || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+          <TabsContent value="notes" className="m-0 p-4 space-y-4">
+            <div className="flex gap-2 max-w-2xl">
+              <Textarea
+                placeholder="Add a note (e.g. payment terms, special arrangement)..."
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                rows={2}
+                className="text-sm flex-1"
+              />
+              <Button size="sm" onClick={submitNote} disabled={createNote.isPending || !newNote.trim()}>
+                <Plus className="h-4 w-4 mr-1" /> Add
+              </Button>
+            </div>
+            <div className="space-y-2 max-w-2xl">
+              {notes.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No notes yet.</p>
+              ) : (
+                notes.map((n: any) => (
+                  <div key={n.id} className="p-3 bg-muted/30 border-l-2 border-primary rounded text-sm flex justify-between items-start gap-3">
+                    <div className="flex-1">
+                      <p>{n.note}</p>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {format(new Date(n.created_at), "dd MMM yyyy HH:mm")}
+                      </span>
+                    </div>
+                    {isAdmin && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        onClick={() => delNote.mutate({ id: n.id, customerId: customerId! })}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
 
       {showPay && (
         <PaymentDialog
