@@ -167,61 +167,56 @@ export default function CustomerQuery() {
         </div>
       </div>
 
-      {/* Hero header — minimal, no card */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 pb-6 border-b">
-        <div className="flex items-start gap-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-bold shrink-0">
-            {initials}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight">{customer.name}</h1>
-              {customer.kra_pin && <Badge className="bg-primary/10 text-primary hover:bg-primary/15">Taxable</Badge>}
-              {customer.credit_terms > 0 && <Badge variant="outline">{customer.credit_terms}d Terms</Badge>}
-              {customer.visit_count >= 3 && <Badge className="bg-success/10 text-success hover:bg-success/15">Repeat</Badge>}
+      {/* Hero header card */}
+      <Card className="overflow-hidden">
+        <div className="h-20 bg-gradient-to-r from-primary to-primary-glow" />
+        <CardContent className="p-6 -mt-12">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+            <div className="flex items-end gap-4">
+              <div className="h-20 w-20 rounded-2xl bg-card border-4 border-card shadow-elegant text-primary flex items-center justify-center text-2xl font-bold shrink-0">
+                {initials}
+              </div>
+              <div className="pb-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl font-bold tracking-tight">{customer.name}</h1>
+                  {customer.kra_pin && <Badge className="bg-primary/10 text-primary hover:bg-primary/15">Taxable</Badge>}
+                  {customer.credit_terms > 0 && <Badge variant="outline">{customer.credit_terms}d Terms</Badge>}
+                  {customer.visit_count >= 3 && <Badge className="bg-success/10 text-success hover:bg-success/15">Repeat</Badge>}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 font-mono">{customer.customer_code}</p>
+              </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
-              <Field icon={<Hash className="h-3.5 w-3.5" />} label="Customer Code" value={customer.customer_code} />
-              <Field icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={customer.phone || "—"} />
-              <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={(customer as any).email || "—"} />
-              <Field icon={<FileText className="h-3.5 w-3.5" />} label="KRA PIN" value={customer.kra_pin || "—"} mono />
-              <Field icon={<CreditCard className="h-3.5 w-3.5" />} label="Credit Limit" value={`KES ${Number(customer.debt_limit).toLocaleString()}`} />
-              <Field icon={<Calendar className="h-3.5 w-3.5" />} label="Payment Terms" value={`${customer.credit_terms || 0} Days`} />
+            <div className="lg:text-right">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Outstanding Balance</p>
+              {totalDebt > 0 ? (
+                <Link to="/invoices" className="block">
+                  <p className="text-3xl font-bold text-destructive hover:underline">KES {totalDebt.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{unpaidInvoices.length} unpaid invoice{unpaidInvoices.length !== 1 ? "s" : ""} · click to view</p>
+                </Link>
+              ) : (
+                <p className="text-3xl font-bold text-success">KES 0</p>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Outstanding balance — minimalist hero stat */}
-        <div className="lg:text-right border-l-0 lg:border-l lg:pl-8 pt-4 lg:pt-0">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Outstanding Balance</p>
-          {totalDebt > 0 ? (
-            <Link to="/invoices" className="block">
-              <p className="text-3xl font-bold text-destructive hover:underline">KES {totalDebt.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-1">{unpaidInvoices.length} unpaid invoice{unpaidInvoices.length !== 1 ? "s" : ""} · click to view</p>
-            </Link>
-          ) : (
-            <p className="text-3xl font-bold text-success">KES 0</p>
-          )}
-          <div className="mt-3 flex gap-6 lg:justify-end text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground">Total Sales</p>
-              <p className="font-semibold">KES {totalSales.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Total Paid</p>
-              <p className="font-semibold">KES {totalPaid.toLocaleString()}</p>
-            </div>
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4 pt-6 border-t">
+            <Field icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={customer.phone || "—"} />
+            <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={(customer as any).email || "—"} />
+            <Field icon={<FileText className="h-3.5 w-3.5" />} label="KRA PIN" value={customer.kra_pin || "—"} mono />
+            <Field icon={<CreditCard className="h-3.5 w-3.5" />} label="Credit Limit" value={`KES ${Number(customer.debt_limit).toLocaleString()}`} />
+            <Field icon={<Calendar className="h-3.5 w-3.5" />} label="Payment Terms" value={`${customer.credit_terms || 0} Days`} />
+            <Field icon={<Hash className="h-3.5 w-3.5" />} label="Total Sales" value={`KES ${totalSales.toLocaleString()}`} />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Quick metrics — minimal, borderless */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-border rounded-lg overflow-hidden">
-        <Metric label="Total Invoices" value={customerInvoices.length.toString()} sub={`KES ${totalSales.toLocaleString()}`} />
-        <Metric label="Total Payments" value={customerPayments.length.toString()} sub={`KES ${totalPaid.toLocaleString()}`} />
-        <Metric label="Outstanding" value={unpaidInvoices.length.toString()} sub={`KES ${totalDebt.toLocaleString()}`} accent={totalDebt > 0 ? "destructive" : undefined} />
-        <Metric label="Avg Invoice" value={`KES ${Math.round(avgInvoice).toLocaleString()}`} />
-        <Metric label="Last Payment" value={lastPayment ? format(new Date(lastPayment.payment_date), "dd MMM yy") : "—"} sub={lastPayment ? `KES ${Number(lastPayment.amount).toLocaleString()}` : ""} />
+      {/* Quick metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <MetricCard label="Total Invoices" value={customerInvoices.length.toString()} sub={`KES ${totalSales.toLocaleString()}`} />
+        <MetricCard label="Total Payments" value={customerPayments.length.toString()} sub={`KES ${totalPaid.toLocaleString()}`} />
+        <MetricCard label="Outstanding" value={unpaidInvoices.length.toString()} sub={`KES ${totalDebt.toLocaleString()}`} accent={totalDebt > 0 ? "destructive" : undefined} />
+        <MetricCard label="Avg Invoice" value={`KES ${Math.round(avgInvoice).toLocaleString()}`} />
+        <MetricCard label="Last Payment" value={lastPayment ? format(new Date(lastPayment.payment_date), "dd MMM yy") : "—"} sub={lastPayment ? `KES ${Number(lastPayment.amount).toLocaleString()}` : ""} />
       </div>
 
       {/* Charts row — borderless, generous space */}
