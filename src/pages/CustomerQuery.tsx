@@ -219,74 +219,77 @@ export default function CustomerQuery() {
         <MetricCard label="Last Payment" value={lastPayment ? format(new Date(lastPayment.payment_date), "dd MMM yy") : "—"} sub={lastPayment ? `KES ${Number(lastPayment.amount).toLocaleString()}` : ""} />
       </div>
 
-      {/* Charts row — borderless, generous space */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Aging Donut */}
-        <div>
-          <h3 className="text-sm font-semibold mb-4">Aging Summary</h3>
-          <div className="flex items-center gap-4">
-            <div className="h-44 w-44 relative shrink-0">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie data={pieData.filter(d => d.value > 0).length ? pieData : [{ name: "None", value: 1, color: "hsl(var(--muted))" }]}
-                    dataKey="value" innerRadius={50} outerRadius={75} paddingAngle={2}>
-                    {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                <p className="text-base font-bold">KES {(totalDebt / 1000).toFixed(0)}K</p>
-                <p className="text-[10px] text-muted-foreground">Outstanding</p>
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Aging Summary</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="h-44 w-44 relative shrink-0">
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie data={pieData.filter(d => d.value > 0).length ? pieData : [{ name: "None", value: 1, color: "hsl(var(--muted))" }]}
+                      dataKey="value" innerRadius={50} outerRadius={75} paddingAngle={2}>
+                      {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                  <p className="text-base font-bold">KES {(totalDebt / 1000).toFixed(0)}K</p>
+                  <p className="text-[10px] text-muted-foreground">Outstanding</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-xs flex-1">
+                {BUCKETS.map((b) => (
+                  <div key={b.key} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: b.color }} />
+                      <span className="text-muted-foreground">{b.label}</span>
+                    </div>
+                    <span className="font-mono font-medium">KES {(aging[b.key] || 0).toLocaleString()}</span>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="space-y-2 text-xs flex-1">
-              {BUCKETS.map((b) => (
-                <div key={b.key} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: b.color }} />
-                    <span className="text-muted-foreground">{b.label}</span>
-                  </div>
-                  <span className="font-mono font-medium">KES {(aging[b.key] || 0).toLocaleString()}</span>
-                </div>
-              ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Outstanding by Age</CardTitle></CardHeader>
+          <CardContent>
+            <div className="h-56">
+              <ResponsiveContainer>
+                <BarChart data={barData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {barData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Aging Bars */}
-        <div>
-          <h3 className="text-sm font-semibold mb-4">Outstanding by Age</h3>
-          <div className="h-56">
-            <ResponsiveContainer>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis fontSize={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {barData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Payment History */}
-        <div>
-          <h3 className="text-sm font-semibold mb-4">Payment History (Last 6 Months)</h3>
-          <div className="h-56">
-            <ResponsiveContainer>
-              <BarChart data={paymentHistory}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis fontSize={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
-                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Payment History (6 mo)</CardTitle></CardHeader>
+          <CardContent>
+            <div className="h-56">
+              <ResponsiveContainer>
+                <BarChart data={paymentHistory}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: number) => `KES ${v.toLocaleString()}`} />
+                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabbed history — borderless tabs */}
