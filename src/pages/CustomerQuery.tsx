@@ -422,13 +422,15 @@ function Field({ icon, label, value, mono }: { icon: React.ReactNode; label: str
   );
 }
 
-function Metric({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: "destructive" }) {
+function MetricCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: "destructive" }) {
   return (
-    <div className="bg-background p-4">
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold mt-1 ${accent === "destructive" ? "text-destructive" : ""}`}>{value}</p>
-      {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
-    </div>
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className={`text-lg font-bold mt-1 ${accent === "destructive" ? "text-destructive" : ""}`}>{value}</p>
+        {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+      </CardContent>
+    </Card>
   );
 }
 
