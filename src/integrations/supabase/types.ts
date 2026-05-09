@@ -821,32 +821,41 @@ export type Database = {
         Row: {
           batch_id: string | null
           created_at: string
+          description: string | null
           id: string
           product_id: string
           purchase_id: string
           quantity: number
           total: number
           unit_cost: number
+          vat_amount: number
+          vat_rate: number
         }
         Insert: {
           batch_id?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           product_id: string
           purchase_id: string
           quantity: number
           total: number
           unit_cost: number
+          vat_amount?: number
+          vat_rate?: number
         }
         Update: {
           batch_id?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           product_id?: string
           purchase_id?: string
           quantity?: number
           total?: number
           unit_cost?: number
+          vat_amount?: number
+          vat_rate?: number
         }
         Relationships: [
           {
@@ -872,38 +881,238 @@ export type Database = {
           },
         ]
       }
-      purchases: {
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          line_total: number
+          po_id: string
+          product_id: string | null
+          quantity: number
+          unit_cost: number
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_total?: number
+          po_id: string
+          product_id?: string | null
+          quantity?: number
+          unit_cost?: number
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_total?: number
+          po_id?: string
+          product_id?: string | null
+          quantity?: number
+          unit_cost?: number
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
         Row: {
           created_at: string
           created_by: string | null
+          expected_date: string | null
           id: string
           notes: string | null
-          purchase_code: string
-          purchase_date: string
+          order_date: string
+          po_number: string
+          reference: string | null
+          status: Database["public"]["Enums"]["purchase_order_status"]
+          subtotal: number
           supplier_id: string
           total: number
+          updated_at: string
+          vat_total: number
+          wht_total: number
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          expected_date?: string | null
           id?: string
           notes?: string | null
-          purchase_code?: string
-          purchase_date?: string
+          order_date?: string
+          po_number?: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          subtotal?: number
           supplier_id: string
           total?: number
+          updated_at?: string
+          vat_total?: number
+          wht_total?: number
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          expected_date?: string | null
           id?: string
           notes?: string | null
-          purchase_code?: string
-          purchase_date?: string
+          order_date?: string
+          po_number?: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          subtotal?: number
           supplier_id?: string
           total?: number
+          updated_at?: string
+          vat_total?: number
+          wht_total?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_receipts: {
+        Row: {
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          purchase_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          mime_type: string
+          purchase_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          purchase_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_receipts_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchases: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          invoice_date: string | null
+          invoice_number: string | null
+          notes: string | null
+          payment_mode: Database["public"]["Enums"]["purchase_payment_mode"]
+          payment_terms_days: number | null
+          po_id: string | null
+          posted_at: string | null
+          purchase_code: string
+          purchase_date: string
+          reference: string | null
+          status: Database["public"]["Enums"]["purchase_status"]
+          subtotal: number
+          supplier_id: string
+          total: number
+          vat_total: number
+          wht_total: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          notes?: string | null
+          payment_mode?: Database["public"]["Enums"]["purchase_payment_mode"]
+          payment_terms_days?: number | null
+          po_id?: string | null
+          posted_at?: string | null
+          purchase_code?: string
+          purchase_date?: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["purchase_status"]
+          subtotal?: number
+          supplier_id: string
+          total?: number
+          vat_total?: number
+          wht_total?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          notes?: string | null
+          payment_mode?: Database["public"]["Enums"]["purchase_payment_mode"]
+          payment_terms_days?: number | null
+          po_id?: string | null
+          posted_at?: string | null
+          purchase_code?: string
+          purchase_date?: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["purchase_status"]
+          subtotal?: number
+          supplier_id?: string
+          total?: number
+          vat_total?: number
+          wht_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchases_supplier_id_fkey"
             columns: ["supplier_id"]
@@ -1245,6 +1454,7 @@ export type Database = {
       }
     }
     Functions: {
+      convert_po_to_invoice: { Args: { p_po_id: string }; Returns: string }
       create_credit_note: {
         Args: {
           p_invoice_id: string
@@ -1286,6 +1496,7 @@ export type Database = {
         }
         Returns: string
       }
+      post_purchase: { Args: { p_id: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "sales_agent"
@@ -1304,6 +1515,14 @@ export type Database = {
         | "Internet Services"
         | "Printing Services"
         | "Other Services"
+      purchase_order_status:
+        | "draft"
+        | "issued"
+        | "received"
+        | "cancelled"
+        | "invoiced"
+      purchase_payment_mode: "credit" | "cash" | "mpesa" | "bank"
+      purchase_status: "draft" | "posted" | "cancelled"
       shop_order_status:
         | "pending"
         | "paid"
@@ -1456,6 +1675,15 @@ export const Constants = {
         "Printing Services",
         "Other Services",
       ],
+      purchase_order_status: [
+        "draft",
+        "issued",
+        "received",
+        "cancelled",
+        "invoiced",
+      ],
+      purchase_payment_mode: ["credit", "cash", "mpesa", "bank"],
+      purchase_status: ["draft", "posted", "cancelled"],
       shop_order_status: [
         "pending",
         "paid",
