@@ -14,6 +14,8 @@ import CustomerQuery from "./pages/CustomerQuery";
 import Inventory from "./pages/Inventory";
 import StockQuery from "./pages/StockQuery";
 import Purchases from "./pages/Purchases";
+import PurchaseOrders from "./pages/PurchaseOrders";
+import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
 import Finance from "./pages/Finance";
 import UserManagement from "./pages/UserManagement";
 import Settings from "./pages/Settings";
@@ -77,6 +79,10 @@ function ErpRoutes() {
         <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
         <Route path="/inventory/:productId" element={<StockQuery />} />
         <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
+        <Route path="/purchases/orders" element={<ProtectedRoute adminOnly><PurchaseOrders /></ProtectedRoute>} />
+        <Route path="/purchases/new" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
+        <Route path="/purchases/:id" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
+        <Route path="/purchases/:id/edit" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
         <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
         <Route path="/accounting" element={<ProtectedRoute adminOnly><Accounting /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
