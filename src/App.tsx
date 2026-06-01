@@ -112,8 +112,18 @@ function AppShell() {
     );
   }
 
+  // Public reset-password route — must work even during a recovery session
+  if (location.pathname === "/reset-password") {
+    return (
+      <Routes>
+        <Route path="/reset-password" element={<ResetPassword />} />
+      </Routes>
+    );
+  }
+
   // Public shop routes — accessible to everyone (logged in or not)
   const isShop = location.pathname === "/shop" || location.pathname.startsWith("/shop/");
+
 
   if (isShop) {
     return (
