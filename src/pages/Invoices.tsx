@@ -4,10 +4,10 @@ import { useMarkReprint } from "@/hooks/useEtims";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Printer, ShieldCheck, Clock, AlertCircle, Undo2 } from "lucide-react";
-import { InvoicePrintView } from "@/components/InvoicePrintView";
+import { Printer, ShieldCheck, Clock, AlertCircle, Undo2, Receipt, FileText } from "lucide-react";
+import { InvoiceDocumentPrint, InvoicePrintFormat } from "@/components/InvoiceDocumentPrint";
 import { CreditNoteDialog } from "@/components/CreditNoteDialog";
 import { VirtualizedTable } from "@/components/VirtualizedTable";
 import { ColumnDef } from "@tanstack/react-table";
@@ -19,8 +19,10 @@ export default function Invoices() {
   const { data: invoices = [], isLoading } = useInvoices();
   const reprint = useMarkReprint();
   const [printData, setPrintData] = useState<any>(null);
+  const [printFormat, setPrintFormat] = useState<InvoicePrintFormat | null>(null);
   const [cnInvoiceId, setCnInvoiceId] = useState<string | null>(null);
   const { isAdmin } = useAuth();
+
 
   const statusColor = (s: string) =>
     s === "paid"
@@ -45,6 +47,12 @@ export default function Invoices() {
       .select("quantity, unit_price, total, products(name)")
       .eq("invoice_id", inv.id);
 
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("name, phone, kra_pin")
+      .eq("id", inv.customer_id)
+      .maybeSingle();
+
     let reprintCount = inv.reprint_count || 0;
     if (asReprint) {
       try {
@@ -52,10 +60,12 @@ export default function Invoices() {
       } catch (e: any) { toast.error(e.message); return; }
     }
 
+    setPrintFormat(null);
     setPrintData({
       invoiceNumber: inv.invoice_number,
-      customerName: inv.customer_name,
-      customerPin: inv.customer_kra_pin,
+      customerName: customer?.name || inv.customer_name,
+      customerPin: customer?.kra_pin || inv.customer_kra_pin,
+      customerPhone: customer?.phone,
       date: inv.created_at,
       items: (items || []).map((it: any) => ({
         name: it.products?.name || "Item",
@@ -71,9 +81,18 @@ export default function Invoices() {
       etimsQrData: inv.etims_qr_data,
       isReprint: asReprint || (inv.reprint_count || 0) > 0,
       reprintCount,
-      reprintedAt: asReprint ? new Date().toISOString() : inv.last_reprinted_at,
     });
   };
+
+  const doPrint = (fmt: InvoicePrintFormat) => {
+    setPrintFormat(fmt);
+    setTimeout(() => {
+      document.body.classList.add("printing-invoice");
+      window.print();
+      setTimeout(() => document.body.classList.remove("printing-invoice"), 200);
+    }, 200);
+  };
+
 
   const columns = useMemo<ColumnDef<any>[]>(() => [
     {
@@ -194,21 +213,52 @@ export default function Invoices() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!printData} onOpenChange={(o) => !o && setPrintData(null)}>
-        <DialogContent className="max-w-4xl p-0 max-h-[90vh] overflow-auto">
+      <Dialog open={!!printData} onOpenChange={(o) => { if (!o) { setPrintData(null); setPrintFormat(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Choose Print Format</DialogTitle>
+          </DialogHeader>
           {printData && (
-            <>
-              <InvoicePrintView {...printData} />
-              <div className="p-3 border-t flex justify-end gap-2 sticky bottom-0 bg-background">
-                <Button variant="outline" onClick={() => setPrintData(null)}>Close</Button>
-                <Button onClick={() => window.print()}>
-                  <Printer className="h-4 w-4 mr-1" /> Print
-                </Button>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Invoice <span className="font-medium text-foreground">{printData.invoiceNumber}</span> — {printData.customerName}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => doPrint("thermal")}
+                  className="flex flex-col items-center gap-2 rounded-lg border-2 border-border p-5 text-center transition-colors hover:border-primary hover:bg-primary/5"
+                >
+                  <Receipt className="h-8 w-8 text-primary" />
+                  <span className="font-semibold text-sm">Thermal Receipt</span>
+                  <span className="text-xs text-muted-foreground">80mm roll · quick receipt (3 copies)</span>
+                </button>
+                <button
+                  onClick={() => doPrint("b5")}
+                  className="flex flex-col items-center gap-2 rounded-lg border-2 border-border p-5 text-center transition-colors hover:border-primary hover:bg-primary/5"
+                >
+                  <FileText className="h-8 w-8 text-primary" />
+                  <span className="font-semibold text-sm">Full Invoice (B5)</span>
+                  <span className="text-xs text-muted-foreground">Invoice + Delivery Note · customer + 2 file copies</span>
+                </button>
               </div>
-            </>
+              <p className="text-[11px] text-muted-foreground">
+                Customer gets the original; 2 file copies are marked “COPY” (B5). KRA tax details print at the bottom of every format.
+              </p>
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => { setPrintData(null); setPrintFormat(null); }}>Close</Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Hidden print document — isolated by @media print rules */}
+      {printData && printFormat && (
+        <div className="hidden print:block">
+          <InvoiceDocumentPrint format={printFormat} {...printData} />
+        </div>
+      )}
+
 
       <CreditNoteDialog
         open={!!cnInvoiceId}
