@@ -213,21 +213,52 @@ export default function Invoices() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!printData} onOpenChange={(o) => !o && setPrintData(null)}>
-        <DialogContent className="max-w-4xl p-0 max-h-[90vh] overflow-auto">
+      <Dialog open={!!printData} onOpenChange={(o) => { if (!o) { setPrintData(null); setPrintFormat(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Choose Print Format</DialogTitle>
+          </DialogHeader>
           {printData && (
-            <>
-              <InvoicePrintView {...printData} />
-              <div className="p-3 border-t flex justify-end gap-2 sticky bottom-0 bg-background">
-                <Button variant="outline" onClick={() => setPrintData(null)}>Close</Button>
-                <Button onClick={() => window.print()}>
-                  <Printer className="h-4 w-4 mr-1" /> Print
-                </Button>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Invoice <span className="font-medium text-foreground">{printData.invoiceNumber}</span> — {printData.customerName}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => doPrint("thermal")}
+                  className="flex flex-col items-center gap-2 rounded-lg border-2 border-border p-5 text-center transition-colors hover:border-primary hover:bg-primary/5"
+                >
+                  <Receipt className="h-8 w-8 text-primary" />
+                  <span className="font-semibold text-sm">Thermal Receipt</span>
+                  <span className="text-xs text-muted-foreground">80mm roll · quick receipt (3 copies)</span>
+                </button>
+                <button
+                  onClick={() => doPrint("b5")}
+                  className="flex flex-col items-center gap-2 rounded-lg border-2 border-border p-5 text-center transition-colors hover:border-primary hover:bg-primary/5"
+                >
+                  <FileText className="h-8 w-8 text-primary" />
+                  <span className="font-semibold text-sm">Full Invoice (B5)</span>
+                  <span className="text-xs text-muted-foreground">Invoice + Delivery Note · customer + 2 file copies</span>
+                </button>
               </div>
-            </>
+              <p className="text-[11px] text-muted-foreground">
+                Customer gets the original; 2 file copies are marked “COPY” (B5). KRA tax details print at the bottom of every format.
+              </p>
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => { setPrintData(null); setPrintFormat(null); }}>Close</Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Hidden print document — isolated by @media print rules */}
+      {printData && printFormat && (
+        <div className="hidden print:block">
+          <InvoiceDocumentPrint format={printFormat} {...printData} />
+        </div>
+      )}
+
 
       <CreditNoteDialog
         open={!!cnInvoiceId}
