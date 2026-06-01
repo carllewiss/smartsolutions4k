@@ -47,6 +47,12 @@ export default function Invoices() {
       .select("quantity, unit_price, total, products(name)")
       .eq("invoice_id", inv.id);
 
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("name, phone, kra_pin")
+      .eq("id", inv.customer_id)
+      .maybeSingle();
+
     let reprintCount = inv.reprint_count || 0;
     if (asReprint) {
       try {
@@ -54,10 +60,12 @@ export default function Invoices() {
       } catch (e: any) { toast.error(e.message); return; }
     }
 
+    setPrintFormat(null);
     setPrintData({
       invoiceNumber: inv.invoice_number,
-      customerName: inv.customer_name,
-      customerPin: inv.customer_kra_pin,
+      customerName: customer?.name || inv.customer_name,
+      customerPin: customer?.kra_pin || inv.customer_kra_pin,
+      customerPhone: customer?.phone,
       date: inv.created_at,
       items: (items || []).map((it: any) => ({
         name: it.products?.name || "Item",
@@ -73,8 +81,18 @@ export default function Invoices() {
       etimsQrData: inv.etims_qr_data,
       isReprint: asReprint || (inv.reprint_count || 0) > 0,
       reprintCount,
-      reprintedAt: asReprint ? new Date().toISOString() : inv.last_reprinted_at,
     });
+  };
+
+  const doPrint = (fmt: InvoicePrintFormat) => {
+    setPrintFormat(fmt);
+    setTimeout(() => {
+      document.body.classList.add("printing-invoice");
+      window.print();
+      setTimeout(() => document.body.classList.remove("printing-invoice"), 200);
+    }, 200);
+  };
+
   };
 
   const columns = useMemo<ColumnDef<any>[]>(() => [
