@@ -93,7 +93,6 @@ export default function Invoices() {
     }, 200);
   };
 
-  };
 
   const columns = useMemo<ColumnDef<any>[]>(() => [
     {
