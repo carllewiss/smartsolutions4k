@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import NewInvoice from "./pages/NewInvoice";
 import Invoices from "./pages/Invoices";
@@ -111,8 +112,18 @@ function AppShell() {
     );
   }
 
+  // Public reset-password route — must work even during a recovery session
+  if (location.pathname === "/reset-password") {
+    return (
+      <Routes>
+        <Route path="/reset-password" element={<ResetPassword />} />
+      </Routes>
+    );
+  }
+
   // Public shop routes — accessible to everyone (logged in or not)
   const isShop = location.pathname === "/shop" || location.pathname.startsWith("/shop/");
+
 
   if (isShop) {
     return (
