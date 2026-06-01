@@ -4,10 +4,10 @@ import { useMarkReprint } from "@/hooks/useEtims";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Printer, ShieldCheck, Clock, AlertCircle, Undo2 } from "lucide-react";
-import { InvoicePrintView } from "@/components/InvoicePrintView";
+import { Printer, ShieldCheck, Clock, AlertCircle, Undo2, Receipt, FileText } from "lucide-react";
+import { InvoiceDocumentPrint, InvoicePrintFormat } from "@/components/InvoiceDocumentPrint";
 import { CreditNoteDialog } from "@/components/CreditNoteDialog";
 import { VirtualizedTable } from "@/components/VirtualizedTable";
 import { ColumnDef } from "@tanstack/react-table";
@@ -19,8 +19,10 @@ export default function Invoices() {
   const { data: invoices = [], isLoading } = useInvoices();
   const reprint = useMarkReprint();
   const [printData, setPrintData] = useState<any>(null);
+  const [printFormat, setPrintFormat] = useState<InvoicePrintFormat | null>(null);
   const [cnInvoiceId, setCnInvoiceId] = useState<string | null>(null);
   const { isAdmin } = useAuth();
+
 
   const statusColor = (s: string) =>
     s === "paid"
