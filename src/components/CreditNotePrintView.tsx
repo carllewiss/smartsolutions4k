@@ -1,3 +1,5 @@
+import { COMPANY } from "@/lib/company";
+
 interface CreditNoteItem {
   product_name: string;
   quantity: number;
