@@ -132,7 +132,7 @@ export default function CustomerStatementPrint({
       </table>
 
       <div className="mt-8 text-[9pt] text-center border-t pt-3">
-        <p>Please remit payment to: <span className="font-bold">M-Pesa Till / Bank A/C as agreed</span></p>
+        <p>Please remit payment to: <span className="font-bold">{COMPANY.bankName} A/C {COMPANY.accountNo} · MPESA Paybill {COMPANY.paybill} (Acc: {COMPANY.paybillAccount})</span></p>
         <p className="italic mt-2">Thank you for your business.</p>
       </div>
     </div>
