@@ -63,7 +63,8 @@ export function InvoicePrintView({
             <h2 className="text-2xl font-black">
               {isSigned ? "TAX INVOICE" : "SALES RECEIPT"}
             </h2>
-            <p className="text-xs text-gray-600 mt-1">4K SMART SOLUTIONS LTD</p>
+            <p className="text-xs text-gray-600 mt-1">{COMPANY.name}</p>
+            <p className="text-[10px] text-gray-500">KRA PIN: {COMPANY.kraPin} · VAT No: {COMPANY.vatNo}</p>
             {isReprint && (
               <p className="text-xs text-red-600 underline font-bold mt-1">
                 DUPLICATE COPY — NOT FOR ORIGINAL TAX CREDIT
