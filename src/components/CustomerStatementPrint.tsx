@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { COMPANY } from "@/lib/company";
 
 type Tx = {
   date: string;
