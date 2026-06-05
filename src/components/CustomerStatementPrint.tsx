@@ -64,9 +64,10 @@ export default function CustomerStatementPrint({
 
       <div className="flex justify-between items-start border-b-2 border-black pb-3 mb-4">
         <div>
-          <h1 className="text-2xl font-extrabold">4K Smart Solutions Ltd</h1>
-          <p className="text-xs">Phone Accessories · Internet · Printing</p>
-          <p className="text-xs">Tel: 0736 217 411</p>
+          <h1 className="text-2xl font-extrabold">{COMPANY.accountName}</h1>
+          <p className="text-xs">{COMPANY.services}</p>
+          <p className="text-xs">Tel: {COMPANY.phone}</p>
+          <p className="text-xs">KRA PIN: {COMPANY.kraPin} · VAT No: {COMPANY.vatNo}</p>
         </div>
         <div className="text-right">
           <h2 className="text-xl font-bold">CUSTOMER STATEMENT</h2>
