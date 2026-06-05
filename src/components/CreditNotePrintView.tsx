@@ -115,6 +115,7 @@ export function CreditNotePrintView({
 
         <div className="mt-10 text-xs text-gray-600 border-t pt-3">
           Returned products have been restored to stock. This credit note reduces the original invoice value.
+          <p className="mt-2">KRA PIN: {COMPANY.kraPin} · VAT No: {COMPANY.vatNo} · MPESA Paybill: {COMPANY.paybill}</p>
         </div>
       </div>
     </div>
