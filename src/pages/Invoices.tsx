@@ -67,10 +67,8 @@ export default function Invoices() {
       customerPin: customer?.kra_pin || inv.customer_kra_pin,
       customerPhone: customer?.phone,
       date: inv.created_at,
-      dueDate: inv.due_date,
       items: (items || []).map((it: any) => ({
         name: it.products?.name || "Item",
-        sku: it.products?.sku,
         quantity: it.quantity,
         unit_price: Number(it.unit_price),
         total: Number(it.total),
