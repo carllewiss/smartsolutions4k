@@ -1,3 +1,5 @@
+import { COMPANY } from "@/lib/company";
+
 interface Props {
   invoiceNumber: string;
   customerName: string;
