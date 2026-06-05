@@ -44,7 +44,7 @@ export default function Invoices() {
   const openPrint = async (inv: any, asReprint: boolean) => {
     const { data: items } = await supabase
       .from("invoice_items")
-      .select("quantity, unit_price, total, products(name, sku)")
+      .select("quantity, unit_price, total, products(name)")
       .eq("invoice_id", inv.id);
 
     const { data: customer } = await supabase
