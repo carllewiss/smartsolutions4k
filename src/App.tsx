@@ -22,6 +22,7 @@ import UserManagement from "./pages/UserManagement";
 import Settings from "./pages/Settings";
 import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import CreditNotes from "./pages/CreditNotes";
+import Approvals from "./pages/Approvals";
 import Accounting from "./pages/Accounting";
 import NotFound from "./pages/NotFound";
 
