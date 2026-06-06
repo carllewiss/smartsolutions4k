@@ -36,6 +36,7 @@ interface LineItem {
 export default function NewInvoice() {
   const { data: products = [] } = useProductWithStock();
   const { data: customers = [] } = useCustomers();
+  const { data: allInvoices = [] } = useInvoices();
   const { data: settings = {} } = useSystemSettings();
   const createInvoice = useCreateInvoice();
   const createCustomer = useCreateCustomer();
