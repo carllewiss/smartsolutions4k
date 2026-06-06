@@ -107,6 +107,11 @@ export default function Invoices() {
               REPRINT ×{row.original.reprint_count}
             </Badge>
           )}
+          {row.original.approval_status === "pending" && (
+            <Badge variant="outline" className="ml-2 text-[10px] text-warning border-warning/30">
+              PENDING APPROVAL
+            </Badge>
+          )}
         </span>
       ),
     },
