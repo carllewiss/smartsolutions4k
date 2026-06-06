@@ -2,19 +2,24 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { differenceInDays } from "date-fns";
-import { Search, CreditCard, ChevronRight } from "lucide-react";
+import { Search, CreditCard, ChevronRight, UserPlus, Ban } from "lucide-react";
 import PaymentDialog from "@/components/PaymentDialog";
+import AddCustomerDialog from "@/components/AddCustomerDialog";
+import { getCustomerCreditStatus } from "@/lib/customerStatus";
 
 export default function Customers() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { data: customers = [], isLoading } = useCustomers();
   const { data: invoices = [] } = useInvoices();
   const [search, setSearch] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState<{ id: string; name: string; balance: number } | null>(null);
   const today = new Date();
 
