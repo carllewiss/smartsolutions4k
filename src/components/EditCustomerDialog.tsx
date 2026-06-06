@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useUpdateCustomer } from "@/hooks/useCustomers";
 import { toast } from "sonner";
 
@@ -15,8 +16,8 @@ export default function EditCustomerDialog({
 }) {
   const update = useUpdateCustomer();
   const [form, setForm] = useState({
-    name: "", phone: "", email: "", kra_pin: "",
-    debt_limit: 0, credit_terms: 0,
+    name: "", phone: "", email: "", kra_pin: "", location: "",
+    debt_limit: 0, credit_terms: 0, is_suspended: false,
   });
 
   useEffect(() => {
@@ -26,8 +27,10 @@ export default function EditCustomerDialog({
         phone: customer.phone || "",
         email: customer.email || "",
         kra_pin: customer.kra_pin || "",
+        location: customer.location || "",
         debt_limit: Number(customer.debt_limit) || 0,
         credit_terms: Number(customer.credit_terms) || 0,
+        is_suspended: !!customer.is_suspended,
       });
     }
   }, [customer]);
@@ -41,8 +44,10 @@ export default function EditCustomerDialog({
         phone: form.phone.trim() || undefined,
         email: form.email.trim() || null,
         kra_pin: form.kra_pin.trim().toUpperCase() || null,
+        location: form.location.trim() || null,
         debt_limit: Number(form.debt_limit) || 0,
         credit_terms: Number(form.credit_terms) || 0,
+        is_suspended: form.is_suspended,
       });
       toast.success("Customer updated");
       onOpenChange(false);
@@ -73,6 +78,10 @@ export default function EditCustomerDialog({
             <Input className="uppercase" value={form.kra_pin} onChange={(e) => setForm({ ...form, kra_pin: e.target.value })} />
           </div>
           <div className="space-y-1">
+            <Label>Location</Label>
+            <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+          </div>
+          <div className="space-y-1">
             <Label>Credit Terms (days)</Label>
             <select
               className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
@@ -88,10 +97,17 @@ export default function EditCustomerDialog({
               <option value={90}>90 days</option>
             </select>
           </div>
-          <div className="col-span-2 space-y-1">
+          <div className="space-y-1">
             <Label>Credit Limit (KES)</Label>
             <Input type="number" min={0} value={form.debt_limit}
               onChange={(e) => setForm({ ...form, debt_limit: Number(e.target.value) })} />
+          </div>
+          <div className="col-span-2 flex items-center justify-between rounded-md border border-input p-3">
+            <div>
+              <Label>Suspend account</Label>
+              <p className="text-xs text-muted-foreground">Blocks new credit invoices until lifted.</p>
+            </div>
+            <Switch checked={form.is_suspended} onCheckedChange={(v) => setForm({ ...form, is_suspended: v })} />
           </div>
         </div>
         <DialogFooter>
