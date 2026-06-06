@@ -22,6 +22,7 @@ import UserManagement from "./pages/UserManagement";
 import Settings from "./pages/Settings";
 import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import CreditNotes from "./pages/CreditNotes";
+import Approvals from "./pages/Approvals";
 import Accounting from "./pages/Accounting";
 import NotFound from "./pages/NotFound";
 
@@ -75,6 +76,7 @@ function ErpRoutes() {
         <Route path="/invoices/new" element={<NewInvoice />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/credit-notes" element={<ProtectedRoute adminOnly><CreditNotes /></ProtectedRoute>} />
+        <Route path="/approvals" element={<ProtectedRoute adminOnly><Approvals /></ProtectedRoute>} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/:customerId" element={<CustomerQuery />} />
         <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />

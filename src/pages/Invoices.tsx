@@ -107,6 +107,11 @@ export default function Invoices() {
               REPRINT ×{row.original.reprint_count}
             </Badge>
           )}
+          {row.original.approval_status === "pending" && (
+            <Badge variant="outline" className="ml-2 text-[10px] text-warning border-warning/30">
+              PENDING APPROVAL
+            </Badge>
+          )}
         </span>
       ),
     },
@@ -174,6 +179,8 @@ export default function Invoices() {
           <Button
             size="sm"
             variant="ghost"
+            disabled={row.original.approval_status === "pending"}
+            title={row.original.approval_status === "pending" ? "Awaiting admin approval" : undefined}
             onClick={(e) => {
               e.stopPropagation();
               openPrint(row.original, (row.original.reprint_count || 0) > 0 || row.original.etims_status === "signed");

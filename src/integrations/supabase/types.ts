@@ -254,7 +254,9 @@ export type Database = {
           debt_limit: number
           email: string | null
           id: string
+          is_suspended: boolean
           kra_pin: string | null
+          location: string | null
           name: string
           phone: string | null
           total_spent: number
@@ -270,7 +272,9 @@ export type Database = {
           debt_limit?: number
           email?: string | null
           id?: string
+          is_suspended?: boolean
           kra_pin?: string | null
+          location?: string | null
           name: string
           phone?: string | null
           total_spent?: number
@@ -286,7 +290,9 @@ export type Database = {
           debt_limit?: number
           email?: string | null
           id?: string
+          is_suspended?: boolean
           kra_pin?: string | null
+          location?: string | null
           name?: string
           phone?: string | null
           total_spent?: number
@@ -452,6 +458,8 @@ export type Database = {
       }
       invoices: {
         Row: {
+          approval_reason: string | null
+          approval_status: string
           balance: number
           cash_amount: number
           created_at: string
@@ -476,6 +484,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_reason?: string | null
+          approval_status?: string
           balance?: number
           cash_amount?: number
           created_at?: string
@@ -500,6 +510,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_reason?: string | null
+          approval_status?: string
           balance?: number
           cash_amount?: number
           created_at?: string

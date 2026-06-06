@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
 import { useProductWithStock } from "@/hooks/useProducts";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
-import { useCreateInvoice } from "@/hooks/useInvoices";
+import { useCreateInvoice, useInvoices } from "@/hooks/useInvoices";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useAuth } from "@/hooks/useAuth";
+import { getCustomerCreditStatus } from "@/lib/customerStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Search, AlertTriangle, UserPlus } from "lucide-react";
+import { Trash2, Search, AlertTriangle, UserPlus, Ban } from "lucide-react";
 import { StockSearchAutocomplete } from "@/components/StockSearchAutocomplete";
 import { toast } from "sonner";
 
@@ -35,6 +36,7 @@ interface LineItem {
 export default function NewInvoice() {
   const { data: products = [] } = useProductWithStock();
   const { data: customers = [] } = useCustomers();
+  const { data: allInvoices = [] } = useInvoices();
   const { data: settings = {} } = useSystemSettings();
   const createInvoice = useCreateInvoice();
   const createCustomer = useCreateCustomer();
@@ -118,6 +120,14 @@ export default function NewInvoice() {
     return null;
   }, [selectedCustomer, balance]);
 
+  // Suspension status (over credit limit OR overdue past terms OR manually suspended)
+  const creditStatus = useMemo(
+    () => (selectedCustomer ? getCustomerCreditStatus(selectedCustomer as any, allInvoices as any) : null),
+    [selectedCustomer, allInvoices],
+  );
+  // A credit (debt) invoice for a suspended customer must be held for admin approval
+  const needsApproval = !!creditStatus?.suspended && balance > 0;
+
   const selectCustomer = (id: string) => {
     setSelectedCustomerId(id);
     const c = customers.find(c => c.id === id);
@@ -191,11 +201,9 @@ export default function NewInvoice() {
       return;
     }
 
-    // Credit limit block
-    if (creditWarning && paymentMethod === "partial_debt") {
-      toast.error("Cannot proceed — customer has exceeded their credit limit.");
-      return;
-    }
+    // Suspended customers cannot take new credit (debt) directly — route for admin approval.
+    // Existing (already saved) customers only; a brand-new customer has no history.
+    const holdForApproval = !isNewCustomer && needsApproval;
 
     // eTIMS KRA PIN check
     if (etimsEnabled && selectedCustomer && selectedCustomer.customer_type === "regular" && !customerHasPin) {
@@ -244,7 +252,9 @@ export default function NewInvoice() {
           mpesa_amount: paymentMethod === "cash" ? 0 : mpesaAmount,
           status: (balance === 0 ? "paid" : paidAmount > 0 ? "partial" : "unpaid") as any,
           created_by: user?.id,
-        },
+          approval_status: holdForApproval ? "pending" : "approved",
+          approval_reason: holdForApproval ? (creditStatus?.reasons.join("; ") || null) : null,
+        } as any,
         items: items.map(i => ({
           product_id: i.product_id,
           quantity: i.quantity,
@@ -253,7 +263,9 @@ export default function NewInvoice() {
           total: i.total,
         })),
       });
-      toast.success("Invoice created!");
+      toast.success(holdForApproval
+        ? "Invoice held for admin approval (customer over limit / overdue)."
+        : "Invoice created!");
       setItems([]);
       setCashAmount(0);
       setMpesaAmount(0);
@@ -424,16 +436,30 @@ export default function NewInvoice() {
                 </div>
               )}
 
-              {creditWarning && (
+              {creditStatus?.suspended && (
                 <div className="bg-destructive/10 border border-destructive/30 rounded-md p-2 flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                  <p className="text-xs text-destructive">{creditWarning}</p>
+                  <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                  <div className="text-xs text-destructive">
+                    <p className="font-semibold">Account suspended</p>
+                    <ul className="list-disc pl-4">
+                      {creditStatus.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                    </ul>
+                    {needsApproval && <p className="mt-1">This credit invoice will be held for admin approval.</p>}
+                  </div>
                 </div>
               )}
 
-              <Button className="w-full" onClick={submitInvoice} disabled={items.length === 0 || createInvoice.isPending || (!!creditWarning && paymentMethod === "partial_debt")}>
-                {createInvoice.isPending ? "Creating..." : "Create Invoice"}
+              {!creditStatus?.suspended && creditWarning && (
+                <div className="bg-warning/10 border border-warning/30 rounded-md p-2 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                  <p className="text-xs text-warning">{creditWarning}</p>
+                </div>
+              )}
+
+              <Button className="w-full" onClick={submitInvoice} disabled={items.length === 0 || createInvoice.isPending}>
+                {createInvoice.isPending ? "Saving..." : needsApproval ? "Submit for Approval" : "Create Invoice"}
               </Button>
+
             </CardContent>
           </Card>
         </div>

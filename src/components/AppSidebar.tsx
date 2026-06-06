@@ -1,9 +1,10 @@
 import {
   LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, MessageSquare, Newspaper, Undo2, BookOpen,
+  Store, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { usePendingApprovals } from "@/hooks/useInvoiceApprovals";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, useSidebar,
@@ -13,11 +14,13 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { isAdmin } = useAuth();
   const collapsed = state === "collapsed";
+  const { data: pendingApprovals = [] } = usePendingApprovals();
 
   const mainItems = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "New Invoice", url: "/invoices/new", icon: FileText },
     { title: "Invoices", url: "/invoices", icon: Receipt },
+    ...(isAdmin ? [{ title: "Approvals", url: "/approvals", icon: ClipboardCheck, badge: pendingApprovals.length || undefined }] : []),
     ...(isAdmin ? [{ title: "Credit Notes", url: "/credit-notes", icon: Undo2 }] : []),
     { title: "Customers", url: "/customers", icon: Users },
   ];
@@ -68,7 +71,7 @@ export function AppSidebar() {
   );
 }
 
-function NavGroup({ label, items, collapsed }: { label: string; items: { title: string; url: string; icon: any }[]; collapsed: boolean }) {
+function NavGroup({ label, items, collapsed }: { label: string; items: { title: string; url: string; icon: any; badge?: number }[]; collapsed: boolean }) {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
@@ -79,7 +82,12 @@ function NavGroup({ label, items, collapsed }: { label: string; items: { title: 
               <SidebarMenuButton asChild>
                 <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                   <item.icon className="mr-2 h-4 w-4" />
-                  {!collapsed && <span>{item.title}</span>}
+                  {!collapsed && <span className="flex-1">{item.title}</span>}
+                  {!collapsed && item.badge ? (
+                    <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-destructive-foreground">
+                      {item.badge}
+                    </span>
+                  ) : null}
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -89,3 +97,4 @@ function NavGroup({ label, items, collapsed }: { label: string; items: { title: 
     </SidebarGroup>
   );
 }
+

@@ -1,55 +1,41 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { useUpdateCustomer } from "@/hooks/useCustomers";
+import { useCreateCustomer } from "@/hooks/useCustomers";
 import { toast } from "sonner";
 
-export default function EditCustomerDialog({
-  open, onOpenChange, customer,
+export default function AddCustomerDialog({
+  open, onOpenChange,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  customer: any;
 }) {
-  const update = useUpdateCustomer();
+  const create = useCreateCustomer();
   const [form, setForm] = useState({
     name: "", phone: "", email: "", kra_pin: "", location: "",
-    debt_limit: 0, credit_terms: 0, is_suspended: false,
+    debt_limit: 0, credit_terms: 0,
   });
 
-  useEffect(() => {
-    if (customer) {
-      setForm({
-        name: customer.name || "",
-        phone: customer.phone || "",
-        email: customer.email || "",
-        kra_pin: customer.kra_pin || "",
-        location: customer.location || "",
-        debt_limit: Number(customer.debt_limit) || 0,
-        credit_terms: Number(customer.credit_terms) || 0,
-        is_suspended: !!customer.is_suspended,
-      });
-    }
-  }, [customer]);
+  const reset = () =>
+    setForm({ name: "", phone: "", email: "", kra_pin: "", location: "", debt_limit: 0, credit_terms: 0 });
 
   const submit = async () => {
     if (!form.name.trim()) return toast.error("Name is required");
     try {
-      await update.mutateAsync({
-        id: customer.id,
+      await create.mutateAsync({
         name: form.name.trim(),
         phone: form.phone.trim() || undefined,
         email: form.email.trim() || null,
-        kra_pin: form.kra_pin.trim().toUpperCase() || null,
+        kra_pin: form.kra_pin.trim().toUpperCase() || undefined,
         location: form.location.trim() || null,
+        customer_type: "regular",
         debt_limit: Number(form.debt_limit) || 0,
         credit_terms: Number(form.credit_terms) || 0,
-        is_suspended: form.is_suspended,
       });
-      toast.success("Customer updated");
+      toast.success("Customer added");
+      reset();
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e.message);
@@ -57,9 +43,9 @@ export default function EditCustomerDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Edit Customer</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Add Customer</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1">
             <Label>Name</Label>
@@ -102,17 +88,10 @@ export default function EditCustomerDialog({
             <Input type="number" min={0} value={form.debt_limit}
               onChange={(e) => setForm({ ...form, debt_limit: Number(e.target.value) })} />
           </div>
-          <div className="col-span-2 flex items-center justify-between rounded-md border border-input p-3">
-            <div>
-              <Label>Suspend account</Label>
-              <p className="text-xs text-muted-foreground">Blocks new credit invoices until lifted.</p>
-            </div>
-            <Switch checked={form.is_suspended} onCheckedChange={(v) => setForm({ ...form, is_suspended: v })} />
-          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={update.isPending}>Save Changes</Button>
+          <Button onClick={submit} disabled={create.isPending}>Add Customer</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

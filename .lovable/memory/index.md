@@ -20,3 +20,4 @@ Cost prices visible to admin only; sales agents see selling price + stock only.
 - [Stock Query & Customer 360](mem://features/query-modules) — Master-detail pages at /inventory/:id and /customers/:id with movements feed, aging chart, notes
 - [eTIMS Scaffold](mem://features/etims-scaffold) — Pending sync queue at /etims, reprint watermark, simulated KRA signer until device certs provisioned
 - [Pricing Audit](mem://features/pricing-audit) — Mutable selling price + immutable FIFO cost. price_history table auto-logged via trigger, surfaced in StockQuery admin tab.
+- [Customer Mgmt & Credit Suspension](mem://features/customer-credit-suspension) — Add/edit customers (location, PIN, limit, terms), auto-suspend over limit/overdue, /approvals invoice queue
