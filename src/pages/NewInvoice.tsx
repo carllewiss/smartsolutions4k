@@ -201,11 +201,9 @@ export default function NewInvoice() {
       return;
     }
 
-    // Credit limit block
-    if (creditWarning && paymentMethod === "partial_debt") {
-      toast.error("Cannot proceed — customer has exceeded their credit limit.");
-      return;
-    }
+    // Suspended customers cannot take new credit (debt) directly — route for admin approval.
+    // Existing (already saved) customers only; a brand-new customer has no history.
+    const holdForApproval = !isNewCustomer && needsApproval;
 
     // eTIMS KRA PIN check
     if (etimsEnabled && selectedCustomer && selectedCustomer.customer_type === "regular" && !customerHasPin) {
