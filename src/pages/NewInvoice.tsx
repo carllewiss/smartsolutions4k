@@ -120,6 +120,14 @@ export default function NewInvoice() {
     return null;
   }, [selectedCustomer, balance]);
 
+  // Suspension status (over credit limit OR overdue past terms OR manually suspended)
+  const creditStatus = useMemo(
+    () => (selectedCustomer ? getCustomerCreditStatus(selectedCustomer as any, allInvoices as any) : null),
+    [selectedCustomer, allInvoices],
+  );
+  // A credit (debt) invoice for a suspended customer must be held for admin approval
+  const needsApproval = !!creditStatus?.suspended && balance > 0;
+
   const selectCustomer = (id: string) => {
     setSelectedCustomerId(id);
     const c = customers.find(c => c.id === id);
