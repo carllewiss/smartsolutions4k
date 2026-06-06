@@ -179,6 +179,8 @@ export default function Invoices() {
           <Button
             size="sm"
             variant="ghost"
+            disabled={row.original.approval_status === "pending"}
+            title={row.original.approval_status === "pending" ? "Awaiting admin approval" : undefined}
             onClick={(e) => {
               e.stopPropagation();
               openPrint(row.original, (row.original.reprint_count || 0) > 0 || row.original.etims_status === "signed");
