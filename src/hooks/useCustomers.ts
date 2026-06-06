@@ -18,9 +18,12 @@ export function useCreateCustomer() {
     mutationFn: async (customer: {
       name: string;
       phone?: string;
+      email?: string | null;
       kra_pin?: string;
+      location?: string | null;
       customer_type?: "walk_in" | "regular";
       debt_limit?: number;
+      credit_terms?: number;
     }) => {
       const { data, error } = await supabase.from("customers").insert(customer).select().single();
       if (error) throw error;
@@ -33,7 +36,7 @@ export function useCreateCustomer() {
 export function useUpdateCustomer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; name?: string; phone?: string; email?: string | null; kra_pin?: string | null; debt_limit?: number; credit_terms?: number; current_balance?: number; total_spent?: number; visit_count?: number }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; phone?: string; email?: string | null; kra_pin?: string | null; location?: string | null; debt_limit?: number; credit_terms?: number; is_suspended?: boolean; current_balance?: number; total_spent?: number; visit_count?: number }) => {
       const { error } = await supabase.from("customers").update(updates).eq("id", id);
       if (error) throw error;
     },
