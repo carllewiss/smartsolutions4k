@@ -252,7 +252,9 @@ export default function NewInvoice() {
           mpesa_amount: paymentMethod === "cash" ? 0 : mpesaAmount,
           status: (balance === 0 ? "paid" : paidAmount > 0 ? "partial" : "unpaid") as any,
           created_by: user?.id,
-        },
+          approval_status: holdForApproval ? "pending" : "approved",
+          approval_reason: holdForApproval ? (creditStatus?.reasons.join("; ") || null) : null,
+        } as any,
         items: items.map(i => ({
           product_id: i.product_id,
           quantity: i.quantity,
@@ -261,7 +263,9 @@ export default function NewInvoice() {
           total: i.total,
         })),
       });
-      toast.success("Invoice created!");
+      toast.success(holdForApproval
+        ? "Invoice held for admin approval (customer over limit / overdue)."
+        : "Invoice created!");
       setItems([]);
       setCashAmount(0);
       setMpesaAmount(0);
