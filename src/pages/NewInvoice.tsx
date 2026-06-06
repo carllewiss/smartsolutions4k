@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
 import { useProductWithStock } from "@/hooks/useProducts";
 import { useCustomers, useCreateCustomer } from "@/hooks/useCustomers";
-import { useCreateInvoice } from "@/hooks/useInvoices";
+import { useCreateInvoice, useInvoices } from "@/hooks/useInvoices";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useAuth } from "@/hooks/useAuth";
+import { getCustomerCreditStatus } from "@/lib/customerStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Search, AlertTriangle, UserPlus } from "lucide-react";
+import { Trash2, Search, AlertTriangle, UserPlus, Ban } from "lucide-react";
 import { StockSearchAutocomplete } from "@/components/StockSearchAutocomplete";
 import { toast } from "sonner";
 
