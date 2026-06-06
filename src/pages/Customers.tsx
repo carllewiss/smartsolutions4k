@@ -125,6 +125,8 @@ export default function Customers() {
           currentBalance={paymentTarget.balance}
         />
       )}
+
+      <AddCustomerDialog open={showAdd} onOpenChange={setShowAdd} />
     </div>
   );
 }
