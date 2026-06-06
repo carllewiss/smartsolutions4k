@@ -436,16 +436,30 @@ export default function NewInvoice() {
                 </div>
               )}
 
-              {creditWarning && (
+              {creditStatus?.suspended && (
                 <div className="bg-destructive/10 border border-destructive/30 rounded-md p-2 flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                  <p className="text-xs text-destructive">{creditWarning}</p>
+                  <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                  <div className="text-xs text-destructive">
+                    <p className="font-semibold">Account suspended</p>
+                    <ul className="list-disc pl-4">
+                      {creditStatus.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                    </ul>
+                    {needsApproval && <p className="mt-1">This credit invoice will be held for admin approval.</p>}
+                  </div>
                 </div>
               )}
 
-              <Button className="w-full" onClick={submitInvoice} disabled={items.length === 0 || createInvoice.isPending || (!!creditWarning && paymentMethod === "partial_debt")}>
-                {createInvoice.isPending ? "Creating..." : "Create Invoice"}
+              {!creditStatus?.suspended && creditWarning && (
+                <div className="bg-warning/10 border border-warning/30 rounded-md p-2 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                  <p className="text-xs text-warning">{creditWarning}</p>
+                </div>
+              )}
+
+              <Button className="w-full" onClick={submitInvoice} disabled={items.length === 0 || createInvoice.isPending}>
+                {createInvoice.isPending ? "Saving..." : needsApproval ? "Submit for Approval" : "Create Invoice"}
               </Button>
+
             </CardContent>
           </Card>
         </div>
