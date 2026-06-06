@@ -64,18 +64,22 @@ export default function Customers() {
       <div className="grid gap-4">
         {filtered.map(cust => {
           const aging = getDebtAging(cust.id);
+          const status = getCustomerCreditStatus(cust as any, invoices as any, today);
           return (
             <Card key={cust.id} className="hover:shadow-elegant transition-shadow cursor-pointer" onClick={() => navigate(`/customers/${cust.id}`)}>
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold font-heading">{cust.name}</h3>
                       <Badge variant="outline" className="text-xs">{cust.customer_code}</Badge>
                       {cust.kra_pin && <Badge variant="outline" className="text-xs">Taxable</Badge>}
                       {cust.visit_count >= 3 && <Badge className="bg-primary/10 text-primary text-xs">Repeat</Badge>}
+                      {status.suspended && (
+                        <Badge variant="destructive" className="text-xs gap-1"><Ban className="h-3 w-3" /> Suspended</Badge>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground">{cust.phone || "No phone"} {cust.kra_pin ? `· PIN: ${cust.kra_pin}` : ""}</p>
+                    <p className="text-xs text-muted-foreground">{cust.phone || "No phone"} {cust.kra_pin ? `· PIN: ${cust.kra_pin}` : ""} {(cust as any).location ? `· ${(cust as any).location}` : ""}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {cust.visit_count} visits · KES {Number(cust.total_spent).toLocaleString()} spent
                       {Number(cust.debt_limit) > 0 && ` · Credit: KES ${Number(cust.debt_limit).toLocaleString()}`}
