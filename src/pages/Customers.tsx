@@ -49,6 +49,11 @@ export default function Customers() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold font-heading">Customers</h1>
+        {isAdmin && (
+          <Button onClick={() => setShowAdd(true)}>
+            <UserPlus className="h-4 w-4 mr-2" /> Add Customer
+          </Button>
+        )}
       </div>
 
       <div className="relative max-w-md">
