@@ -1,9 +1,10 @@
 import {
   LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, MessageSquare, Newspaper, Undo2, BookOpen,
+  Store, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { usePendingApprovals } from "@/hooks/useInvoiceApprovals";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, useSidebar,
