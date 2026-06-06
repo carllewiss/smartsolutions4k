@@ -14,11 +14,13 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { isAdmin } = useAuth();
   const collapsed = state === "collapsed";
+  const { data: pendingApprovals = [] } = usePendingApprovals();
 
   const mainItems = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "New Invoice", url: "/invoices/new", icon: FileText },
     { title: "Invoices", url: "/invoices", icon: Receipt },
+    ...(isAdmin ? [{ title: "Approvals", url: "/approvals", icon: ClipboardCheck, badge: pendingApprovals.length || undefined }] : []),
     ...(isAdmin ? [{ title: "Credit Notes", url: "/credit-notes", icon: Undo2 }] : []),
     { title: "Customers", url: "/customers", icon: Users },
   ];
