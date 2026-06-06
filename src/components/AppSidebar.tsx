@@ -71,7 +71,7 @@ export function AppSidebar() {
   );
 }
 
-function NavGroup({ label, items, collapsed }: { label: string; items: { title: string; url: string; icon: any }[]; collapsed: boolean }) {
+function NavGroup({ label, items, collapsed }: { label: string; items: { title: string; url: string; icon: any; badge?: number }[]; collapsed: boolean }) {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
@@ -82,7 +82,12 @@ function NavGroup({ label, items, collapsed }: { label: string; items: { title: 
               <SidebarMenuButton asChild>
                 <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                   <item.icon className="mr-2 h-4 w-4" />
-                  {!collapsed && <span>{item.title}</span>}
+                  {!collapsed && <span className="flex-1">{item.title}</span>}
+                  {!collapsed && item.badge ? (
+                    <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-destructive-foreground">
+                      {item.badge}
+                    </span>
+                  ) : null}
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -92,3 +97,4 @@ function NavGroup({ label, items, collapsed }: { label: string; items: { title: 
     </SidebarGroup>
   );
 }
+
