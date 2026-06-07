@@ -38,7 +38,6 @@ interface Props {
 // Brand palette (print only — kept as literals so colours survive @media print)
 const TEAL = "#0f6b66";
 const TEAL_DARK = "#0b524e";
-const LIGHT = "#eef6f5";
 
 interface CopyDef {
   label: string;
@@ -56,17 +55,20 @@ const money = (n: number) =>
 
 /**
  * Multi-format print document for invoices.
- * - Thermal: monospace 80mm receipt mirroring the approved 4K receipt layout, ONE copy only.
- * - B5: modern branded TAX INVOICE + DELIVERY NOTE per copy (1 customer + 2 file copies),
- *   file copies carry a diagonal "COPY" watermark.
- * Render with id="invoice-print-root"; isolation handled by index.css (body.printing-invoice).
+ * - Thermal: monospace 80mm receipt, ONE copy only.
+ * - B5: clean modern TAX INVOICE + DELIVERY NOTE per copy (1 customer + 2 file copies),
+ *   styled after the approved template; file copies carry a diagonal "COPY" watermark.
+ * VAT is only displayed when tax is actually charged.
  */
 export function InvoiceDocumentPrint(props: Props) {
   const { data: settings } = useSystemSettings();
   const businessName = settings?.business_name || COMPANY.name;
   const companyPin = COMPANY.kraPin;
+  const vatActive = settings?.vat_enabled === "true" || settings?.vat_enabled === "1";
   const isSigned = props.etimsStatus === "signed";
   const docTitle = isSigned ? "TAX INVOICE" : "INVOICE";
+  // Only show VAT if any VAT is charged on the invoice OR VAT is globally enabled.
+  const showVat = props.tax > 0 || vatActive;
 
   const fmtDate = (d?: string | null, withTime = false) => {
     if (!d) return "—";
@@ -77,7 +79,7 @@ export function InvoiceDocumentPrint(props: Props) {
       : day;
   };
 
-  // ---------------- THERMAL (80mm) — single receipt, image layout ----------------
+  // ---------------- THERMAL (80mm) — single receipt ----------------
   if (props.format === "thermal") {
     const dash = <div className="border-t border-dashed border-black my-1" />;
     return (
@@ -92,7 +94,7 @@ export function InvoiceDocumentPrint(props: Props) {
             <p className="text-[7pt]">{COMPANY.address}</p>
             <p className="text-[7pt]">Tel: {COMPANY.phone}</p>
             <p className="text-[7pt]">Email: {COMPANY.email}</p>
-            <p className="text-[7pt]">PIN: {companyPin} | VAT: {COMPANY.vatNo}</p>
+            <p className="text-[7pt]">PIN: {companyPin}</p>
           </div>
 
           {dash}
@@ -126,7 +128,7 @@ export function InvoiceDocumentPrint(props: Props) {
                 <th className="text-left pb-0.5">QTY</th>
                 <th className="text-left pb-0.5">ITEM</th>
                 <th className="text-right pb-0.5">PRICE</th>
-                <th className="text-right pb-0.5">VAT</th>
+                {showVat && <th className="text-right pb-0.5">VAT</th>}
                 <th className="text-right pb-0.5">AMOUNT</th>
               </tr>
             </thead>
@@ -136,7 +138,7 @@ export function InvoiceDocumentPrint(props: Props) {
                   <td className="pt-0.5">{it.quantity}</td>
                   <td className="pt-0.5 pr-1">{it.name}</td>
                   <td className="text-right pt-0.5 whitespace-nowrap">{money(it.unit_price)}</td>
-                  <td className="text-right pt-0.5">16%</td>
+                  {showVat && <td className="text-right pt-0.5">16%</td>}
                   <td className="text-right pt-0.5 whitespace-nowrap">{money(it.total)}</td>
                 </tr>
               ))}
@@ -146,9 +148,9 @@ export function InvoiceDocumentPrint(props: Props) {
           {dash}
           {/* Totals */}
           <div className="text-[7.5pt]">
-            <div className="flex justify-between"><span>Subtotal (Excl. VAT)</span><span>{money(props.subtotal)}</span></div>
-            <div className="flex justify-between"><span>VAT (16%)</span><span>{money(props.tax)}</span></div>
-            <div className="flex justify-between"><span>Discount</span><span>{money(props.discount || 0)}</span></div>
+            <div className="flex justify-between"><span>Subtotal{showVat ? " (Excl. VAT)" : ""}</span><span>{money(props.subtotal)}</span></div>
+            {showVat && <div className="flex justify-between"><span>VAT (16%)</span><span>{money(props.tax)}</span></div>}
+            {!!props.discount && <div className="flex justify-between"><span>Discount</span><span>{money(props.discount)}</span></div>}
           </div>
           {dash}
           <div className="flex justify-between font-bold text-[10pt]">
@@ -159,9 +161,6 @@ export function InvoiceDocumentPrint(props: Props) {
           {/* Payment details */}
           <div className="text-[7pt]">
             <p>Payment Details:</p>
-            <p>Bank: {COMPANY.bankName}</p>
-            <p>A/C Name: {COMPANY.accountName}</p>
-            <p>A/C No: {COMPANY.accountNo}</p>
             <p>MPESA Paybill: {COMPANY.paybill}</p>
             <p>A/C No: {COMPANY.paybillAccount}</p>
           </div>
@@ -181,7 +180,7 @@ export function InvoiceDocumentPrint(props: Props) {
     );
   }
 
-  // ---------------- B5 FULL (modern Invoice + Delivery Note) ----------------
+  // ---------------- B5 FULL (template-styled Invoice + Delivery Note) ----------------
   const Watermark = ({ text }: { text: string }) => (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 0 }}>
       <span className="text-[150px] font-black rotate-[-32deg] select-none tracking-widest" style={{ color: "rgba(15,107,102,0.07)" }}>
@@ -192,57 +191,56 @@ export function InvoiceDocumentPrint(props: Props) {
 
   const fmt = (d?: string | null) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 
-  // Modern header band: full-width teal bar with logo + doc title + copy chip.
-  const HeaderBand = ({ title, copyLabel }: { title: string; copyLabel: string }) => (
-    <div className="relative mb-5" style={{ zIndex: 10 }}>
-      <div className="flex items-stretch overflow-hidden rounded-xl" style={{ boxShadow: "0 8px 22px -12px rgba(15,107,102,0.55)" }}>
-        <div className="flex items-center gap-3 px-5 py-4 flex-1" style={{ background: `linear-gradient(135deg, ${TEAL}, ${TEAL_DARK})` }}>
-          <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
-            <img src={logo.url} alt="4K Smart" style={{ height: "13mm" }} />
-          </div>
-          <div className="text-white leading-tight">
-            <p className="text-[14pt] font-extrabold tracking-tight">{businessName}</p>
-            <p className="text-[8pt] opacity-90">{COMPANY.tagline}</p>
-            <p className="text-[7.5pt] opacity-80 mt-0.5">{COMPANY.services}</p>
+  // Decorative corner accent (echoes the template's top-right ornament)
+  const CornerAccent = () => (
+    <div
+      className="absolute top-0 right-0 pointer-events-none"
+      style={{
+        width: "44mm",
+        height: "44mm",
+        background: `radial-gradient(circle at top right, ${TEAL}22, transparent 70%)`,
+        zIndex: 1,
+      }}
+    />
+  );
+
+  // Brand header: logo + business name on the left, big document title below.
+  const DocHeader = ({ title, copyLabel }: { title: string; copyLabel: string }) => (
+    <div className="relative mb-6" style={{ zIndex: 10 }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img src={logo.url} alt="4K Smart" style={{ height: "15mm" }} />
+          <div className="leading-tight">
+            <p className="text-[13pt] font-extrabold tracking-tight" style={{ color: TEAL_DARK }}>{businessName}</p>
+            <p className="text-[8pt] text-gray-500">{COMPANY.services}</p>
           </div>
         </div>
-        <div className="flex flex-col items-end justify-center px-5 py-4 text-right" style={{ backgroundColor: "#0a3f3c" }}>
-          <p className="text-white text-[18pt] font-extrabold tracking-tight leading-none">{title}</p>
-          <span className="mt-2 text-[7.5pt] font-bold text-white/90 border border-white/40 rounded-full px-2 py-0.5">{copyLabel}</span>
-        </div>
+        <span className="text-[7.5pt] font-bold rounded-full px-3 py-1" style={{ backgroundColor: copyLabel.includes("FILE") ? "#f0f4f4" : TEAL, color: copyLabel.includes("FILE") ? TEAL_DARK : "#ffffff" }}>
+          {copyLabel}
+        </span>
+      </div>
+      <div className="mt-4 flex items-end gap-3">
+        <h1 className="text-[34pt] font-black leading-none tracking-tight" style={{ color: TEAL_DARK }}>{title}</h1>
+        <span className="h-[3px] flex-1 mb-2 rounded-full" style={{ backgroundColor: TEAL }} />
       </div>
     </div>
   );
 
-  const CompanyStrip = () => (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[8pt] text-gray-600 mb-4 px-1 relative" style={{ zIndex: 10 }}>
-      <span>📍 {COMPANY.address}</span>
-      <span>📞 {COMPANY.phone}</span>
-      <span>✉ {COMPANY.email}</span>
-      <span className="font-semibold" style={{ color: TEAL }}>PIN: {companyPin}</span>
-      <span className="font-semibold" style={{ color: TEAL }}>VAT: {COMPANY.vatNo}</span>
-    </div>
-  );
-
-  const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="rounded-lg overflow-hidden border border-gray-200 relative" style={{ zIndex: 10 }}>
-      <div className="text-[8pt] font-bold tracking-wide px-3 py-1.5 text-white" style={{ backgroundColor: TEAL }}>{title}</div>
-      <div className="px-3 py-2 text-[9pt]" style={{ backgroundColor: "#fbfdfd" }}>{children}</div>
-    </div>
-  );
-
   const KraFooterBar = () => (
-    <div className="absolute left-0 right-0 bottom-0 text-white text-[7.5pt] flex items-center justify-between px-5 py-2.5" style={{ background: `linear-gradient(90deg, ${TEAL_DARK}, ${TEAL})`, zIndex: 10 }}>
-      <span>KRA PIN: <b>{companyPin}</b> · VAT No: <b>{COMPANY.vatNo}</b></span>
-      <span className="font-semibold">Smart Business. Smarter Solutions.</span>
-      <span>{COMPANY.website}</span>
+    <div className="absolute left-0 right-0 bottom-0 px-10 py-3 border-t-2" style={{ borderColor: TEAL, zIndex: 10 }}>
+      <div className="flex items-center justify-between text-[7.5pt] text-gray-600">
+        <span className="flex items-center gap-1">📞 <b>{COMPANY.phone}</b></span>
+        <span className="flex items-center gap-1">✉ {COMPANY.email}</span>
+        <span className="flex items-center gap-1">📍 {COMPANY.address}</span>
+      </div>
+      <p className="text-center text-[7pt] mt-1" style={{ color: TEAL }}>KRA PIN: <b>{companyPin}</b></p>
     </div>
   );
 
   const pageStyle = (last: boolean): React.CSSProperties => ({
     width: "176mm",
     minHeight: "250mm",
-    padding: "10mm 10mm 16mm",
+    padding: "12mm 12mm 22mm",
     position: "relative",
     pageBreakAfter: last ? "auto" : "always",
   });
@@ -258,80 +256,87 @@ export function InvoiceDocumentPrint(props: Props) {
         const invoicePage = (
           <div key={`inv-${ci}`} className="bg-white text-black mx-auto" style={pageStyle(false)}>
             {copy.isFileCopy && <Watermark text="COPY" />}
-            <HeaderBand title={isSigned ? "TAX INVOICE" : "INVOICE"} copyLabel={copy.label} />
-            <CompanyStrip />
+            <CornerAccent />
+            <DocHeader title={isSigned ? "TAX INVOICE" : "INVOICE"} copyLabel={copy.label} />
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <Card title="BILL TO">
-                <p className="font-bold text-[10pt]">{props.customerName}</p>
-                {props.customerAddress && <p>{props.customerAddress}</p>}
-                {props.customerPin && <p>PIN: {props.customerPin.toUpperCase()}</p>}
-                {props.customerPhone && <p>Tel: {props.customerPhone}</p>}
-              </Card>
-              <Card title="INVOICE DETAILS">
-                <div className="space-y-0.5">
-                  <div className="flex justify-between"><span className="text-gray-500">Invoice No.</span><span className="font-semibold">{props.invoiceNumber}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-semibold">{fmt(props.date)}</span></div>
-                  {props.dueDate && <div className="flex justify-between"><span className="text-gray-500">Due Date</span><span className="font-semibold">{fmt(props.dueDate)}</span></div>}
-                  <div className="flex justify-between"><span className="text-gray-500">Currency</span><span className="font-semibold">KES</span></div>
-                </div>
-              </Card>
+            {/* Bill-to + meta */}
+            <div className="flex justify-between items-start mb-6 relative" style={{ zIndex: 10 }}>
+              <div className="text-[9pt]">
+                <p className="text-[8pt] font-bold text-gray-400 mb-1">TO</p>
+                <p className="font-bold text-[11pt]" style={{ color: TEAL_DARK }}>{props.customerName}</p>
+                {props.customerAddress && <p className="text-gray-600">{props.customerAddress}</p>}
+                {props.customerPhone && <p className="text-gray-600">Tel: {props.customerPhone}</p>}
+                {props.customerPin && <p className="text-gray-600">PIN: {props.customerPin.toUpperCase()}</p>}
+              </div>
+              <div className="text-[9pt] text-right space-y-0.5">
+                <div><span className="text-gray-400 mr-2">Invoice no :</span><span className="font-bold">{props.invoiceNumber}</span></div>
+                <div><span className="text-gray-400 mr-2">Date :</span><span className="font-bold">{fmt(props.date)}</span></div>
+                {props.dueDate && <div><span className="text-gray-400 mr-2">Due :</span><span className="font-bold">{fmt(props.dueDate)}</span></div>}
+              </div>
             </div>
 
-            <table className="w-full text-[9pt] border-collapse relative mb-4 overflow-hidden rounded-lg" style={{ zIndex: 10 }}>
+            {/* Items table */}
+            <table className="w-full text-[9pt] border-collapse mb-6 relative" style={{ zIndex: 10 }}>
               <thead>
-                <tr className="text-white" style={{ backgroundColor: TEAL }}>
-                  <th className="text-left py-2 px-3 w-8">#</th>
-                  <th className="text-left py-2 px-3">DESCRIPTION</th>
-                  <th className="text-right py-2 px-3 w-12">QTY</th>
-                  <th className="text-right py-2 px-3 w-24">UNIT PRICE</th>
-                  <th className="text-right py-2 px-3 w-14">VAT</th>
-                  <th className="text-right py-2 px-3 w-28">AMOUNT</th>
+                <tr className="border-b-2" style={{ borderColor: TEAL_DARK }}>
+                  <th className="text-left py-2 w-8 font-bold">NO</th>
+                  <th className="text-left py-2 font-bold">DESCRIPTION</th>
+                  <th className="text-center py-2 w-14 font-bold">QTY</th>
+                  <th className="text-right py-2 w-28 font-bold">PRICE</th>
+                  {showVat && <th className="text-right py-2 w-14 font-bold">VAT</th>}
+                  <th className="text-right py-2 w-28 font-bold">TOTAL</th>
                 </tr>
               </thead>
               <tbody>
                 {props.items.map((it, i) => (
-                  <tr key={i} style={{ backgroundColor: i % 2 ? "#f4f9f8" : "#ffffff" }}>
-                    <td className="py-1.5 px-3">{i + 1}</td>
-                    <td className="py-1.5 px-3">
-                      <div className="font-semibold">{it.name}</div>
-                      {it.sku && <div className="text-[7.5pt] text-gray-500">SKU: {it.sku}</div>}
+                  <tr key={i} className="border-b border-gray-200">
+                    <td className="py-2">{i + 1}</td>
+                    <td className="py-2">
+                      <div className="font-medium">{it.name}</div>
+                      {it.sku && <div className="text-[7.5pt] text-gray-400">SKU: {it.sku}</div>}
                     </td>
-                    <td className="text-right py-1.5 px-3">{it.quantity}</td>
-                    <td className="text-right py-1.5 px-3 font-mono">{money(it.unit_price)}</td>
-                    <td className="text-right py-1.5 px-3">16%</td>
-                    <td className="text-right py-1.5 px-3 font-mono">{money(it.total)}</td>
+                    <td className="text-center py-2">{it.quantity}</td>
+                    <td className="text-right py-2 font-mono">{money(it.unit_price)}</td>
+                    {showVat && <td className="text-right py-2">16%</td>}
+                    <td className="text-right py-2 font-mono">{money(it.total)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="grid grid-cols-2 gap-4 relative" style={{ zIndex: 10 }}>
-              <Card title="PAYMENT DETAILS">
-                <div className="space-y-0.5 text-[8.5pt]">
-                  <p>Bank: <b>{COMPANY.bankName}</b></p>
-                  <p>Account Name: {COMPANY.accountName}</p>
-                  <p>Account No.: {COMPANY.accountNo}</p>
-                  <p>MPESA Paybill: <b>{COMPANY.paybill}</b></p>
-                  <p>Account: {COMPANY.paybillAccount}</p>
-                </div>
-              </Card>
-              <div className="rounded-lg overflow-hidden border border-gray-200 text-[9.5pt] self-start">
-                <div className="flex justify-between px-3 py-1.5 border-b border-gray-100"><span className="text-gray-500">Subtotal (Excl. VAT)</span><span className="font-mono">KES {money(props.subtotal)}</span></div>
-                <div className="flex justify-between px-3 py-1.5 border-b border-gray-100"><span className="text-gray-500">VAT (16%)</span><span className="font-mono">KES {money(props.tax)}</span></div>
-                {!!props.discount && <div className="flex justify-between px-3 py-1.5 border-b border-gray-100"><span className="text-gray-500">Discount</span><span className="font-mono">KES {money(props.discount)}</span></div>}
-                <div className="flex justify-between items-center text-white font-bold px-3 py-2.5 text-[12pt]" style={{ background: `linear-gradient(135deg, ${TEAL}, ${TEAL_DARK})` }}>
-                  <span>TOTAL DUE</span><span className="font-mono">KES {money(props.total)}</span>
+            {/* Payment method + totals */}
+            <div className="flex justify-between items-start gap-6 relative" style={{ zIndex: 10 }}>
+              <div className="text-[8.5pt]">
+                <p className="font-bold text-[10pt] mb-1" style={{ color: TEAL_DARK }}>Payment Method</p>
+                <p className="text-gray-600">MPESA Paybill : <b>{COMPANY.paybill}</b></p>
+                <p className="text-gray-600">Account : {COMPANY.paybillAccount}</p>
+              </div>
+              <div className="w-[70mm] text-[9.5pt]">
+                <div className="flex justify-between py-1"><span className="text-gray-500">Sub Total</span><span className="font-mono">{money(props.subtotal)}</span></div>
+                {showVat && <div className="flex justify-between py-1"><span className="text-gray-500">VAT (16%)</span><span className="font-mono">{money(props.tax)}</span></div>}
+                {!!props.discount && <div className="flex justify-between py-1"><span className="text-gray-500">Discount</span><span className="font-mono">{money(props.discount)}</span></div>}
+                <div className="flex justify-between items-center text-white font-bold px-3 py-2.5 mt-2 rounded text-[11pt]" style={{ background: `linear-gradient(135deg, ${TEAL}, ${TEAL_DARK})` }}>
+                  <span>GRAND TOTAL</span><span className="font-mono">KES {money(props.total)}</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-5 text-[8pt] text-gray-500 italic relative" style={{ zIndex: 10 }}>
-              Thank you for your business. Goods once sold are not returnable.
+            {/* Terms + signature */}
+            <div className="flex justify-between items-end mt-8 relative" style={{ zIndex: 10 }}>
+              <div className="text-[8pt] text-gray-500 max-w-[90mm]">
+                <p className="font-bold text-[9pt] mb-1" style={{ color: TEAL_DARK }}>Terms and Conditions :</p>
+                <p>Goods once sold are not returnable. Please settle the invoice within the agreed payment terms.</p>
+                {props.isReprint && (
+                  <p className="mt-2 font-bold" style={{ color: TEAL }}>REPRINT — DUPLICATE COPY #{props.reprintCount || 1}</p>
+                )}
+              </div>
+              <div className="text-center text-[8pt]">
+                <div className="border-b border-gray-400 w-40 mb-1" />
+                <p className="font-bold">For {businessName}</p>
+                <p className="text-gray-500">Authorized Signature</p>
+              </div>
             </div>
-            {props.isReprint && (
-              <p className="text-[8pt] mt-1 font-bold relative" style={{ zIndex: 10, color: TEAL }}>REPRINT — DUPLICATE COPY #{props.reprintCount || 1}</p>
-            )}
+
             <KraFooterBar />
           </div>
         );
@@ -340,66 +345,61 @@ export function InvoiceDocumentPrint(props: Props) {
         const deliveryPage = (
           <div key={`dn-${ci}`} className="bg-white text-black mx-auto" style={pageStyle(dnLast)}>
             {copy.isFileCopy && <Watermark text="COPY" />}
-            <HeaderBand title="DELIVERY NOTE" copyLabel={copy.label} />
-            <CompanyStrip />
+            <CornerAccent />
+            <DocHeader title="DELIVERY NOTE" copyLabel={copy.label} />
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <Card title="DELIVER TO">
-                <p className="font-bold text-[10pt]">{props.customerName}</p>
-                {props.customerAddress && <p>{props.customerAddress}</p>}
-                {props.customerPhone && <p>Tel: {props.customerPhone}</p>}
-              </Card>
-              <Card title="DELIVERY DETAILS">
-                <div className="space-y-0.5">
-                  <div className="flex justify-between"><span className="text-gray-500">D/Note No.</span><span className="font-semibold">{props.invoiceNumber.replace(/^INV/, "DN")}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-semibold">{fmt(props.date)}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Reference</span><span className="font-semibold">{props.invoiceNumber}</span></div>
-                </div>
-              </Card>
+            <div className="flex justify-between items-start mb-6 relative" style={{ zIndex: 10 }}>
+              <div className="text-[9pt]">
+                <p className="text-[8pt] font-bold text-gray-400 mb-1">DELIVER TO</p>
+                <p className="font-bold text-[11pt]" style={{ color: TEAL_DARK }}>{props.customerName}</p>
+                {props.customerAddress && <p className="text-gray-600">{props.customerAddress}</p>}
+                {props.customerPhone && <p className="text-gray-600">Tel: {props.customerPhone}</p>}
+              </div>
+              <div className="text-[9pt] text-right space-y-0.5">
+                <div><span className="text-gray-400 mr-2">D/Note no :</span><span className="font-bold">{props.invoiceNumber.replace(/^INV/, "DN")}</span></div>
+                <div><span className="text-gray-400 mr-2">Date :</span><span className="font-bold">{fmt(props.date)}</span></div>
+                <div><span className="text-gray-400 mr-2">Reference :</span><span className="font-bold">{props.invoiceNumber}</span></div>
+              </div>
             </div>
 
-            <table className="w-full text-[9pt] border-collapse relative mb-4 overflow-hidden rounded-lg" style={{ zIndex: 10 }}>
+            <table className="w-full text-[9pt] border-collapse mb-6 relative" style={{ zIndex: 10 }}>
               <thead>
-                <tr className="text-white" style={{ backgroundColor: TEAL }}>
-                  <th className="text-left py-2 px-3 w-8">#</th>
-                  <th className="text-left py-2 px-3">DESCRIPTION</th>
-                  <th className="text-right py-2 px-3 w-24">QTY ORDERED</th>
-                  <th className="text-right py-2 px-3 w-24">QTY DELIVERED</th>
-                  <th className="text-left py-2 px-3 w-24">REMARKS</th>
+                <tr className="border-b-2" style={{ borderColor: TEAL_DARK }}>
+                  <th className="text-left py-2 w-8 font-bold">NO</th>
+                  <th className="text-left py-2 font-bold">DESCRIPTION</th>
+                  <th className="text-center py-2 w-24 font-bold">QTY ORDERED</th>
+                  <th className="text-center py-2 w-24 font-bold">QTY DELIVERED</th>
+                  <th className="text-left py-2 w-24 font-bold">REMARKS</th>
                 </tr>
               </thead>
               <tbody>
                 {props.items.map((it, i) => (
-                  <tr key={i} style={{ backgroundColor: i % 2 ? "#f4f9f8" : "#ffffff" }}>
-                    <td className="py-1.5 px-3">{i + 1}</td>
-                    <td className="py-1.5 px-3">
-                      <div className="font-semibold">{it.name}</div>
-                      {it.sku && <div className="text-[7.5pt] text-gray-500">SKU: {it.sku}</div>}
+                  <tr key={i} className="border-b border-gray-200">
+                    <td className="py-2">{i + 1}</td>
+                    <td className="py-2">
+                      <div className="font-medium">{it.name}</div>
+                      {it.sku && <div className="text-[7.5pt] text-gray-400">SKU: {it.sku}</div>}
                     </td>
-                    <td className="text-right py-1.5 px-3">{it.quantity}</td>
-                    <td className="text-right py-1.5 px-3">{it.quantity}</td>
-                    <td className="py-1.5 px-3">—</td>
+                    <td className="text-center py-2">{it.quantity}</td>
+                    <td className="text-center py-2">{it.quantity}</td>
+                    <td className="py-2">—</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="grid grid-cols-2 gap-4 relative" style={{ zIndex: 10 }}>
-              <Card title="REMARKS / NOTES">
-                <div className="min-h-[24mm] text-[8.5pt]">Goods received in good condition.</div>
-              </Card>
-              <Card title="RECEIVED BY">
-                <div className="space-y-4 text-[9pt] py-1">
-                  <p>Name: <span className="inline-block border-b border-gray-400 w-40 ml-1" /></p>
-                  <p>Signature: <span className="inline-block border-b border-gray-400 w-32 ml-1" /></p>
-                  <p>Date: <span className="inline-block border-b border-gray-400 w-40 ml-1" /></p>
-                </div>
-              </Card>
+            <div className="flex justify-between items-end mt-10 relative" style={{ zIndex: 10 }}>
+              <div className="text-[8.5pt] text-gray-600 max-w-[90mm]">
+                <p className="font-bold text-[9pt] mb-1" style={{ color: TEAL_DARK }}>Remarks / Notes</p>
+                <p>Goods received in good condition.</p>
+              </div>
+              <div className="text-[8.5pt] space-y-3">
+                <p>Received by: <span className="inline-block border-b border-gray-400 w-36 ml-1" /></p>
+                <p>Signature: <span className="inline-block border-b border-gray-400 w-32 ml-1" /></p>
+                <p>Date: <span className="inline-block border-b border-gray-400 w-36 ml-1" /></p>
+              </div>
             </div>
 
-            <p className="mt-5 text-[8pt] text-gray-500 italic relative" style={{ zIndex: 10 }}>
-              Smart Solutions for a Smarter Tomorrow.
-            </p>
             <KraFooterBar />
           </div>
         );

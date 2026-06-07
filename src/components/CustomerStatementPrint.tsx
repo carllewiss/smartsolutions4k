@@ -64,10 +64,10 @@ export default function CustomerStatementPrint({
 
       <div className="flex justify-between items-start border-b-2 border-black pb-3 mb-4">
         <div>
-          <h1 className="text-2xl font-extrabold">{COMPANY.accountName}</h1>
+          <h1 className="text-2xl font-extrabold">{COMPANY.name}</h1>
           <p className="text-xs">{COMPANY.services}</p>
-          <p className="text-xs">Tel: {COMPANY.phone}</p>
-          <p className="text-xs">KRA PIN: {COMPANY.kraPin} · VAT No: {COMPANY.vatNo}</p>
+          <p className="text-xs">{COMPANY.address} · Tel: {COMPANY.phone}</p>
+          <p className="text-xs">KRA PIN: {COMPANY.kraPin}</p>
         </div>
         <div className="text-right">
           <h2 className="text-xl font-bold">CUSTOMER STATEMENT</h2>
@@ -132,7 +132,7 @@ export default function CustomerStatementPrint({
       </table>
 
       <div className="mt-8 text-[9pt] text-center border-t pt-3">
-        <p>Please remit payment to: <span className="font-bold">{COMPANY.bankName} A/C {COMPANY.accountNo} · MPESA Paybill {COMPANY.paybill} (Acc: {COMPANY.paybillAccount})</span></p>
+        <p>Please remit payment to: <span className="font-bold">MPESA Paybill {COMPANY.paybill} (Acc: {COMPANY.paybillAccount})</span></p>
         <p className="italic mt-2">Thank you for your business.</p>
       </div>
     </div>

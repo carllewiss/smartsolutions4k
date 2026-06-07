@@ -64,7 +64,7 @@ export function InvoicePrintView({
               {isSigned ? "TAX INVOICE" : "SALES RECEIPT"}
             </h2>
             <p className="text-xs text-gray-600 mt-1">{COMPANY.name}</p>
-            <p className="text-[10px] text-gray-500">KRA PIN: {COMPANY.kraPin} · VAT No: {COMPANY.vatNo}</p>
+            <p className="text-[10px] text-gray-500">KRA PIN: {COMPANY.kraPin}</p>
             {isReprint && (
               <p className="text-xs text-red-600 underline font-bold mt-1">
                 DUPLICATE COPY — NOT FOR ORIGINAL TAX CREDIT
@@ -139,9 +139,8 @@ export function InvoicePrintView({
 
         <div className="mt-6 pt-3 border-t border-gray-300 text-[10px] text-gray-600 leading-tight">
           <p className="font-bold">Payment Details</p>
-          <p>Bank: {COMPANY.bankName} · A/C Name: {COMPANY.accountName} · A/C No: {COMPANY.accountNo}</p>
           <p>MPESA Paybill: {COMPANY.paybill} · Account: {COMPANY.paybillAccount}</p>
-          <p className="mt-1">KRA PIN: {COMPANY.kraPin} · VAT No: {COMPANY.vatNo}</p>
+          <p className="mt-1">KRA PIN: {COMPANY.kraPin}</p>
         </div>
       </div>
     </div>

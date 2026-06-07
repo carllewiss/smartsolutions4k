@@ -7,19 +7,15 @@ export const COMPANY = {
   name: "4K SMART SOLUTIONS LTD",
   tagline: "Smart Business. Smarter Solutions.",
   services: "Phone Accessories · Internet · Printing",
-  address: "P.O Box 12345 - 00100, Nairobi, Kenya",
-  phone: "+254 700 000 000  |  0736 217 411",
-  email: "info@4ksmart.co.ke",
+  address: "P.O BOX 2706, KAKAMEGA",
+  phone: "0736217411",
+  email: "4ksmartsolutionsltd@gmail.com",
   website: "www.4ksmart.co.ke",
 
   // KRA / tax
   kraPin: "P052399943U",
-  vatNo: "0123456A",
 
   // Payment
-  bankName: "KCB Bank Kenya",
-  accountName: "4K Smart Solutions Ltd",
-  accountNo: "1234567890",
   paybill: "4183147",
   paybillAccount: "4KSmart",
 } as const;
