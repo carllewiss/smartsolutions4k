@@ -21,12 +21,12 @@ export default function ShopContact() {
           <Card className="p-6 text-center">
             <Mail className="h-10 w-10 mx-auto text-shop-deep mb-3" />
             <h3 className="font-bold mb-1">Email</h3>
-            <p className="text-sm text-muted-foreground">info@4ksmartsolutions.co.ke</p>
+            <p className="text-sm text-muted-foreground">4ksmartsolutionsltd@gmail.com</p>
           </Card>
           <Card className="p-6 text-center">
             <MapPin className="h-10 w-10 mx-auto text-shop-deep mb-3" />
             <h3 className="font-bold mb-1">Visit</h3>
-            <p className="text-sm text-muted-foreground">Nairobi, Kenya</p>
+            <p className="text-sm text-muted-foreground">P.O Box 2706, Kakamega, Kenya</p>
           </Card>
         </div>
         <div className="text-center mt-10">
