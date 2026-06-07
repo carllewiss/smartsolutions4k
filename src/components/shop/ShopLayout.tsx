@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AdSlot } from "@/components/shop/AdSlot";
 
 export function ShopLayout({ children }: { children: ReactNode }) {
   const { count } = useCart();
@@ -169,11 +170,17 @@ export function ShopLayout({ children }: { children: ReactNode }) {
             </div>
             <div>
               <h4 className="font-semibold mb-3">Contact Info</h4>
-              <p className="opacity-80">Nairobi, Kenya</p>
+              <p className="opacity-80">Kakamega, Kenya</p>
               <p className="opacity-80">+254 736 217 411</p>
-              <p className="opacity-80">info@4ksmartsolutions.co.ke</p>
+              <p className="opacity-80">4ksmartsolutionsltd@gmail.com</p>
             </div>
           </div>
+
+          {/* Footer advertisement */}
+          <div className="max-w-4xl mx-auto px-4 pb-6">
+            <AdSlot placement="footer" label={false} />
+          </div>
+
           <div className="border-t border-white/10 py-4 text-center text-xs opacity-70">
             © {new Date().getFullYear()} 4K Smart Solutions Ltd. All rights reserved.
           </div>

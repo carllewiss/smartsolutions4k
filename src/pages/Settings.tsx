@@ -77,6 +77,67 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Google AdSense (Customer Website)</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="font-medium">Enable Ads</Label>
+              <p className="text-xs text-muted-foreground">Show Google AdSense ads on the storefront (footer, blog sidebar & in-article)</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className={settings.adsense_enabled === "true" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}>
+                {settings.adsense_enabled === "true" ? "ON" : "OFF"}
+              </Badge>
+              <Switch
+                checked={settings.adsense_enabled === "true"}
+                onCheckedChange={() => toggle("adsense_enabled", settings.adsense_enabled || "false")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">AdSense Client ID</Label>
+            <Input
+              placeholder="ca-pub-XXXXXXXXXXXXXXXX"
+              defaultValue={settings.adsense_client || ""}
+              onBlur={e => updateValue("adsense_client", e.target.value.trim())}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">Paste your publisher ID from your AdSense account.</p>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">Sidebar Ad Slot</Label>
+              <Input
+                placeholder="Slot ID"
+                defaultValue={settings.adsense_slot_sidebar || ""}
+                onBlur={e => updateValue("adsense_slot_sidebar", e.target.value.trim())}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Footer Ad Slot</Label>
+              <Input
+                placeholder="Slot ID"
+                defaultValue={settings.adsense_slot_footer || ""}
+                onBlur={e => updateValue("adsense_slot_footer", e.target.value.trim())}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">In-Article Ad Slot</Label>
+              <Input
+                placeholder="Slot ID"
+                defaultValue={settings.adsense_slot_article || ""}
+                onBlur={e => updateValue("adsense_slot_article", e.target.value.trim())}
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Each ad unit auto-sizes to fit its space. Ads only appear once enabled and a client ID + at least one slot are set.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
