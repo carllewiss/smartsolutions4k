@@ -1,11 +1,13 @@
 import { useInvoices } from "@/hooks/useInvoices";
 import { useProductWithStock } from "@/hooks/useProducts";
 import { useExpenses } from "@/hooks/useExpenses";
+import { useWifiTransactions } from "@/hooks/useWifi";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Package, AlertTriangle, TrendingUp, Receipt, ShoppingCart, Users } from "lucide-react";
+import { DollarSign, Package, AlertTriangle, TrendingUp, Receipt, ShoppingCart, Users, Wifi } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Link } from "react-router-dom";
 import { format, subDays, differenceInDays } from "date-fns";
 
 const COLORS = ["hsl(243 75% 59%)", "hsl(167 72% 60%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)", "hsl(142 71% 45%)"];
