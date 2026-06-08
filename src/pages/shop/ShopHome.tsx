@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ShopLayout } from "@/components/shop/ShopLayout";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { useShopFeatured } from "@/hooks/useShop";
 import { usePublishedPosts as useBlogPosts } from "@/hooks/useBlog";
-import { ArrowRight, Truck, ShieldCheck, Headphones, BadgePercent } from "lucide-react";
+import { useActiveServices } from "@/hooks/useServices";
+import { ArrowRight, Truck, ShieldCheck, Headphones, BadgePercent, Sparkles } from "lucide-react";
 
 export default function ShopHome() {
   const { data: featured = [] } = useShopFeatured();
   const { data: posts = [] } = useBlogPosts();
+  const { data: services = [] } = useActiveServices();
 
   return (
     <ShopLayout>
@@ -87,25 +90,64 @@ export default function ShopHome() {
         )}
       </section>
 
-      {/* SERVICES TEASER */}
+      {/* SERVICES */}
       <section className="bg-shop-soft/30 py-16">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold font-heading mb-3">Government Services</h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            One-click WhatsApp inquiry for KRA, NSSF, HELB, eTIMS, eCitizen and more.
-          </p>
-          <Button asChild size="lg" className="bg-shop-deep hover:bg-shop-deep/90 text-shop-deep-foreground">
-            <Link to="/shop/services">Explore Services <ArrowRight className="h-4 w-4 ml-1" /></Link>
-          </Button>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold font-heading">Our Services</h2>
+              <p className="text-muted-foreground mt-1">KRA, NSSF, HELB, eTIMS, eCitizen & more</p>
+            </div>
+            <Button asChild variant="ghost" className="shrink-0">
+              <Link to="/shop/services">View All <ArrowRight className="h-4 w-4 ml-1" /></Link>
+            </Button>
+          </div>
+
+          {services.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Services will appear here soon.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {services.slice(0, 4).map((svc) => (
+                <Card key={svc.id} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow border-border/40">
+                  <div className="h-36 bg-shop-soft/60 flex items-center justify-center overflow-hidden">
+                    {svc.image_url ? (
+                      <img src={svc.image_url} alt={svc.name} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <Sparkles className="h-9 w-9 text-shop-deep/40" />
+                    )}
+                  </div>
+                  <div className="p-5 flex flex-col flex-1 text-center">
+                    <h3 className="font-bold mb-1 text-shop-deep">{svc.name}</h3>
+                    {svc.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{svc.description}</p>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-8">
+            <Button asChild size="lg" className="bg-shop-deep hover:bg-shop-deep/90 text-shop-deep-foreground">
+              <Link to="/shop/services">Explore All Services <ArrowRight className="h-4 w-4 ml-1" /></Link>
+            </Button>
+          </div>
         </div>
       </section>
 
       {/* RECENT BLOG */}
       {posts.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold font-heading">Recent News</h2>
-            <p className="text-muted-foreground mt-1">Updates & tips from our team</p>
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold font-heading">Latest from our Blog</h2>
+              <p className="text-muted-foreground mt-1">Updates & tips from our team</p>
+            </div>
+            <Button asChild variant="ghost" className="shrink-0">
+              <Link to="/shop/blog">View All <ArrowRight className="h-4 w-4 ml-1" /></Link>
+            </Button>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {posts.slice(0, 3).map((p) => (
@@ -122,6 +164,11 @@ export default function ShopHome() {
                 {p.excerpt && <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{p.excerpt}</p>}
               </Link>
             ))}
+          </div>
+          <div className="text-center mt-8">
+            <Button asChild size="lg" variant="outline">
+              <Link to="/shop/blog">Read More Posts <ArrowRight className="h-4 w-4 ml-1" /></Link>
+            </Button>
           </div>
         </section>
       )}
