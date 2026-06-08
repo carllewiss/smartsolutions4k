@@ -17,6 +17,7 @@ export default function Dashboard() {
   const { data: invoices = [], isLoading: invLoading } = useInvoices();
   const { data: products = [] } = useProductWithStock();
   const { data: expenses = [] } = useExpenses();
+  const { data: wifiTxns = [] } = useWifiTransactions();
 
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
