@@ -1483,6 +1483,99 @@ export type Database = {
         }
         Relationships: []
       }
+      wifi_transactions: {
+        Row: {
+          amount: number
+          authenticated_at: string | null
+          client_mac: string | null
+          created_at: string
+          id: string
+          journal_id: string | null
+          mpesa_receipt: string | null
+          package_type: string | null
+          paid_at: string
+          phone_number: string | null
+          remote_id: string
+          ssid: string | null
+          status: string
+          synced_at: string
+          voucher_code: string | null
+        }
+        Insert: {
+          amount?: number
+          authenticated_at?: string | null
+          client_mac?: string | null
+          created_at?: string
+          id?: string
+          journal_id?: string | null
+          mpesa_receipt?: string | null
+          package_type?: string | null
+          paid_at?: string
+          phone_number?: string | null
+          remote_id: string
+          ssid?: string | null
+          status?: string
+          synced_at?: string
+          voucher_code?: string | null
+        }
+        Update: {
+          amount?: number
+          authenticated_at?: string | null
+          client_mac?: string | null
+          created_at?: string
+          id?: string
+          journal_id?: string | null
+          mpesa_receipt?: string | null
+          package_type?: string | null
+          paid_at?: string
+          phone_number?: string | null
+          remote_id?: string
+          ssid?: string | null
+          status?: string
+          synced_at?: string
+          voucher_code?: string | null
+        }
+        Relationships: []
+      }
+      wifi_vouchers: {
+        Row: {
+          code: string | null
+          created_at: string
+          duration_hours: number | null
+          id: string
+          package_type: string | null
+          remote_id: string
+          status: string | null
+          synced_at: string
+          used_at: string | null
+          used_by_mac: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          duration_hours?: number | null
+          id?: string
+          package_type?: string | null
+          remote_id: string
+          status?: string | null
+          synced_at?: string
+          used_at?: string | null
+          used_by_mac?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          duration_hours?: number | null
+          id?: string
+          package_type?: string | null
+          remote_id?: string
+          status?: string | null
+          synced_at?: string
+          used_at?: string | null
+          used_by_mac?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_trial_balance: {

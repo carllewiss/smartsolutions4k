@@ -24,6 +24,7 @@ import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import CreditNotes from "./pages/CreditNotes";
 import Approvals from "./pages/Approvals";
 import Accounting from "./pages/Accounting";
+import Wifi from "./pages/Wifi";
 import NotFound from "./pages/NotFound";
 
 // Shop (public)
@@ -89,6 +90,7 @@ function ErpRoutes() {
         <Route path="/purchases/:id/edit" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
         <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
         <Route path="/accounting" element={<ProtectedRoute adminOnly><Accounting /></ProtectedRoute>} />
+        <Route path="/wifi" element={<ProtectedRoute adminOnly><Wifi /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
         <Route path="/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />

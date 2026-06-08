@@ -21,3 +21,4 @@ Cost prices visible to admin only; sales agents see selling price + stock only.
 - [eTIMS Scaffold](mem://features/etims-scaffold) — Pending sync queue at /etims, reprint watermark, simulated KRA signer until device certs provisioned
 - [Pricing Audit](mem://features/pricing-audit) — Mutable selling price + immutable FIFO cost. price_history table auto-logged via trigger, surfaced in StockQuery admin tab.
 - [Customer Mgmt & Credit Suspension](mem://features/customer-credit-suspension) — Add/edit customers (location, PIN, limit, terms), auto-suspend over limit/overdue, /approvals invoice queue
+- [WiFi Captive Portal](mem://features/wifi-captive-portal) — Syncs Omada WiFi M-Pesa payments + vouchers from separate Supabase project (tyqcalkdvsmeczbbqfns) into /wifi, auto-posts to GL (1030→4020), 15-min cron
