@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ShopLayout } from "@/components/shop/ShopLayout";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { useShopFeatured } from "@/hooks/useShop";
 import { usePublishedPosts as useBlogPosts } from "@/hooks/useBlog";
-import { ArrowRight, Truck, ShieldCheck, Headphones, BadgePercent } from "lucide-react";
+import { useActiveServices } from "@/hooks/useServices";
+import { ArrowRight, Truck, ShieldCheck, Headphones, BadgePercent, Sparkles } from "lucide-react";
 
 export default function ShopHome() {
   const { data: featured = [] } = useShopFeatured();
   const { data: posts = [] } = useBlogPosts();
+  const { data: services = [] } = useActiveServices();
 
   return (
     <ShopLayout>
