@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench,
+  Store, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
