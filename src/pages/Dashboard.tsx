@@ -142,6 +142,10 @@ export default function Dashboard() {
   const todayRevenue = todaySales.reduce((s, i) => s + Number(i.paid_amount), 0);
   const totalDebt = invoices.reduce((s, i) => s + Number(i.balance), 0);
 
+  // WiFi captive-portal payments (synced from the Omada portal)
+  const wifiToday = wifiTxns.filter(t => t.paid_at?.startsWith(todayStr));
+  const wifiTodayRevenue = wifiToday.reduce((s, t) => s + Number(t.amount), 0);
+
   const unpaidInvoices = invoices.filter(i => Number(i.balance) > 0);
   const debt14 = unpaidInvoices.filter(i => differenceInDays(today, new Date(i.created_at)) <= 14).reduce((s, i) => s + Number(i.balance), 0);
   const debt30 = unpaidInvoices.filter(i => { const d = differenceInDays(today, new Date(i.created_at)); return d > 14 && d <= 30; }).reduce((s, i) => s + Number(i.balance), 0);
