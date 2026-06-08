@@ -24,6 +24,7 @@ import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import CreditNotes from "./pages/CreditNotes";
 import Approvals from "./pages/Approvals";
 import Accounting from "./pages/Accounting";
+import Wifi from "./pages/Wifi";
 import NotFound from "./pages/NotFound";
 
 // Shop (public)
