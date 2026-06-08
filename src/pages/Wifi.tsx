@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Wifi, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp } from "lucide-react";
+import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, isToday } from "date-fns";
 
@@ -55,7 +55,7 @@ export default function Wifi() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold font-heading flex items-center gap-2">
-            <Wifi className="h-6 w-6 text-primary" /> WiFi Revenue
+            <WifiIcon className="h-6 w-6 text-primary" /> WiFi Revenue
           </h1>
           <p className="text-muted-foreground text-sm">Daily captive-portal payments, vouchers &amp; M-Pesa codes</p>
         </div>
@@ -69,7 +69,7 @@ export default function Wifi() {
         <StatCard icon={DollarSign} label="Today's WiFi Revenue" value={kes(stats.todayRevenue)} sub={`${stats.todayCount} payments`} color="text-success" />
         <StatCard icon={TrendingUp} label="Last 7 Days" value={kes(stats.sevenDay)} sub="WiFi revenue" color="text-primary" />
         <StatCard icon={Ticket} label="Vouchers Today" value={String(stats.vouchersToday)} sub="assigned" color="text-warning" />
-        <StatCard icon={Wifi} label="All-Time Revenue" value={kes(stats.totalRevenue)} sub={`${txns.length} payments`} color="text-primary" />
+        <StatCard icon={WifiIcon} label="All-Time Revenue" value={kes(stats.totalRevenue)} sub={`${txns.length} payments`} color="text-primary" />
       </div>
 
       <Card>
