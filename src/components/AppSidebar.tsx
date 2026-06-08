@@ -34,6 +34,7 @@ export function AppSidebar() {
   const financeItems = isAdmin ? [
     { title: "Profit & Loss", url: "/finance", icon: TrendingUp },
     { title: "Accounting", url: "/accounting", icon: BookOpen },
+    { title: "WiFi Revenue", url: "/wifi", icon: Wifi },
   ] : [];
 
   const adminItems = isAdmin ? [
