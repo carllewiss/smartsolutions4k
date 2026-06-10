@@ -9,6 +9,7 @@ import {
 import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, isToday } from "date-fns";
+import VoucherInventory from "@/components/VoucherInventory";
 
 const pkgLabel = (t?: string | null) => {
   if (!t) return "—";
