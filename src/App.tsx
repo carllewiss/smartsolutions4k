@@ -118,11 +118,40 @@ function AppShell() {
     );
   }
 
+  // Build target: "shop" = customer storefront deployment, otherwise = back-office ERP
+  const APP_TARGET = import.meta.env.VITE_APP_TARGET ?? "erp";
+  const SHOP_ONLY = APP_TARGET === "shop";
+
   // Public reset-password route — must work even during a recovery session
-  if (location.pathname === "/reset-password") {
+  if (!SHOP_ONLY && location.pathname === "/reset-password") {
     return (
       <Routes>
         <Route path="/reset-password" element={<ResetPassword />} />
+      </Routes>
+    );
+  }
+
+  // Customer storefront build: serve the shop at the domain root, no ERP.
+  if (SHOP_ONLY) {
+    return (
+      <Routes>
+        <Route path="/" element={<Navigate to="/shop" replace />} />
+        <Route path="/shop" element={<ShopCatalog />} />
+        <Route path="/shop/home" element={<ShopHome />} />
+        <Route path="/shop/services" element={<ShopServices />} />
+        <Route path="/shop/blog" element={<ShopBlog />} />
+        <Route path="/shop/blog/:slug" element={<ShopBlogPost />} />
+        <Route path="/shop/about" element={<ShopAbout />} />
+        <Route path="/shop/contact" element={<ShopContact />} />
+        <Route path="/shop/product/:id" element={<ShopProductDetail />} />
+        <Route path="/shop/cart" element={<ShopCart />} />
+        <Route path="/shop/checkout" element={<ShopCheckout />} />
+        <Route path="/shop/order-success/:id" element={<ShopOrderSuccess />} />
+        <Route path="/shop/signin" element={<ShopSignIn />} />
+        <Route path="/shop/signup" element={<ShopSignUp />} />
+        <Route path="/shop/account" element={<ShopAccount />} />
+        <Route path="/shop/account/orders" element={<ShopOrders />} />
+        <Route path="*" element={<Navigate to="/shop" replace />} />
       </Routes>
     );
   }
