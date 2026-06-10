@@ -129,43 +129,7 @@ export default function Wifi() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2"><Ticket className="h-4 w-4" /> Voucher Assignments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {vouchers.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No voucher assignments yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Assigned At</TableHead>
-                    <TableHead>Voucher Code</TableHead>
-                    <TableHead>Package</TableHead>
-                    <TableHead>Device (MAC)</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vouchers.slice(0, 200).map((v) => (
-                    <TableRow key={v.id}>
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                        {v.used_at ? format(new Date(v.used_at), "dd MMM, HH:mm") : "—"}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs font-medium">{v.code || "—"}</TableCell>
-                      <TableCell><Badge variant="secondary">{pkgLabel(v.package_type)}</Badge></TableCell>
-                      <TableCell className="font-mono text-xs">{v.used_by_mac || "—"}</TableCell>
-                      <TableCell><Badge variant={v.status === "used" ? "default" : "outline"}>{v.status || "—"}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <VoucherInventory />
     </div>
   );
 }
