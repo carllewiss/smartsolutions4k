@@ -28,8 +28,9 @@ Deno.serve(async (req) => {
       const status = body.status ?? "all"; // all | used | unused
       const search = (body.search ?? "").trim();
 
+      // Sort by most recently used first (used_at desc), unused vouchers last.
       let query =
-        "vouchers?select=id,code,package_type,duration_hours,status,is_used,used_by_mac,used_at,created_at&order=created_at.desc";
+        "vouchers?select=id,code,package_type,duration_hours,status,is_used,used_by_mac,used_at,created_at&order=used_at.desc.nullslast,created_at.desc";
       if (status === "used") query += "&is_used=eq.true";
       else if (status === "unused") query += "&is_used=eq.false";
       if (search) query += `&code=ilike.*${encodeURIComponent(search)}*`;
