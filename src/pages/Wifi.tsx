@@ -53,6 +53,12 @@ export default function Wifi() {
   const { data: txns = [], isLoading } = useWifiTransactions();
   const { data: vouchers = [] } = useWifiVouchers();
   const sync = useSyncWifi();
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+
+  const matchVoucher = useMemo(() => buildVoucherMatcher(vouchers), [vouchers]);
+  const totalPages = Math.max(1, Math.ceil(txns.length / pageSize));
+  const pageTxns = txns.slice((page - 1) * pageSize, page * pageSize);
 
   const stats = useMemo(() => {
     const today = new Date();
