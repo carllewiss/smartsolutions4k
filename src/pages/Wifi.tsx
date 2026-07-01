@@ -146,23 +146,41 @@ export default function Wifi() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {txns.slice(0, 200).map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                        {format(new Date(t.paid_at), "dd MMM, HH:mm")}
-                      </TableCell>
-                      <TableCell className="font-medium">{t.phone_number || "—"}</TableCell>
-                      <TableCell><Badge variant="secondary">{pkgLabel(t.package_type)}</Badge></TableCell>
-                      <TableCell className="text-right font-semibold">{kes(Number(t.amount))}</TableCell>
-                      <TableCell className="font-mono text-xs">{t.mpesa_receipt || "—"}</TableCell>
-                      <TableCell className="font-mono text-xs">{t.voucher_code || "—"}</TableCell>
-                    </TableRow>
-                  ))}
+                  {pageTxns.map((t) => {
+                    const voucher = matchVoucher(t.client_mac, t.paid_at, t.voucher_code);
+                    return (
+                      <TableRow key={t.id}>
+                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                          {format(new Date(t.paid_at), "dd MMM, HH:mm")}
+                        </TableCell>
+                        <TableCell className="font-medium">{t.phone_number || "—"}</TableCell>
+                        <TableCell><Badge variant="secondary">{pkgLabel(t.package_type)}</Badge></TableCell>
+                        <TableCell className="text-right font-semibold">{kes(Number(t.amount))}</TableCell>
+                        <TableCell className="font-mono text-xs">{t.mpesa_receipt || "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{voucher || "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
+
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-xs text-muted-foreground">
+                  Page {page} of {totalPages} · {txns.length} payment{txns.length === 1 ? "" : "s"}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                    <ChevronLeft className="h-4 w-4" /> Prev
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+                    Next <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
+
       </Card>
 
       <VoucherInventory />
