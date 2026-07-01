@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useWifiTransactions, useWifiVouchers, useSyncWifi } from "@/hooks/useWifi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp } from "lucide-react";
+import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, isToday } from "date-fns";
 import VoucherInventory from "@/components/VoucherInventory";
+import type { WifiVoucher } from "@/hooks/useWifi";
 
 const pkgLabel = (t?: string | null) => {
   if (!t) return "—";
@@ -17,6 +18,34 @@ const pkgLabel = (t?: string | null) => {
   if (t === "24hour") return "24-Hour";
   return t;
 };
+
+// Match the voucher used by a payment: same device MAC, closest used_at to the
+// payment time. Source data rarely fills transactions.voucher_code directly.
+function buildVoucherMatcher(vouchers: WifiVoucher[]) {
+  const byMac = new Map<string, WifiVoucher[]>();
+  for (const v of vouchers) {
+    if (!v.used_by_mac) continue;
+    const mac = v.used_by_mac.toLowerCase();
+    if (!byMac.has(mac)) byMac.set(mac, []);
+    byMac.get(mac)!.push(v);
+  }
+  return (mac: string | null | undefined, paidAt: string | null | undefined, existing?: string | null) => {
+    if (existing) return existing;
+    if (!mac) return null;
+    const list = byMac.get(mac.toLowerCase());
+    if (!list || list.length === 0) return null;
+    if (!paidAt) return list[0].code ?? null;
+    const t = new Date(paidAt).getTime();
+    let best: WifiVoucher | null = null;
+    let bestDiff = Infinity;
+    for (const v of list) {
+      const diff = v.used_at ? Math.abs(new Date(v.used_at).getTime() - t) : Infinity;
+      if (diff < bestDiff) { bestDiff = diff; best = v; }
+    }
+    return (best ?? list[0]).code ?? null;
+  };
+}
+
 
 const kes = (n: number) => `KES ${Math.round(n).toLocaleString()}`;
 
