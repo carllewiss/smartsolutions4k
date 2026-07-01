@@ -145,6 +145,9 @@ export default function Dashboard() {
   // WiFi captive-portal payments (synced from the Omada portal)
   const wifiToday = wifiTxns.filter(t => t.paid_at?.startsWith(todayStr));
   const wifiTodayRevenue = wifiToday.reduce((s, t) => s + Number(t.amount), 0);
+  const monthStr = format(today, "yyyy-MM");
+  const wifiMonth = wifiTxns.filter(t => t.paid_at?.startsWith(monthStr));
+  const wifiMonthRevenue = wifiMonth.reduce((s, t) => s + Number(t.amount), 0);
 
   const unpaidInvoices = invoices.filter(i => Number(i.balance) > 0);
   const debt14 = unpaidInvoices.filter(i => differenceInDays(today, new Date(i.created_at)) <= 14).reduce((s, i) => s + Number(i.balance), 0);
@@ -172,10 +175,13 @@ export default function Dashboard() {
         <p className="text-muted-foreground text-sm">Welcome back — here's your business at a glance</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard icon={DollarSign} label="Today's Sales" value={`KES ${todayRevenue.toLocaleString()}`} sub={`${todaySales.length} invoices`} color="text-success" />
         <Link to="/wifi" className="block">
           <StatCard icon={Wifi} label="Today's WiFi" value={`KES ${wifiTodayRevenue.toLocaleString()}`} sub={`${wifiToday.length} payments`} color="text-primary" />
+        </Link>
+        <Link to="/wifi" className="block">
+          <StatCard icon={Wifi} label="Monthly WiFi" value={`KES ${wifiMonthRevenue.toLocaleString()}`} sub={`${wifiMonth.length} payments`} color="text-primary" />
         </Link>
         <StatCard icon={Receipt} label="Total Debt" value={`KES ${totalDebt.toLocaleString()}`} sub={`${unpaidInvoices.length} unpaid`} color="text-warning" />
         <StatCard icon={TrendingUp} label="Net Profit" value={`KES ${netProfit.toLocaleString()}`} sub={netProfit >= 0 ? "Profitable" : "Loss"} color={netProfit >= 0 ? "text-success" : "text-destructive"} />

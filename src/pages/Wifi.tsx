@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useWifiTransactions, useWifiVouchers, useSyncWifi } from "@/hooks/useWifi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp } from "lucide-react";
+import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, isToday } from "date-fns";
 import VoucherInventory from "@/components/VoucherInventory";
+import type { WifiVoucher } from "@/hooks/useWifi";
 
 const pkgLabel = (t?: string | null) => {
   if (!t) return "—";
@@ -18,12 +19,46 @@ const pkgLabel = (t?: string | null) => {
   return t;
 };
 
+// Match the voucher used by a payment: same device MAC, closest used_at to the
+// payment time. Source data rarely fills transactions.voucher_code directly.
+function buildVoucherMatcher(vouchers: WifiVoucher[]) {
+  const byMac = new Map<string, WifiVoucher[]>();
+  for (const v of vouchers) {
+    if (!v.used_by_mac) continue;
+    const mac = v.used_by_mac.toLowerCase();
+    if (!byMac.has(mac)) byMac.set(mac, []);
+    byMac.get(mac)!.push(v);
+  }
+  return (mac: string | null | undefined, paidAt: string | null | undefined, existing?: string | null) => {
+    if (existing) return existing;
+    if (!mac) return null;
+    const list = byMac.get(mac.toLowerCase());
+    if (!list || list.length === 0) return null;
+    if (!paidAt) return list[0].code ?? null;
+    const t = new Date(paidAt).getTime();
+    let best: WifiVoucher | null = null;
+    let bestDiff = Infinity;
+    for (const v of list) {
+      const diff = v.used_at ? Math.abs(new Date(v.used_at).getTime() - t) : Infinity;
+      if (diff < bestDiff) { bestDiff = diff; best = v; }
+    }
+    return (best ?? list[0]).code ?? null;
+  };
+}
+
+
 const kes = (n: number) => `KES ${Math.round(n).toLocaleString()}`;
 
 export default function Wifi() {
   const { data: txns = [], isLoading } = useWifiTransactions();
   const { data: vouchers = [] } = useWifiVouchers();
   const sync = useSyncWifi();
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+
+  const matchVoucher = useMemo(() => buildVoucherMatcher(vouchers), [vouchers]);
+  const totalPages = Math.max(1, Math.ceil(txns.length / pageSize));
+  const pageTxns = txns.slice((page - 1) * pageSize, page * pageSize);
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -111,23 +146,41 @@ export default function Wifi() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {txns.slice(0, 200).map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                        {format(new Date(t.paid_at), "dd MMM, HH:mm")}
-                      </TableCell>
-                      <TableCell className="font-medium">{t.phone_number || "—"}</TableCell>
-                      <TableCell><Badge variant="secondary">{pkgLabel(t.package_type)}</Badge></TableCell>
-                      <TableCell className="text-right font-semibold">{kes(Number(t.amount))}</TableCell>
-                      <TableCell className="font-mono text-xs">{t.mpesa_receipt || "—"}</TableCell>
-                      <TableCell className="font-mono text-xs">{t.voucher_code || "—"}</TableCell>
-                    </TableRow>
-                  ))}
+                  {pageTxns.map((t) => {
+                    const voucher = matchVoucher(t.client_mac, t.paid_at, t.voucher_code);
+                    return (
+                      <TableRow key={t.id}>
+                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                          {format(new Date(t.paid_at), "dd MMM, HH:mm")}
+                        </TableCell>
+                        <TableCell className="font-medium">{t.phone_number || "—"}</TableCell>
+                        <TableCell><Badge variant="secondary">{pkgLabel(t.package_type)}</Badge></TableCell>
+                        <TableCell className="text-right font-semibold">{kes(Number(t.amount))}</TableCell>
+                        <TableCell className="font-mono text-xs">{t.mpesa_receipt || "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{voucher || "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
+
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-xs text-muted-foreground">
+                  Page {page} of {totalPages} · {txns.length} payment{txns.length === 1 ? "" : "s"}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                    <ChevronLeft className="h-4 w-4" /> Prev
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+                    Next <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
+
       </Card>
 
       <VoucherInventory />
