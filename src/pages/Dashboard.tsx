@@ -145,6 +145,9 @@ export default function Dashboard() {
   // WiFi captive-portal payments (synced from the Omada portal)
   const wifiToday = wifiTxns.filter(t => t.paid_at?.startsWith(todayStr));
   const wifiTodayRevenue = wifiToday.reduce((s, t) => s + Number(t.amount), 0);
+  const monthStr = format(today, "yyyy-MM");
+  const wifiMonth = wifiTxns.filter(t => t.paid_at?.startsWith(monthStr));
+  const wifiMonthRevenue = wifiMonth.reduce((s, t) => s + Number(t.amount), 0);
 
   const unpaidInvoices = invoices.filter(i => Number(i.balance) > 0);
   const debt14 = unpaidInvoices.filter(i => differenceInDays(today, new Date(i.created_at)) <= 14).reduce((s, i) => s + Number(i.balance), 0);
