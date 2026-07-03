@@ -1607,6 +1607,20 @@ export type Database = {
         Returns: number
       }
       get_product_stock: { Args: { p_product_id: string }; Returns: number }
+      gl_financials: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          asof_credit: number
+          asof_debit: number
+          code: string
+          name: string
+          opening_credit: number
+          opening_debit: number
+          period_credit: number
+          period_debit: number
+          type: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

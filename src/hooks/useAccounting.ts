@@ -1,6 +1,47 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface GLAgg {
+  code: string;
+  name: string;
+  type: string; // asset | liability | equity | income | expense
+  period_debit: number;
+  period_credit: number;
+  asof_debit: number;
+  asof_credit: number;
+  opening_debit: number;
+  opening_credit: number;
+}
+
+/**
+ * Server-side aggregated General Ledger totals per account for a date range.
+ * All financial statements derive from these GL figures (never from
+ * invoices/expenses tables) so adjustments, journals & accruals are included.
+ */
+export function useGLFinancials(from: string, to: string) {
+  return useQuery({
+    queryKey: ["gl-financials", from, to],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("gl_financials", { p_from: from, p_to: to });
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        code: r.code,
+        name: r.name,
+        type: r.type,
+        period_debit: Number(r.period_debit) || 0,
+        period_credit: Number(r.period_credit) || 0,
+        asof_debit: Number(r.asof_debit) || 0,
+        asof_credit: Number(r.asof_credit) || 0,
+        opening_debit: Number(r.opening_debit) || 0,
+        opening_credit: Number(r.opening_credit) || 0,
+      })) as GLAgg[];
+    },
+    staleTime: 60_000,
+  });
+}
+
+
+
 export function useAccounts() {
   return useQuery({
     queryKey: ["accounts"],
