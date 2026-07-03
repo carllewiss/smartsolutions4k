@@ -1,53 +1,45 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface GLLine {
-  debit: number;
-  credit: number;
-  entry_date: string;
+export interface GLAgg {
   code: string;
   name: string;
   type: string; // asset | liability | equity | income | expense
+  period_debit: number;
+  period_credit: number;
+  asof_debit: number;
+  asof_credit: number;
+  opening_debit: number;
+  opening_credit: number;
 }
 
 /**
- * Pulls every posted journal line with its account + entry date.
- * All financial statements are derived from these GL lines (never from
+ * Server-side aggregated General Ledger totals per account for a date range.
+ * All financial statements derive from these GL figures (never from
  * invoices/expenses tables) so adjustments, journals & accruals are included.
  */
-export function useGLLines() {
+export function useGLFinancials(from: string, to: string) {
   return useQuery({
-    queryKey: ["gl-lines"],
+    queryKey: ["gl-financials", from, to],
     queryFn: async () => {
-      const pageSize = 1000;
-      let from = 0;
-      const all: GLLine[] = [];
-      // paginate to fetch all lines (Supabase caps at 1000 rows/request)
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { data, error } = await (supabase as any)
-          .from("journal_lines")
-          .select("debit, credit, journal_entries!inner(entry_date), accounts!inner(code, name, type)")
-          .order("id", { ascending: true })
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        const rows = (data || []).map((l: any) => ({
-          debit: Number(l.debit) || 0,
-          credit: Number(l.credit) || 0,
-          entry_date: l.journal_entries?.entry_date,
-          code: l.accounts?.code,
-          name: l.accounts?.name,
-          type: l.accounts?.type,
-        })) as GLLine[];
-        all.push(...rows);
-        if (rows.length < pageSize) break;
-        from += pageSize;
-      }
-      return all;
+      const { data, error } = await (supabase as any).rpc("gl_financials", { p_from: from, p_to: to });
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        code: r.code,
+        name: r.name,
+        type: r.type,
+        period_debit: Number(r.period_debit) || 0,
+        period_credit: Number(r.period_credit) || 0,
+        asof_debit: Number(r.asof_debit) || 0,
+        asof_credit: Number(r.asof_credit) || 0,
+        opening_debit: Number(r.opening_debit) || 0,
+        opening_credit: Number(r.opening_credit) || 0,
+      })) as GLAgg[];
     },
     staleTime: 60_000,
   });
 }
+
 
 
 export function useAccounts() {
