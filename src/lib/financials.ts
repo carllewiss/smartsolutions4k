@@ -1,4 +1,4 @@
-import type { GLLine } from "@/hooks/useAccounting";
+import type { GLAgg } from "@/hooks/useAccounting";
 
 export interface Period {
   from: string; // yyyy-MM-dd inclusive
@@ -13,19 +13,10 @@ export interface LineItem {
 
 const CASH_CODES = ["1000", "1010", "1020", "1030", "1040", "1050"];
 
-const inPeriod = (d: string, p: Period) => d >= p.from && d <= p.to;
-const upTo = (d: string, to: string) => d <= to;
-
-/** Group lines into positive-signed line items using an amount selector. */
-function group(lines: GLLine[], amount: (l: GLLine) => number): LineItem[] {
-  const map = new Map<string, LineItem>();
-  for (const l of lines) {
-    const v = amount(l);
-    const cur = map.get(l.code) || { code: l.code, name: l.name, amount: 0 };
-    cur.amount += v;
-    map.set(l.code, cur);
-  }
-  return [...map.values()]
+/** Build positive-signed line items from aggregate rows using an amount selector. */
+function items(rows: GLAgg[], amount: (r: GLAgg) => number): LineItem[] {
+  return rows
+    .map((r) => ({ code: r.code, name: r.name, amount: amount(r) }))
     .filter((i) => Math.abs(i.amount) > 0.0049)
     .sort((a, b) => a.code.localeCompare(b.code));
 }
@@ -33,29 +24,15 @@ function group(lines: GLLine[], amount: (l: GLLine) => number): LineItem[] {
 const sum = (items: LineItem[]) => items.reduce((s, i) => s + i.amount, 0);
 
 /* ------------------------------- Profit & Loss ------------------------------ */
-export function computePL(lines: GLLine[], p: Period) {
-  const period = lines.filter((l) => l.entry_date && inPeriod(l.entry_date, p));
+export function computePL(rows: GLAgg[]) {
+  const pd = (r: GLAgg) => r.period_debit;
+  const pc = (r: GLAgg) => r.period_credit;
 
-  const sales = group(
-    period.filter((l) => l.code === "4000" || l.code === "4010"),
-    (l) => l.credit - l.debit,
-  );
-  const otherIncome = group(
-    period.filter((l) => l.type === "income" && l.code !== "4000" && l.code !== "4010"),
-    (l) => l.credit - l.debit,
-  );
-  const cogs = group(
-    period.filter((l) => l.code.startsWith("5")),
-    (l) => l.debit - l.credit,
-  );
-  const opex = group(
-    period.filter((l) => l.type === "expense" && !l.code.startsWith("5") && !l.code.startsWith("7")),
-    (l) => l.debit - l.credit,
-  );
-  const finance = group(
-    period.filter((l) => l.code.startsWith("7")),
-    (l) => l.debit - l.credit,
-  );
+  const sales = items(rows.filter((r) => r.code === "4000" || r.code === "4010"), (r) => pc(r) - pd(r));
+  const otherIncome = items(rows.filter((r) => r.type === "income" && r.code !== "4000" && r.code !== "4010"), (r) => pc(r) - pd(r));
+  const cogs = items(rows.filter((r) => r.code.startsWith("5")), (r) => pd(r) - pc(r));
+  const opex = items(rows.filter((r) => r.type === "expense" && !r.code.startsWith("5") && !r.code.startsWith("7")), (r) => pd(r) - pc(r));
+  const finance = items(rows.filter((r) => r.code.startsWith("7")), (r) => pd(r) - pc(r));
 
   const salesTotal = sum(sales);
   const cogsTotal = sum(cogs);
@@ -65,38 +42,27 @@ export function computePL(lines: GLLine[], p: Period) {
   const financeTotal = sum(finance);
   const netProfit = grossProfit + otherIncomeTotal - opexTotal - financeTotal;
 
-  return {
-    sales, otherIncome, cogs, opex, finance,
-    salesTotal, cogsTotal, grossProfit, otherIncomeTotal, opexTotal, financeTotal, netProfit,
-  };
-}
-
-/* ----------------------------- Retained earnings ---------------------------- */
-/** Cumulative net income (income - expenses) from inception up to a date. */
-function cumulativeEarnings(lines: GLLine[], to: string) {
-  let income = 0, expense = 0;
-  for (const l of lines) {
-    if (!l.entry_date || !upTo(l.entry_date, to)) continue;
-    if (l.type === "income") income += l.credit - l.debit;
-    else if (l.type === "expense") expense += l.debit - l.credit;
-  }
-  return income - expense;
+  return { sales, otherIncome, cogs, opex, finance, salesTotal, cogsTotal, grossProfit, otherIncomeTotal, opexTotal, financeTotal, netProfit };
 }
 
 /* ------------------------------ Balance Sheet ------------------------------- */
-export function computeBalanceSheet(lines: GLLine[], asOf: string) {
-  const cum = lines.filter((l) => l.entry_date && upTo(l.entry_date, asOf));
+export function computeBalanceSheet(rows: GLAgg[]) {
+  const ad = (r: GLAgg) => r.asof_debit;
+  const ac = (r: GLAgg) => r.asof_credit;
 
-  const assets = group(cum.filter((l) => l.type === "asset"), (l) => l.debit - l.credit);
-  const liabilities = group(cum.filter((l) => l.type === "liability"), (l) => l.credit - l.debit);
-  const equityAccts = group(cum.filter((l) => l.type === "equity"), (l) => l.credit - l.debit);
+  const assets = items(rows.filter((r) => r.type === "asset"), (r) => ad(r) - ac(r));
+  const liabilities = items(rows.filter((r) => r.type === "liability"), (r) => ac(r) - ad(r));
+  const equityAccts = items(rows.filter((r) => r.type === "equity"), (r) => ac(r) - ad(r));
 
-  const currentEarnings = cumulativeEarnings(lines, asOf);
+  // Income & expense accounts aren't closed to equity, so fold cumulative
+  // earnings (income - expense, all-time up to the report date) into equity.
+  const cumIncome = rows.filter((r) => r.type === "income").reduce((s, r) => s + (ac(r) - ad(r)), 0);
+  const cumExpense = rows.filter((r) => r.type === "expense").reduce((s, r) => s + (ad(r) - ac(r)), 0);
+  const currentEarnings = cumIncome - cumExpense;
+
   const equity: LineItem[] = [
     ...equityAccts,
-    ...(Math.abs(currentEarnings) > 0.0049
-      ? [{ code: "3900", name: "Current Earnings (GL)", amount: currentEarnings }]
-      : []),
+    ...(Math.abs(currentEarnings) > 0.0049 ? [{ code: "3900", name: "Current Earnings (GL)", amount: currentEarnings }] : []),
   ];
 
   const assetsTotal = sum(assets);
@@ -108,30 +74,24 @@ export function computeBalanceSheet(lines: GLLine[], asOf: string) {
 }
 
 /* -------------------------------- Cash Flow --------------------------------- */
-export function computeCashFlow(lines: GLLine[], p: Period) {
-  const cashLines = lines.filter((l) => CASH_CODES.includes(l.code) && l.entry_date);
+export function computeCashFlow(rows: GLAgg[]) {
+  const cash = rows.filter((r) => CASH_CODES.includes(r.code));
 
-  let opening = 0;
-  for (const l of cashLines) if (l.entry_date < p.from) opening += l.debit - l.credit;
-
-  const period = cashLines.filter((l) => inPeriod(l.entry_date, p));
-  const inflow = period.reduce((s, l) => s + l.debit, 0);
-  const outflow = period.reduce((s, l) => s + l.credit, 0);
+  const opening = cash.reduce((s, r) => s + (r.opening_debit - r.opening_credit), 0);
+  const inflow = cash.reduce((s, r) => s + r.period_debit, 0);
+  const outflow = cash.reduce((s, r) => s + r.period_credit, 0);
   const net = inflow - outflow;
   const closing = opening + net;
 
-  const byAccount = group(period, (l) => l.debit - l.credit);
+  const byAccount = items(cash, (r) => r.period_debit - r.period_credit);
   return { opening, inflow, outflow, net, closing, byAccount };
 }
 
 /* ------------------------------- VAT position ------------------------------- */
-export function computeVat(lines: GLLine[], p: Period) {
-  const period = lines.filter((l) => l.entry_date && inPeriod(l.entry_date, p));
-  const outputVat = period
-    .filter((l) => l.code === "2100")
-    .reduce((s, l) => s + (l.credit - l.debit), 0);
-  const inputVat = period
-    .filter((l) => l.code === "1300")
-    .reduce((s, l) => s + (l.debit - l.credit), 0);
+export function computeVat(rows: GLAgg[]) {
+  const output = rows.find((r) => r.code === "2100");
+  const input = rows.find((r) => r.code === "1300");
+  const outputVat = output ? output.period_credit - output.period_debit : 0;
+  const inputVat = input ? input.period_debit - input.period_credit : 0;
   return { outputVat, inputVat, payable: outputVat - inputVat };
 }
