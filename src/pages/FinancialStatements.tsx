@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrendingUp, TrendingDown, Scale, Wallet, Receipt, Printer, Download } from "lucide-react";
 import { format, startOfMonth, startOfYear, endOfMonth } from "date-fns";
-import { useGLLines } from "@/hooks/useAccounting";
+import { useGLFinancials } from "@/hooks/useAccounting";
 import { computePL, computeBalanceSheet, computeCashFlow, computeVat, type Period, type LineItem } from "@/lib/financials";
 
 const fmt = (n: number) => `KES ${Math.round(Number(n || 0)).toLocaleString()}`;
@@ -18,7 +18,6 @@ const iso = (d: Date) => format(d, "yyyy-MM-dd");
 type Preset = "month" | "ytd" | "all" | "custom";
 
 export default function FinancialStatements() {
-  const { data: lines = [], isLoading } = useGLLines();
   const [preset, setPreset] = useState<Preset>("ytd");
   const [customFrom, setCustomFrom] = useState(iso(startOfMonth(new Date())));
   const [customTo, setCustomTo] = useState(iso(new Date()));
@@ -31,10 +30,13 @@ export default function FinancialStatements() {
     return { from: customFrom, to: customTo };
   }, [preset, customFrom, customTo]);
 
-  const pl = useMemo(() => computePL(lines, period), [lines, period]);
-  const bs = useMemo(() => computeBalanceSheet(lines, period.to), [lines, period]);
-  const cf = useMemo(() => computeCashFlow(lines, period), [lines, period]);
-  const vat = useMemo(() => computeVat(lines, period), [lines, period]);
+  const { data: rows = [], isLoading } = useGLFinancials(period.from, period.to);
+
+  const pl = useMemo(() => computePL(rows), [rows]);
+  const bs = useMemo(() => computeBalanceSheet(rows), [rows]);
+  const cf = useMemo(() => computeCashFlow(rows), [rows]);
+  const vat = useMemo(() => computeVat(rows), [rows]);
+
 
   const exportCsv = () => {
     const rows: string[][] = [];
