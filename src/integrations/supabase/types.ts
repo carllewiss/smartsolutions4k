@@ -598,6 +598,7 @@ export type Database = {
           created_at: string
           credit: number
           debit: number
+          entry_date: string | null
           id: string
           journal_id: string
           memo: string | null
@@ -607,6 +608,7 @@ export type Database = {
           created_at?: string
           credit?: number
           debit?: number
+          entry_date?: string | null
           id?: string
           journal_id: string
           memo?: string | null
@@ -616,6 +618,7 @@ export type Database = {
           created_at?: string
           credit?: number
           debit?: number
+          entry_date?: string | null
           id?: string
           journal_id?: string
           memo?: string | null
