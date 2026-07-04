@@ -8,6 +8,11 @@ type InvoiceItemRow = Database["public"]["Tables"]["invoice_items"]["Row"];
 export interface InvoiceWithItems extends InvoiceRow {
   invoice_items: InvoiceItemRow[];
   customer_name?: string;
+  customer_phone?: string | null;
+  customer_kra_pin?: string | null;
+  customer_code?: string | null;
+  customer_email?: string | null;
+  customer_credit_terms?: number | null;
 }
 
 export function useInvoices() {
@@ -16,13 +21,21 @@ export function useInvoices() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("*, invoice_items(*), customers(name)")
+        .select("*, invoice_items(*, products(name, sku)), customers(name, phone, kra_pin, customer_code, email, credit_terms)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data?.map(inv => ({
-        ...inv,
-        customer_name: (inv.customers as any)?.name || "Walk-in",
-      })) as InvoiceWithItems[];
+      return data?.map(inv => {
+        const c = inv.customers as any;
+        return {
+          ...inv,
+          customer_name: c?.name || "Walk-in",
+          customer_phone: c?.phone ?? null,
+          customer_kra_pin: c?.kra_pin ?? null,
+          customer_code: c?.customer_code ?? null,
+          customer_email: c?.email ?? null,
+          customer_credit_terms: c?.credit_terms ?? 30,
+        };
+      }) as InvoiceWithItems[];
     },
   });
 }

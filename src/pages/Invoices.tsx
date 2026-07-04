@@ -1,86 +1,151 @@
 import { useMemo, useState } from "react";
 import { useInvoices } from "@/hooks/useInvoices";
+import { useCreditNotes, useReprintCreditNote } from "@/hooks/useCreditNotes";
+import { usePayments } from "@/hooks/usePayments";
 import { useMarkReprint } from "@/hooks/useEtims";
-import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { format } from "date-fns";
-import { Printer, ShieldCheck, Clock, AlertCircle, Undo2, Receipt, FileText } from "lucide-react";
+import { format, differenceInDays } from "date-fns";
+import { Search, Receipt, FileText, Printer, FileX } from "lucide-react";
 import { InvoiceDocumentPrint, InvoicePrintFormat } from "@/components/InvoiceDocumentPrint";
+import { CreditNotePrintView } from "@/components/CreditNotePrintView";
 import { CreditNoteDialog } from "@/components/CreditNoteDialog";
-import { VirtualizedTable } from "@/components/VirtualizedTable";
-import { ColumnDef } from "@tanstack/react-table";
+import { InvoiceDetailPanel, CreditNoteDetailPanel } from "@/components/InvoiceDetailPanel";
+import CustomerStatementPrint from "@/components/CustomerStatementPrint";
+import PaymentDialog from "@/components/PaymentDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
+type Tab = "all" | "paid" | "unpaid" | "overdue" | "credit_notes" | "cancelled";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "paid", label: "Paid" },
+  { key: "unpaid", label: "Unpaid" },
+  { key: "overdue", label: "Overdue" },
+  { key: "credit_notes", label: "Credit Notes" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
+const statusPill = (s: string) =>
+  s === "paid"
+    ? "bg-success/10 text-success"
+    : s === "partial"
+    ? "bg-warning/10 text-warning"
+    : s === "overdue"
+    ? "bg-destructive/10 text-destructive"
+    : s === "credit_note"
+    ? "bg-destructive/10 text-destructive"
+    : "bg-muted text-muted-foreground";
+
 export default function Invoices() {
   const { data: invoices = [], isLoading } = useInvoices();
+  const { data: creditNotes = [] } = useCreditNotes();
+  const { data: payments = [] } = usePayments();
   const reprint = useMarkReprint();
-  const [printData, setPrintData] = useState<any>(null);
-  const [printFormat, setPrintFormat] = useState<InvoicePrintFormat | null>(null);
-  const [cnInvoiceId, setCnInvoiceId] = useState<string | null>(null);
+  const reprintCN = useReprintCreditNote();
   const { isAdmin } = useAuth();
 
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<Tab>("all");
+  const [selected, setSelected] = useState<{ type: "invoice" | "credit_note"; id: string } | null>(null);
 
-  const statusColor = (s: string) =>
-    s === "paid"
-      ? "bg-success/10 text-success border-success/20"
-      : s === "partial"
-      ? "bg-warning/10 text-warning border-warning/20"
-      : "bg-destructive/10 text-destructive border-destructive/20";
+  // dialogs
+  const [printData, setPrintData] = useState<any>(null);
+  const [printFormat, setPrintFormat] = useState<InvoicePrintFormat | null>(null);
+  const [cnPrint, setCnPrint] = useState<any>(null);
+  const [cnInvoiceId, setCnInvoiceId] = useState<string | null>(null);
+  const [payFor, setPayFor] = useState<{ id: string; name: string; balance: number } | null>(null);
+  const [statementFor, setStatementFor] = useState<any>(null);
 
-  const etimsBadge = (s: string) => {
-    if (s === "signed")
-      return <Badge className="bg-success/10 text-success gap-1"><ShieldCheck className="h-3 w-3" />Signed</Badge>;
-    if (s === "pending_sync")
-      return <Badge className="bg-warning/10 text-warning gap-1"><Clock className="h-3 w-3" />Pending</Badge>;
-    if (s === "failed")
-      return <Badge className="bg-destructive/10 text-destructive gap-1"><AlertCircle className="h-3 w-3" />Failed</Badge>;
-    return <Badge variant="outline">—</Badge>;
-  };
+  const isOverdue = (inv: any) =>
+    Number(inv.balance) > 0 && differenceInDays(new Date(), new Date(inv.created_at)) > (inv.customer_credit_terms || 30);
 
-  const openPrint = async (inv: any, asReprint: boolean) => {
+  // Unified, searchable, filtered document list
+  const docs = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const matchInv = (inv: any) => {
+      if (!term) return true;
+      return [
+        inv.invoice_number, inv.customer_name, inv.customer_phone,
+        inv.customer_kra_pin, inv.customer_code, String(inv.total),
+      ].some((f) => f && String(f).toLowerCase().includes(term));
+    };
+    const matchCN = (cn: any) => {
+      if (!term) return true;
+      return [
+        cn.credit_note_number, cn.customers?.name, cn.customers?.customer_code,
+        cn.invoices?.invoice_number, String(cn.total),
+      ].some((f) => f && String(f).toLowerCase().includes(term));
+    };
+
+    const invDocs = invoices.filter(matchInv).map((inv: any) => {
+      const overdue = isOverdue(inv);
+      const status = overdue ? "overdue" : inv.status;
+      return {
+        type: "invoice" as const, id: inv.id, number: inv.invoice_number,
+        customer: inv.customer_name, date: inv.created_at, amount: Number(inv.total),
+        status, raw: inv,
+      };
+    });
+
+    const cnDocs = creditNotes.filter(matchCN).map((cn: any) => ({
+      type: "credit_note" as const, id: cn.id, number: cn.credit_note_number,
+      customer: cn.customers?.name || "—", date: cn.created_at, amount: -Number(cn.total),
+      status: "credit_note", raw: cn,
+    }));
+
+    let all = [...invDocs, ...cnDocs];
+    if (tab === "paid") all = invDocs.filter((d) => d.status === "paid");
+    else if (tab === "unpaid") all = invDocs.filter((d) => d.status === "unpaid" || d.status === "partial");
+    else if (tab === "overdue") all = invDocs.filter((d) => d.status === "overdue");
+    else if (tab === "credit_notes") all = cnDocs;
+    else if (tab === "cancelled") all = invDocs.filter((d) => d.raw.status === "cancelled");
+
+    return all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [invoices, creditNotes, search, tab]);
+
+  const counts = useMemo(() => ({
+    all: invoices.length + creditNotes.length,
+    paid: invoices.filter((i) => i.status === "paid" && !isOverdue(i)).length,
+    unpaid: invoices.filter((i) => (i.status === "unpaid" || i.status === "partial") && !isOverdue(i)).length,
+    overdue: invoices.filter(isOverdue).length,
+    credit_notes: creditNotes.length,
+    cancelled: invoices.filter((i) => (i.status as string) === "cancelled").length,
+  }), [invoices, creditNotes]);
+
+  const selectedInvoice = selected?.type === "invoice" ? invoices.find((i) => i.id === selected.id) : null;
+  const selectedCN = selected?.type === "credit_note" ? creditNotes.find((c: any) => c.id === selected.id) : null;
+
+  // ---- Invoice print
+  const openInvoicePrint = async (inv: any, asReprint: boolean) => {
     const { data: items } = await supabase
       .from("invoice_items")
-      .select("quantity, unit_price, total, products(name)")
+      .select("quantity, unit_price, total, products(name, sku)")
       .eq("invoice_id", inv.id);
-
-    const { data: customer } = await supabase
-      .from("customers")
-      .select("name, phone, kra_pin")
-      .eq("id", inv.customer_id)
-      .maybeSingle();
 
     let reprintCount = inv.reprint_count || 0;
     if (asReprint) {
-      try {
-        reprintCount = await reprint.mutateAsync(inv.id);
-      } catch (e: any) { toast.error(e.message); return; }
+      try { reprintCount = await reprint.mutateAsync(inv.id); }
+      catch (e: any) { toast.error(e.message); return; }
     }
-
     setPrintFormat(null);
     setPrintData({
       invoiceNumber: inv.invoice_number,
-      customerName: customer?.name || inv.customer_name,
-      customerPin: customer?.kra_pin || inv.customer_kra_pin,
-      customerPhone: customer?.phone,
+      customerName: inv.customer_name,
+      customerPin: inv.customer_kra_pin,
+      customerPhone: inv.customer_phone,
       date: inv.created_at,
       items: (items || []).map((it: any) => ({
-        name: it.products?.name || "Item",
-        quantity: it.quantity,
-        unit_price: Number(it.unit_price),
-        total: Number(it.total),
+        name: it.products?.name || "Item", sku: it.products?.sku,
+        quantity: it.quantity, unit_price: Number(it.unit_price), total: Number(it.total),
       })),
-      subtotal: Number(inv.subtotal),
-      tax: Number(inv.tax),
-      total: Number(inv.total),
-      etimsStatus: inv.etims_status,
-      etimsSignature: inv.etims_signature,
-      etimsQrData: inv.etims_qr_data,
-      isReprint: asReprint || (inv.reprint_count || 0) > 0,
-      reprintCount,
+      subtotal: Number(inv.subtotal), tax: Number(inv.tax), total: Number(inv.total),
+      etimsStatus: inv.etims_status, etimsSignature: inv.etims_signature, etimsQrData: inv.etims_qr_data,
+      isReprint: asReprint || (inv.reprint_count || 0) > 0, reprintCount,
     });
   };
 
@@ -93,185 +158,214 @@ export default function Invoices() {
     }, 200);
   };
 
+  // ---- Credit note print
+  const openCNPrint = async (cn: any) => {
+    let count = cn.reprint_count || 0;
+    try { count = await reprintCN.mutateAsync(cn.id); } catch { /* keep count */ }
+    setCnPrint({
+      creditNoteNumber: cn.credit_note_number,
+      invoiceNumber: cn.invoices?.invoice_number || "—",
+      customerName: cn.customers?.name || "—",
+      customerPin: null, date: cn.created_at, reason: cn.reason,
+      items: (cn.credit_note_items || []).map((it: any) => ({
+        product_name: it.product_name, quantity: it.quantity,
+        unit_price: Number(it.unit_price), total: Number(it.total), is_service: it.is_service,
+      })),
+      subtotal: Number(cn.subtotal), tax: Number(cn.tax), total: Number(cn.total),
+      refundMethod: cn.refund_method, refundAmount: Number(cn.refund_amount),
+      isReprint: (cn.reprint_count || 0) > 0, reprintCount: count,
+    });
+  };
 
-  const columns = useMemo<ColumnDef<any>[]>(() => [
-    {
-      accessorKey: "invoice_number",
-      header: "Invoice #",
-      size: 160,
-      cell: ({ row }) => (
-        <span className="font-medium text-sm">
-          {row.original.invoice_number}
-          {(row.original.reprint_count || 0) > 0 && (
-            <Badge variant="outline" className="ml-2 text-[10px] text-destructive border-destructive/30">
-              REPRINT ×{row.original.reprint_count}
-            </Badge>
-          )}
-          {row.original.approval_status === "pending" && (
-            <Badge variant="outline" className="ml-2 text-[10px] text-warning border-warning/30">
-              PENDING APPROVAL
-            </Badge>
-          )}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "customer_name",
-      header: "Customer",
-      cell: ({ row }) => <span className="text-sm">{row.original.customer_name}</span>,
-    },
-    {
-      accessorKey: "created_at",
-      header: "Date",
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {format(new Date(row.original.created_at), "dd MMM yyyy")}
-        </span>
-      ),
-      size: 120,
-    },
-    {
-      accessorKey: "total",
-      header: () => <span className="block text-right w-full">Total</span>,
-      cell: ({ row }) => (
-        <div className="text-right text-sm">KES {Number(row.original.total).toLocaleString()}</div>
-      ),
-    },
-    {
-      accessorKey: "balance",
-      header: () => <span className="block text-right w-full">Balance</span>,
-      cell: ({ row }) => (
-        <div className="text-right text-sm font-medium">
-          {Number(row.original.balance) > 0 ? `KES ${Number(row.original.balance).toLocaleString()}` : "—"}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "payment_method",
-      header: "Payment",
-      cell: ({ row }) => (
-        <Badge variant="outline" className="text-xs capitalize">
-          {row.original.payment_method.replace("_", " ")}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge className={`text-xs capitalize ${statusColor(row.original.status)}`}>
-          {row.original.status}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "etims_status",
-      header: "eTIMS",
-      cell: ({ row }) => etimsBadge(row.original.etims_status),
-    },
-    {
-      id: "actions",
-      header: () => <span className="block text-right w-full">Actions</span>,
-      enableSorting: false,
-      size: 110,
-      cell: ({ row }) => (
-        <div className="text-right">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={row.original.approval_status === "pending"}
-            title={row.original.approval_status === "pending" ? "Awaiting admin approval" : undefined}
-            onClick={(e) => {
-              e.stopPropagation();
-              openPrint(row.original, (row.original.reprint_count || 0) > 0 || row.original.etims_status === "signed");
-            }}
-          >
-            <Printer className="h-3 w-3 mr-1" /> Print
-          </Button>
-          {isAdmin && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-destructive hover:text-destructive"
-              onClick={(e) => { e.stopPropagation(); setCnInvoiceId(row.original.id); }}
-            >
-              <Undo2 className="h-3 w-3 mr-1" /> Credit
-            </Button>
-          )}
-        </div>
-      ),
-    },
-  ], [isAdmin]);
-
-  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  const onEmail = (inv: any) => {
+    if (!inv.customer_email) { toast.error("No email on file for this customer"); return; }
+    const subject = encodeURIComponent(`Invoice ${inv.invoice_number}`);
+    const body = encodeURIComponent(`Dear ${inv.customer_name},\n\nPlease find your invoice ${inv.invoice_number} for KES ${Number(inv.total).toLocaleString()}.\n\nThank you.`);
+    window.open(`mailto:${inv.customer_email}?subject=${subject}&body=${body}`);
+  };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold font-heading">Invoices</h1>
-      <Card>
-        <CardContent className="p-0">
-          <VirtualizedTable
-            data={invoices}
-            columns={columns}
-            rowHeight={48}
-            height="70vh"
-            empty="No invoices yet."
-          />
-        </CardContent>
-      </Card>
+    <div className="flex h-[calc(100vh-6rem)] gap-4">
+      {/* LEFT: master list */}
+      <div className="flex w-2/5 min-w-[340px] flex-col rounded-xl border bg-card">
+        <div className="border-b p-4">
+          <h1 className="mb-3 text-xl font-bold font-heading">Invoices</h1>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search invoice, customer, phone, KRA PIN, amount..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
 
+        <div className="flex flex-wrap gap-1.5 border-b p-3">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                tab === t.key ? "bg-primary text-primary-foreground" : "border bg-background hover:bg-muted"
+              }`}
+            >
+              {t.label} <span className="opacity-70">{counts[t.key]}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-auto">
+          {isLoading ? (
+            <div className="flex h-40 items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
+            </div>
+          ) : docs.length === 0 ? (
+            <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
+              <FileX className="h-8 w-8" />
+              <p className="text-sm">No documents found</p>
+            </div>
+          ) : (
+            docs.map((d) => {
+              const active = selected?.id === d.id && selected?.type === d.type;
+              return (
+                <button
+                  key={`${d.type}-${d.id}`}
+                  onClick={() => setSelected({ type: d.type, id: d.id })}
+                  className={`block w-full border-b p-4 text-left transition-colors ${active ? "bg-primary/5" : "hover:bg-muted/50"}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 font-semibold text-sm">
+                      {d.type === "credit_note" ? <FileText className="h-3.5 w-3.5 text-destructive" /> : <Receipt className="h-3.5 w-3.5 text-muted-foreground" />}
+                      {d.number}
+                    </span>
+                    <Badge className={`text-[10px] capitalize ${statusPill(d.status)}`}>
+                      {d.status === "credit_note" ? "Credit Note" : d.status}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{d.customer}</p>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{format(new Date(d.date), "dd MMM yyyy")}</span>
+                    <span className={`text-sm font-semibold ${d.amount < 0 ? "text-destructive" : ""}`}>
+                      KES {d.amount.toLocaleString()}
+                    </span>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT: detail preview */}
+      <div className="flex-1 overflow-hidden rounded-xl border bg-card">
+        {selectedInvoice ? (
+          <InvoiceDetailPanel
+            invoice={selectedInvoice}
+            payments={payments as any}
+            isAdmin={isAdmin}
+            onPrint={() => openInvoicePrint(selectedInvoice, (selectedInvoice.reprint_count || 0) > 0 || selectedInvoice.etims_status === "signed")}
+            onEmail={() => onEmail(selectedInvoice)}
+            onCreditNote={() => setCnInvoiceId(selectedInvoice.id)}
+            onAllocate={() => setPayFor({ id: selectedInvoice.customer_id, name: selectedInvoice.customer_name || "Customer", balance: Number(selectedInvoice.balance) })}
+            onStatement={() => setStatementFor(selectedInvoice)}
+          />
+        ) : selectedCN ? (
+          <CreditNoteDetailPanel note={selectedCN} onPrint={() => openCNPrint(selectedCN)} />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+            <Receipt className="h-12 w-12 opacity-30" />
+            <p className="text-sm">Select a document to preview</p>
+          </div>
+        )}
+      </div>
+
+      {/* Invoice print format dialog */}
       <Dialog open={!!printData} onOpenChange={(o) => { if (!o) { setPrintData(null); setPrintFormat(null); } }}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Choose Print Format</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Choose Print Format</DialogTitle></DialogHeader>
           {printData && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Invoice <span className="font-medium text-foreground">{printData.invoiceNumber}</span> — {printData.customerName}
               </p>
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => doPrint("thermal")}
-                  className="flex flex-col items-center gap-2 rounded-lg border-2 border-border p-5 text-center transition-colors hover:border-primary hover:bg-primary/5"
-                >
+                <button onClick={() => doPrint("thermal")} className="flex flex-col items-center gap-2 rounded-lg border-2 border-border p-5 text-center transition-colors hover:border-primary hover:bg-primary/5">
                   <Receipt className="h-8 w-8 text-primary" />
                   <span className="font-semibold text-sm">Thermal Receipt</span>
-                  <span className="text-xs text-muted-foreground">80mm roll · quick receipt (3 copies)</span>
+                  <span className="text-xs text-muted-foreground">80mm roll · quick receipt</span>
                 </button>
-                <button
-                  onClick={() => doPrint("b5")}
-                  className="flex flex-col items-center gap-2 rounded-lg border-2 border-border p-5 text-center transition-colors hover:border-primary hover:bg-primary/5"
-                >
+                <button onClick={() => doPrint("b5")} className="flex flex-col items-center gap-2 rounded-lg border-2 border-border p-5 text-center transition-colors hover:border-primary hover:bg-primary/5">
                   <FileText className="h-8 w-8 text-primary" />
                   <span className="font-semibold text-sm">Full Invoice (B5)</span>
-                  <span className="text-xs text-muted-foreground">Invoice + Delivery Note · customer + 2 file copies</span>
+                  <span className="text-xs text-muted-foreground">Invoice + Delivery Note</span>
                 </button>
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Customer gets the original; 2 file copies are marked “COPY” (B5). KRA tax details print at the bottom of every format.
-              </p>
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => { setPrintData(null); setPrintFormat(null); }}>Close</Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Hidden print document — isolated by @media print rules */}
       {printData && printFormat && (
         <div className="hidden print:block">
           <InvoiceDocumentPrint format={printFormat} {...printData} />
         </div>
       )}
 
+      {/* Credit note print dialog */}
+      <Dialog open={!!cnPrint} onOpenChange={(o) => !o && setCnPrint(null)}>
+        <DialogContent className="max-w-4xl p-0 max-h-[90vh] overflow-auto">
+          {cnPrint && (
+            <>
+              <CreditNotePrintView {...cnPrint} />
+              <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-background p-3">
+                <Button variant="outline" onClick={() => setCnPrint(null)}>Close</Button>
+                <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
-      <CreditNoteDialog
-        open={!!cnInvoiceId}
-        onOpenChange={(o) => !o && setCnInvoiceId(null)}
-        invoiceId={cnInvoiceId}
-      />
+      {/* Customer statement dialog */}
+      <Dialog open={!!statementFor} onOpenChange={(o) => !o && setStatementFor(null)}>
+        <DialogContent className="max-w-4xl p-0 max-h-[90vh] overflow-auto">
+          {statementFor && (
+            <>
+              <CustomerStatementPrint
+                customer={{
+                  name: statementFor.customer_name,
+                  customer_code: statementFor.customer_code,
+                  kra_pin: statementFor.customer_kra_pin,
+                  phone: statementFor.customer_phone,
+                }}
+                invoices={invoices.filter((i) => i.customer_id === statementFor.customer_id)}
+                payments={payments.filter((p: any) => p.customer_id === statementFor.customer_id)}
+                fromDate={new Date(new Date().setFullYear(new Date().getFullYear() - 1))}
+                toDate={new Date()}
+              />
+              <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-background p-3">
+                <Button variant="outline" onClick={() => setStatementFor(null)}>Close</Button>
+                <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit note creation */}
+      <CreditNoteDialog open={!!cnInvoiceId} onOpenChange={(o) => !o && setCnInvoiceId(null)} invoiceId={cnInvoiceId} />
+
+      {/* Allocate payment */}
+      {payFor && (
+        <PaymentDialog
+          open={!!payFor}
+          onOpenChange={(o) => !o && setPayFor(null)}
+          customerId={payFor.id}
+          customerName={payFor.name}
+          currentBalance={payFor.balance}
+        />
+      )}
     </div>
   );
 }
