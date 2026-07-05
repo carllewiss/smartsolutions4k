@@ -124,7 +124,7 @@ export default function Invoices() {
   const openInvoicePrint = async (inv: any, asReprint: boolean) => {
     const { data: items } = await supabase
       .from("invoice_items")
-      .select("quantity, unit_price, total, products(name, sku)")
+      .select("quantity, unit_price, total, products(name)")
       .eq("invoice_id", inv.id);
 
     let reprintCount = inv.reprint_count || 0;
@@ -140,7 +140,7 @@ export default function Invoices() {
       customerPhone: inv.customer_phone,
       date: inv.created_at,
       items: (items || []).map((it: any) => ({
-        name: it.products?.name || "Item", sku: it.products?.sku,
+        name: it.products?.name || "Item",
         quantity: it.quantity, unit_price: Number(it.unit_price), total: Number(it.total),
       })),
       subtotal: Number(inv.subtotal), tax: Number(inv.tax), total: Number(inv.total),
