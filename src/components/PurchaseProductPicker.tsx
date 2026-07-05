@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useProductsPurchaseView, type ProductPurchaseInfo } from "@/hooks/usePurchaseWorkspace";
 import { useCreateProduct } from "@/hooks/useProducts";
-import { format } from "date-fns";
 import { toast } from "sonner";
 
 export type PickerProduct = ProductPurchaseInfo;
@@ -196,4 +195,3 @@ export function PurchaseProductPicker({ onSelect, value, placeholder = "Search p
   );
 }
 
-export { format };
