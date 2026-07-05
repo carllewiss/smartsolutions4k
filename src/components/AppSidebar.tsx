@@ -27,8 +27,7 @@ export function AppSidebar() {
 
   const inventoryItems = isAdmin ? [
     { title: "Inventory", url: "/inventory", icon: Package },
-    { title: "Purchase Invoices", url: "/purchases", icon: ShoppingCart },
-    { title: "Purchase Orders", url: "/purchases/orders", icon: FileText },
+    { title: "Purchases", url: "/purchases", icon: ShoppingCart },
   ] : [];
 
   const financeItems = isAdmin ? [
