@@ -21,7 +21,7 @@ export function useInvoices() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("*, invoice_items(*, products(name, sku)), customers(name, phone, kra_pin, customer_code, email, credit_terms)")
+        .select("*, invoice_items(*, products(name)), customers(name, phone, kra_pin, customer_code, email, credit_terms)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data?.map(inv => {
