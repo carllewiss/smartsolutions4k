@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Search, AlertTriangle, UserPlus, Ban } from "lucide-react";
+import { Trash2, Search, AlertTriangle, UserPlus, Ban, Smartphone } from "lucide-react";
 import { StockSearchAutocomplete } from "@/components/StockSearchAutocomplete";
+import StkPushDialog from "@/components/StkPushDialog";
 import { toast } from "sonner";
 
 type PaymentMethod = "cash" | "mpesa" | "cash_mpesa" | "partial_debt";
