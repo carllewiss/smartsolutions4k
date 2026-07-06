@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Printer, Mail, Undo2, Wallet, FileText, ShieldCheck, Clock, AlertCircle,
-  CheckCircle2, Circle, Receipt, User, Phone, Hash, FileClock,
+  CheckCircle2, Circle, Receipt, User, Phone, Hash, FileClock, Smartphone,
 } from "lucide-react";
 import type { InvoiceWithItems } from "@/hooks/useInvoices";
 
