@@ -292,6 +292,7 @@ export default function Invoices() {
             onCreditNote={() => setCnInvoiceId(selectedInvoice.id)}
             onAllocate={() => setPayFor({ id: selectedInvoice.customer_id, name: selectedInvoice.customer_name || "Customer", balance: Number(selectedInvoice.balance) })}
             onStatement={() => setStatementFor(selectedInvoice)}
+            onStk={Number(selectedInvoice.balance) > 0 && (selectedInvoice.status as string) !== "cancelled" ? () => openStk(selectedInvoice) : undefined}
           />
         ) : selectedCN ? (
           <CreditNoteDetailPanel note={selectedCN} onPrint={() => openCNPrint(selectedCN)} />
