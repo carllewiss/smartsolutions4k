@@ -390,6 +390,20 @@ export default function Invoices() {
           currentBalance={payFor.balance}
         />
       )}
+
+      {/* M-Pesa STK Push */}
+      {stkFor && (
+        <StkPushDialog
+          open={!!stkFor}
+          onOpenChange={(o) => !o && setStkFor(null)}
+          invoiceId={stkFor.invoiceId}
+          invoiceNumber={stkFor.invoiceNumber}
+          customerId={stkFor.customerId}
+          customerName={stkFor.customerName}
+          defaultPhone={stkFor.phone}
+          amount={stkFor.amount}
+        />
+      )}
     </div>
   );
 }
