@@ -105,6 +105,11 @@ export function InvoiceDetailPanel({
           <div className="flex flex-wrap justify-end gap-2">
             <Button size="sm" onClick={onPrint}><Printer className="h-4 w-4 mr-1" /> Print</Button>
             <Button size="sm" variant="outline" onClick={onEmail}><Mail className="h-4 w-4 mr-1" /> Email</Button>
+            {bal > 0 && onStk && (
+              <Button size="sm" className="bg-success hover:bg-success/90 text-success-foreground" onClick={onStk}>
+                <Smartphone className="h-4 w-4 mr-1" /> Send STK
+              </Button>
+            )}
             {bal > 0 && (
               <Button size="sm" variant="outline" onClick={onAllocate}><Wallet className="h-4 w-4 mr-1" /> Allocate</Button>
             )}
