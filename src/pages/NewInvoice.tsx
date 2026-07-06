@@ -199,6 +199,104 @@ export default function NewInvoice() {
 
   const removeItem = (productId: string) => setItems(items.filter(i => i.product_id !== productId));
 
+  // Resolve (or create) the customer for this sale, returning its id.
+  const resolveCustomerId = async (): Promise<string | null> => {
+    let customerId = selectedCustomerId;
+    if (isNewCustomer) {
+      if (!newCustName.trim()) { toast.error("Enter customer name"); return null; }
+      const newCust = await createCustomer.mutateAsync({
+        name: newCustName,
+        phone: newCustPhone || undefined,
+        kra_pin: custPin || undefined,
+        customer_type: "regular",
+      });
+      customerId = newCust.id;
+    }
+    if (!customerId) {
+      const walkin = customers.find(c => c.customer_type === "walk_in");
+      if (walkin) customerId = walkin.id;
+      else {
+        const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
+        customerId = w.id;
+      }
+    }
+    return customerId;
+  };
+
+  // Amount to collect via M-Pesa STK for the current payment method.
+  const stkAmount = paymentMethod === "mpesa" ? total : mpesaAmount;
+
+  // Create the invoice (M-Pesa portion left unpaid), then open the STK prompt to collect it.
+  const handleStkInvoice = async () => {
+    if (items.length === 0) { toast.error("Add at least one item"); return; }
+    if (stkAmount <= 0) { toast.error("Enter the M-Pesa amount to collect"); return; }
+
+    if (etimsEnabled && selectedCustomer && selectedCustomer.customer_type === "regular" && !customerHasPin) {
+      toast.error("eTIMS is enabled — KRA PIN is required for repeat customers.");
+      return;
+    }
+
+    let customerId: string | null;
+    try {
+      customerId = await resolveCustomerId();
+    } catch (e: any) { toast.error("Failed to create customer: " + e.message); return; }
+    if (!customerId) return;
+
+    const cashPortion = paymentMethod === "cash_mpesa" ? cashAmount : 0;
+    const paid = cashPortion; // M-Pesa collected asynchronously via callback
+    const stkBalance = Math.max(0, total - paid);
+
+    try {
+      const inv = await createInvoice.mutateAsync({
+        invoice: {
+          customer_id: customerId,
+          subtotal,
+          tax,
+          total,
+          paid_amount: paid,
+          balance: stkBalance,
+          payment_method: paymentMethod as any,
+          cash_amount: cashPortion,
+          mpesa_amount: 0,
+          status: (paid > 0 ? "partial" : "unpaid") as any,
+          created_by: user?.id,
+          approval_status: "approved",
+        } as any,
+        items: items.map(i => ({
+          product_id: i.product_id,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          discount: i.original_price > i.unit_price ? (i.original_price - i.unit_price) * i.quantity : 0,
+          total: i.total,
+        })),
+      });
+
+      const cust = customers.find(c => c.id === customerId);
+      setStkData({
+        invoiceId: inv.id,
+        invoiceNumber: inv.invoice_number,
+        customerId,
+        customerName: cust?.name || (isNewCustomer ? newCustName : "Walk-in"),
+        phone: (isNewCustomer ? newCustPhone : cust?.phone) || "",
+        amount: stkAmount,
+      });
+      setStkOpen(true);
+    } catch (e: any) { toast.error("Failed: " + e.message); }
+  };
+
+  const resetAfterSale = () => {
+    setItems([]);
+    setCashAmount(0);
+    setMpesaAmount(0);
+    setSelectedCustomerId("");
+    setCustomerSearch("");
+    setIsNewCustomer(false);
+    setNewCustName("");
+    setNewCustPhone("");
+    setCustPin("");
+  };
+
+
   const submitInvoice = async () => {
     if (items.length === 0) { toast.error("Add at least one item"); return; }
     if (paymentMethod !== "partial_debt" && balance > 0) {
