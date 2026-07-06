@@ -64,6 +64,7 @@ export function InvoiceDetailPanel({
   onCreditNote,
   onAllocate,
   onStatement,
+  onStk,
 }: {
   invoice: InvoiceWithItems;
   payments: PaymentRow[];
@@ -73,6 +74,7 @@ export function InvoiceDetailPanel({
   onCreditNote: () => void;
   onAllocate: () => void;
   onStatement: () => void;
+  onStk?: () => void;
 }) {
   const invPayments = payments
     .filter((p) => p.invoice_id === invoice.id)
