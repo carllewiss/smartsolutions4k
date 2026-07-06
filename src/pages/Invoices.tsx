@@ -239,31 +239,43 @@ export default function Invoices() {
           ) : (
             docs.map((d) => {
               const active = selected?.id === d.id && selected?.type === d.type;
+              const canStk = d.type === "invoice" && Number(d.raw.balance) > 0 && (d.raw.status as string) !== "cancelled";
               return (
-                <button
-                  key={`${d.type}-${d.id}`}
-                  onClick={() => setSelected({ type: d.type, id: d.id })}
-                  className={`block w-full border-b p-4 text-left transition-colors ${active ? "bg-primary/5" : "hover:bg-muted/50"}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 font-semibold text-sm">
-                      {d.type === "credit_note" ? <FileText className="h-3.5 w-3.5 text-destructive" /> : <Receipt className="h-3.5 w-3.5 text-muted-foreground" />}
-                      {d.number}
-                    </span>
-                    <Badge className={`text-[10px] capitalize ${statusPill(d.status)}`}>
-                      {d.status === "credit_note" ? "Credit Note" : d.status}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{d.customer}</p>
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{format(new Date(d.date), "dd MMM yyyy")}</span>
-                    <span className={`text-sm font-semibold ${d.amount < 0 ? "text-destructive" : ""}`}>
-                      KES {d.amount.toLocaleString()}
-                    </span>
-                  </div>
-                </button>
+                <div key={`${d.type}-${d.id}`} className="relative border-b">
+                  <button
+                    onClick={() => setSelected({ type: d.type, id: d.id })}
+                    className={`block w-full p-4 text-left transition-colors ${active ? "bg-primary/5" : "hover:bg-muted/50"} ${canStk ? "pr-12" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5 font-semibold text-sm">
+                        {d.type === "credit_note" ? <FileText className="h-3.5 w-3.5 text-destructive" /> : <Receipt className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {d.number}
+                      </span>
+                      <Badge className={`text-[10px] capitalize ${statusPill(d.status)}`}>
+                        {d.status === "credit_note" ? "Credit Note" : d.status}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{d.customer}</p>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{format(new Date(d.date), "dd MMM yyyy")}</span>
+                      <span className={`text-sm font-semibold ${d.amount < 0 ? "text-destructive" : ""}`}>
+                        KES {d.amount.toLocaleString()}
+                      </span>
+                    </div>
+                  </button>
+                  {canStk && (
+                    <button
+                      title="Send M-Pesa STK Push"
+                      onClick={(e) => { e.stopPropagation(); openStk(d.raw); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-success text-success-foreground shadow-sm transition hover:scale-110"
+                    >
+                      <Smartphone className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               );
             })
+
           )}
         </div>
       </div>
