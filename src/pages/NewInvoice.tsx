@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Search, AlertTriangle, UserPlus, Ban } from "lucide-react";
+import { Trash2, Search, AlertTriangle, UserPlus, Ban, Smartphone } from "lucide-react";
 import { StockSearchAutocomplete } from "@/components/StockSearchAutocomplete";
+import StkPushDialog from "@/components/StkPushDialog";
 import { toast } from "sonner";
 
 type PaymentMethod = "cash" | "mpesa" | "cash_mpesa" | "partial_debt";
@@ -63,6 +64,10 @@ export default function NewInvoice() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [cashAmount, setCashAmount] = useState(0);
   const [mpesaAmount, setMpesaAmount] = useState(0);
+
+  // STK Push (M-Pesa) state
+  const [stkOpen, setStkOpen] = useState(false);
+  const [stkData, setStkData] = useState<{ invoiceId: string; invoiceNumber?: string; customerId: string | null; customerName?: string; phone: string; amount: number } | null>(null);
 
   // Customer search (fuzzy)
   const filteredCustomers = useMemo(() => {
@@ -193,6 +198,104 @@ export default function NewInvoice() {
   };
 
   const removeItem = (productId: string) => setItems(items.filter(i => i.product_id !== productId));
+
+  // Resolve (or create) the customer for this sale, returning its id.
+  const resolveCustomerId = async (): Promise<string | null> => {
+    let customerId = selectedCustomerId;
+    if (isNewCustomer) {
+      if (!newCustName.trim()) { toast.error("Enter customer name"); return null; }
+      const newCust = await createCustomer.mutateAsync({
+        name: newCustName,
+        phone: newCustPhone || undefined,
+        kra_pin: custPin || undefined,
+        customer_type: "regular",
+      });
+      customerId = newCust.id;
+    }
+    if (!customerId) {
+      const walkin = customers.find(c => c.customer_type === "walk_in");
+      if (walkin) customerId = walkin.id;
+      else {
+        const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
+        customerId = w.id;
+      }
+    }
+    return customerId;
+  };
+
+  // Amount to collect via M-Pesa STK for the current payment method.
+  const stkAmount = paymentMethod === "mpesa" ? total : mpesaAmount;
+
+  // Create the invoice (M-Pesa portion left unpaid), then open the STK prompt to collect it.
+  const handleStkInvoice = async () => {
+    if (items.length === 0) { toast.error("Add at least one item"); return; }
+    if (stkAmount <= 0) { toast.error("Enter the M-Pesa amount to collect"); return; }
+
+    if (etimsEnabled && selectedCustomer && selectedCustomer.customer_type === "regular" && !customerHasPin) {
+      toast.error("eTIMS is enabled — KRA PIN is required for repeat customers.");
+      return;
+    }
+
+    let customerId: string | null;
+    try {
+      customerId = await resolveCustomerId();
+    } catch (e: any) { toast.error("Failed to create customer: " + e.message); return; }
+    if (!customerId) return;
+
+    const cashPortion = paymentMethod === "cash_mpesa" ? cashAmount : 0;
+    const paid = cashPortion; // M-Pesa collected asynchronously via callback
+    const stkBalance = Math.max(0, total - paid);
+
+    try {
+      const inv = await createInvoice.mutateAsync({
+        invoice: {
+          customer_id: customerId,
+          subtotal,
+          tax,
+          total,
+          paid_amount: paid,
+          balance: stkBalance,
+          payment_method: paymentMethod as any,
+          cash_amount: cashPortion,
+          mpesa_amount: 0,
+          status: (paid > 0 ? "partial" : "unpaid") as any,
+          created_by: user?.id,
+          approval_status: "approved",
+        } as any,
+        items: items.map(i => ({
+          product_id: i.product_id,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          discount: i.original_price > i.unit_price ? (i.original_price - i.unit_price) * i.quantity : 0,
+          total: i.total,
+        })),
+      });
+
+      const cust = customers.find(c => c.id === customerId);
+      setStkData({
+        invoiceId: inv.id,
+        invoiceNumber: inv.invoice_number,
+        customerId,
+        customerName: cust?.name || (isNewCustomer ? newCustName : "Walk-in"),
+        phone: (isNewCustomer ? newCustPhone : cust?.phone) || "",
+        amount: stkAmount,
+      });
+      setStkOpen(true);
+    } catch (e: any) { toast.error("Failed: " + e.message); }
+  };
+
+  const resetAfterSale = () => {
+    setItems([]);
+    setCashAmount(0);
+    setMpesaAmount(0);
+    setSelectedCustomerId("");
+    setCustomerSearch("");
+    setIsNewCustomer(false);
+    setNewCustName("");
+    setNewCustPhone("");
+    setCustPin("");
+  };
+
 
   const submitInvoice = async () => {
     if (items.length === 0) { toast.error("Add at least one item"); return; }
@@ -460,10 +563,36 @@ export default function NewInvoice() {
                 {createInvoice.isPending ? "Saving..." : needsApproval ? "Submit for Approval" : "Create Invoice"}
               </Button>
 
+              {(paymentMethod === "mpesa" || paymentMethod === "cash_mpesa") && (
+                <Button
+                  variant="outline"
+                  className="w-full border-success/40 text-success hover:bg-success/10 hover:text-success gap-2"
+                  onClick={handleStkInvoice}
+                  disabled={items.length === 0 || stkAmount <= 0 || createInvoice.isPending}
+                >
+                  <Smartphone className="h-4 w-4" />
+                  Send STK Push · KES {Math.round(stkAmount).toLocaleString()}
+                </Button>
+              )}
+
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {stkData && (
+        <StkPushDialog
+          open={stkOpen}
+          onOpenChange={(o) => { setStkOpen(o); if (!o) setStkData(null); }}
+          invoiceId={stkData.invoiceId}
+          invoiceNumber={stkData.invoiceNumber}
+          customerId={stkData.customerId}
+          customerName={stkData.customerName}
+          defaultPhone={stkData.phone}
+          amount={stkData.amount}
+          onPaid={resetAfterSale}
+        />
+      )}
     </div>
   );
 }

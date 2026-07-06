@@ -647,6 +647,69 @@ export type Database = {
           },
         ]
       }
+      mpesa_transactions: {
+        Row: {
+          amount: number
+          checkout_request_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          merchant_request_id: string | null
+          mpesa_receipt_number: string | null
+          paid_at: string | null
+          phone: string
+          result_desc: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          checkout_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          merchant_request_id?: string | null
+          mpesa_receipt_number?: string | null
+          paid_at?: string | null
+          phone: string
+          result_desc?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          checkout_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          merchant_request_id?: string | null
+          mpesa_receipt_number?: string | null
+          paid_at?: string | null
+          phone?: string
+          result_desc?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mpesa_transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mpesa_transactions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number

@@ -8,13 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, differenceInDays } from "date-fns";
-import { Search, Receipt, FileText, Printer, FileX } from "lucide-react";
+import { Search, Receipt, FileText, Printer, FileX, Smartphone } from "lucide-react";
 import { InvoiceDocumentPrint, InvoicePrintFormat } from "@/components/InvoiceDocumentPrint";
 import { CreditNotePrintView } from "@/components/CreditNotePrintView";
 import { CreditNoteDialog } from "@/components/CreditNoteDialog";
 import { InvoiceDetailPanel, CreditNoteDetailPanel } from "@/components/InvoiceDetailPanel";
 import CustomerStatementPrint from "@/components/CustomerStatementPrint";
 import PaymentDialog from "@/components/PaymentDialog";
+import StkPushDialog from "@/components/StkPushDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -60,6 +61,16 @@ export default function Invoices() {
   const [cnInvoiceId, setCnInvoiceId] = useState<string | null>(null);
   const [payFor, setPayFor] = useState<{ id: string; name: string; balance: number } | null>(null);
   const [statementFor, setStatementFor] = useState<any>(null);
+  const [stkFor, setStkFor] = useState<{ invoiceId: string; invoiceNumber: string; customerId: string; customerName: string; phone: string; amount: number } | null>(null);
+
+  const openStk = (inv: any) => setStkFor({
+    invoiceId: inv.id,
+    invoiceNumber: inv.invoice_number,
+    customerId: inv.customer_id,
+    customerName: inv.customer_name || "Customer",
+    phone: inv.customer_phone || "",
+    amount: Number(inv.balance),
+  });
 
   const isOverdue = (inv: any) =>
     Number(inv.balance) > 0 && differenceInDays(new Date(), new Date(inv.created_at)) > (inv.customer_credit_terms || 30);
@@ -228,31 +239,43 @@ export default function Invoices() {
           ) : (
             docs.map((d) => {
               const active = selected?.id === d.id && selected?.type === d.type;
+              const canStk = d.type === "invoice" && Number(d.raw.balance) > 0 && (d.raw.status as string) !== "cancelled";
               return (
-                <button
-                  key={`${d.type}-${d.id}`}
-                  onClick={() => setSelected({ type: d.type, id: d.id })}
-                  className={`block w-full border-b p-4 text-left transition-colors ${active ? "bg-primary/5" : "hover:bg-muted/50"}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 font-semibold text-sm">
-                      {d.type === "credit_note" ? <FileText className="h-3.5 w-3.5 text-destructive" /> : <Receipt className="h-3.5 w-3.5 text-muted-foreground" />}
-                      {d.number}
-                    </span>
-                    <Badge className={`text-[10px] capitalize ${statusPill(d.status)}`}>
-                      {d.status === "credit_note" ? "Credit Note" : d.status}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{d.customer}</p>
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{format(new Date(d.date), "dd MMM yyyy")}</span>
-                    <span className={`text-sm font-semibold ${d.amount < 0 ? "text-destructive" : ""}`}>
-                      KES {d.amount.toLocaleString()}
-                    </span>
-                  </div>
-                </button>
+                <div key={`${d.type}-${d.id}`} className="relative border-b">
+                  <button
+                    onClick={() => setSelected({ type: d.type, id: d.id })}
+                    className={`block w-full p-4 text-left transition-colors ${active ? "bg-primary/5" : "hover:bg-muted/50"} ${canStk ? "pr-12" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5 font-semibold text-sm">
+                        {d.type === "credit_note" ? <FileText className="h-3.5 w-3.5 text-destructive" /> : <Receipt className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {d.number}
+                      </span>
+                      <Badge className={`text-[10px] capitalize ${statusPill(d.status)}`}>
+                        {d.status === "credit_note" ? "Credit Note" : d.status}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{d.customer}</p>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{format(new Date(d.date), "dd MMM yyyy")}</span>
+                      <span className={`text-sm font-semibold ${d.amount < 0 ? "text-destructive" : ""}`}>
+                        KES {d.amount.toLocaleString()}
+                      </span>
+                    </div>
+                  </button>
+                  {canStk && (
+                    <button
+                      title="Send M-Pesa STK Push"
+                      onClick={(e) => { e.stopPropagation(); openStk(d.raw); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-success text-success-foreground shadow-sm transition hover:scale-110"
+                    >
+                      <Smartphone className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               );
             })
+
           )}
         </div>
       </div>
@@ -269,6 +292,7 @@ export default function Invoices() {
             onCreditNote={() => setCnInvoiceId(selectedInvoice.id)}
             onAllocate={() => setPayFor({ id: selectedInvoice.customer_id, name: selectedInvoice.customer_name || "Customer", balance: Number(selectedInvoice.balance) })}
             onStatement={() => setStatementFor(selectedInvoice)}
+            onStk={Number(selectedInvoice.balance) > 0 && (selectedInvoice.status as string) !== "cancelled" ? () => openStk(selectedInvoice) : undefined}
           />
         ) : selectedCN ? (
           <CreditNoteDetailPanel note={selectedCN} onPrint={() => openCNPrint(selectedCN)} />
@@ -364,6 +388,20 @@ export default function Invoices() {
           customerId={payFor.id}
           customerName={payFor.name}
           currentBalance={payFor.balance}
+        />
+      )}
+
+      {/* M-Pesa STK Push */}
+      {stkFor && (
+        <StkPushDialog
+          open={!!stkFor}
+          onOpenChange={(o) => !o && setStkFor(null)}
+          invoiceId={stkFor.invoiceId}
+          invoiceNumber={stkFor.invoiceNumber}
+          customerId={stkFor.customerId}
+          customerName={stkFor.customerName}
+          defaultPhone={stkFor.phone}
+          amount={stkFor.amount}
         />
       )}
     </div>

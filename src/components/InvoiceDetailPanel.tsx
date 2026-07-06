@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Printer, Mail, Undo2, Wallet, FileText, ShieldCheck, Clock, AlertCircle,
-  CheckCircle2, Circle, Receipt, User, Phone, Hash, FileClock,
+  CheckCircle2, Circle, Receipt, User, Phone, Hash, FileClock, Smartphone,
 } from "lucide-react";
 import type { InvoiceWithItems } from "@/hooks/useInvoices";
 
@@ -64,6 +64,7 @@ export function InvoiceDetailPanel({
   onCreditNote,
   onAllocate,
   onStatement,
+  onStk,
 }: {
   invoice: InvoiceWithItems;
   payments: PaymentRow[];
@@ -73,6 +74,7 @@ export function InvoiceDetailPanel({
   onCreditNote: () => void;
   onAllocate: () => void;
   onStatement: () => void;
+  onStk?: () => void;
 }) {
   const invPayments = payments
     .filter((p) => p.invoice_id === invoice.id)
@@ -103,6 +105,11 @@ export function InvoiceDetailPanel({
           <div className="flex flex-wrap justify-end gap-2">
             <Button size="sm" onClick={onPrint}><Printer className="h-4 w-4 mr-1" /> Print</Button>
             <Button size="sm" variant="outline" onClick={onEmail}><Mail className="h-4 w-4 mr-1" /> Email</Button>
+            {bal > 0 && onStk && (
+              <Button size="sm" className="bg-success hover:bg-success/90 text-success-foreground" onClick={onStk}>
+                <Smartphone className="h-4 w-4 mr-1" /> Send STK
+              </Button>
+            )}
             {bal > 0 && (
               <Button size="sm" variant="outline" onClick={onAllocate}><Wallet className="h-4 w-4 mr-1" /> Allocate</Button>
             )}

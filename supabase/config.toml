@@ -3,3 +3,9 @@ verify_jwt = false
 
 [functions.shop-mpesa-callback]
 verify_jwt = false
+
+[functions.invoice-stk-push]
+verify_jwt = false
+
+[functions.invoice-mpesa-callback]
+verify_jwt = false
