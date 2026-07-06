@@ -61,6 +61,16 @@ export default function Invoices() {
   const [cnInvoiceId, setCnInvoiceId] = useState<string | null>(null);
   const [payFor, setPayFor] = useState<{ id: string; name: string; balance: number } | null>(null);
   const [statementFor, setStatementFor] = useState<any>(null);
+  const [stkFor, setStkFor] = useState<{ invoiceId: string; invoiceNumber: string; customerId: string; customerName: string; phone: string; amount: number } | null>(null);
+
+  const openStk = (inv: any) => setStkFor({
+    invoiceId: inv.id,
+    invoiceNumber: inv.invoice_number,
+    customerId: inv.customer_id,
+    customerName: inv.customer_name || "Customer",
+    phone: inv.customer_phone || "",
+    amount: Number(inv.balance),
+  });
 
   const isOverdue = (inv: any) =>
     Number(inv.balance) > 0 && differenceInDays(new Date(), new Date(inv.created_at)) > (inv.customer_credit_terms || 30);
