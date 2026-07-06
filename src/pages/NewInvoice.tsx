@@ -563,10 +563,36 @@ export default function NewInvoice() {
                 {createInvoice.isPending ? "Saving..." : needsApproval ? "Submit for Approval" : "Create Invoice"}
               </Button>
 
+              {(paymentMethod === "mpesa" || paymentMethod === "cash_mpesa") && (
+                <Button
+                  variant="outline"
+                  className="w-full border-success/40 text-success hover:bg-success/10 hover:text-success gap-2"
+                  onClick={handleStkInvoice}
+                  disabled={items.length === 0 || stkAmount <= 0 || createInvoice.isPending}
+                >
+                  <Smartphone className="h-4 w-4" />
+                  Send STK Push · KES {Math.round(stkAmount).toLocaleString()}
+                </Button>
+              )}
+
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {stkData && (
+        <StkPushDialog
+          open={stkOpen}
+          onOpenChange={(o) => { setStkOpen(o); if (!o) setStkData(null); }}
+          invoiceId={stkData.invoiceId}
+          invoiceNumber={stkData.invoiceNumber}
+          customerId={stkData.customerId}
+          customerName={stkData.customerName}
+          defaultPhone={stkData.phone}
+          amount={stkData.amount}
+          onPaid={resetAfterSale}
+        />
+      )}
     </div>
   );
 }
