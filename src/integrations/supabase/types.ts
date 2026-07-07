@@ -311,9 +311,12 @@ export type Database = {
           created_by: string | null
           description: string | null
           expense_date: string
+          expense_no: string | null
           id: string
           journal_id: string | null
           payment_account_id: string | null
+          payment_method: string | null
+          reference_no: string | null
           status: string
           supplier_id: string | null
           vat_amount: number
@@ -327,9 +330,12 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           expense_date?: string
+          expense_no?: string | null
           id?: string
           journal_id?: string | null
           payment_account_id?: string | null
+          payment_method?: string | null
+          reference_no?: string | null
           status?: string
           supplier_id?: string | null
           vat_amount?: number
@@ -343,9 +349,12 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           expense_date?: string
+          expense_no?: string | null
           id?: string
           journal_id?: string | null
           payment_account_id?: string | null
+          payment_method?: string | null
+          reference_no?: string | null
           status?: string
           supplier_id?: string | null
           vat_amount?: number
@@ -1715,6 +1724,7 @@ export type Database = {
         Returns: string
       }
       post_purchase: { Args: { p_id: string }; Returns: string }
+      reverse_expense: { Args: { p_expense_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "sales_agent"
