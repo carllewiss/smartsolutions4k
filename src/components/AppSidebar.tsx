@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale,
+  Store, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,7 +31,7 @@ export function AppSidebar() {
   ] : [];
 
   const financeItems = isAdmin ? [
-    { title: "Profit & Loss", url: "/finance", icon: TrendingUp },
+    { title: "Expenses", url: "/expenses", icon: Wallet },
     { title: "Financial Statements", url: "/financials", icon: Scale },
     { title: "Accounting", url: "/accounting", icon: BookOpen },
     { title: "WiFi Revenue", url: "/wifi", icon: Wifi },

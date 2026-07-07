@@ -17,7 +17,8 @@ import StockQuery from "./pages/StockQuery";
 import Purchases from "./pages/Purchases";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
-import Finance from "./pages/Finance";
+import Expenses from "./pages/Expenses";
+import NewExpense from "./pages/NewExpense";
 import UserManagement from "./pages/UserManagement";
 import Settings from "./pages/Settings";
 import EtimsSyncQueue from "./pages/EtimsSyncQueue";
@@ -90,7 +91,9 @@ function ErpRoutes() {
         <Route path="/purchases/new" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
         <Route path="/purchases/:id" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
         <Route path="/purchases/:id/edit" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
-        <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
+        <Route path="/expenses" element={<ProtectedRoute adminOnly><Expenses /></ProtectedRoute>} />
+        <Route path="/expenses/new" element={<ProtectedRoute adminOnly><NewExpense /></ProtectedRoute>} />
+        <Route path="/finance" element={<Navigate to="/expenses" replace />} />
         <Route path="/accounting" element={<ProtectedRoute adminOnly><Accounting /></ProtectedRoute>} />
         <Route path="/financials" element={<ProtectedRoute adminOnly><FinancialStatements /></ProtectedRoute>} />
         <Route path="/wifi" element={<ProtectedRoute adminOnly><Wifi /></ProtectedRoute>} />
