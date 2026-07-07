@@ -1,5 +1,39 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
+
+export interface Account {
+  id: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  parent_id?: string | null;
+  is_active?: boolean;
+}
+
+export function useCreateAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (a: { code: string; name: string; type: AccountType; parent_id?: string | null }) => {
+      const { data, error } = await (supabase as any).from("accounts").insert(a).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
+  });
+}
+
+export function useUpdateAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: { id: string; code?: string; name?: string; type?: AccountType; is_active?: boolean }) => {
+      const { error } = await (supabase as any).from("accounts").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
+  });
+}
 
 export interface GLAgg {
   code: string;
