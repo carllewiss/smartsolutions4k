@@ -1,21 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface AgentDaySummary {
-  agentId: string;
-  agentName: string;
-  invoiceCount: number;
-  totalSales: number;
-  posCash: number;
-  posMpesa: number;
-  debtSales: number;
-  debtCollectedCash: number;
-  debtCollectedMpesa: number;
-  paymentCount: number;
-  customersServed: number;
-  get totalCollected(): number;
-}
-
 export interface DaySummary {
   date: string;
   invoiceCount: number;
