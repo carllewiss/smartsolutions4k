@@ -55,6 +55,7 @@ export default function NewInvoice() {
   const [walkinName, setWalkinName] = useState("");
   const [walkinPhone, setWalkinPhone] = useState("");
   const [showConvert, setShowConvert] = useState(false);
+  const { data: walkinHistory } = useWalkinHistory(walkinPhone);
   const [newCustName, setNewCustName] = useState("");
   const [newCustPhone, setNewCustPhone] = useState("");
   const [custPin, setCustPin] = useState("");
@@ -649,6 +650,15 @@ export default function NewInvoice() {
           </Card>
         </div>
       </div>
+
+      <WalkinConvertDialog
+        open={showConvert}
+        onOpenChange={setShowConvert}
+        phone={normalizePhone(walkinPhone)}
+        defaultName={walkinName || walkinHistory?.lastName}
+        history={walkinHistory}
+        onConverted={(id) => { setCustomerMode("existing"); setSelectedCustomerId(id); setCustomerSearch(walkinName || walkinHistory?.lastName || ""); }}
+      />
 
       {stkData && (
         <StkPushDialog
