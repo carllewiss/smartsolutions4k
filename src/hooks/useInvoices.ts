@@ -26,10 +26,14 @@ export function useInvoices() {
       if (error) throw error;
       return data?.map(inv => {
         const c = inv.customers as any;
+        const walkinName = (inv as any).walkin_name as string | null;
+        const walkinPhone = (inv as any).walkin_phone as string | null;
+        const isWalkin = !!walkinPhone || !!walkinName || c?.customer_type === "walk_in";
         return {
           ...inv,
-          customer_name: c?.name || "Walk-in",
-          customer_phone: c?.phone ?? null,
+          is_walkin: isWalkin,
+          customer_name: walkinName || c?.name || "Walk-in",
+          customer_phone: walkinPhone ?? c?.phone ?? null,
           customer_kra_pin: c?.kra_pin ?? null,
           customer_code: c?.customer_code ?? null,
           customer_email: c?.email ?? null,
