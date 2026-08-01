@@ -13,7 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Search, AlertTriangle, UserPlus, Ban, Smartphone } from "lucide-react";
+import { Trash2, Search, AlertTriangle, UserPlus, Ban, Smartphone, User, Sparkles } from "lucide-react";
+import { useWalkinHistory, normalizePhone } from "@/hooks/useWalkins";
+import WalkinConvertDialog from "@/components/WalkinConvertDialog";
 import { StockSearchAutocomplete } from "@/components/StockSearchAutocomplete";
 import StkPushDialog from "@/components/StkPushDialog";
 import { toast } from "sonner";
@@ -49,7 +51,10 @@ export default function NewInvoice() {
   // Customer state
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [customerMode, setCustomerMode] = useState<"walkin" | "existing" | "new">("walkin");
+  const [walkinName, setWalkinName] = useState("");
+  const [walkinPhone, setWalkinPhone] = useState("");
+  const [showConvert, setShowConvert] = useState(false);
   const [newCustName, setNewCustName] = useState("");
   const [newCustPhone, setNewCustPhone] = useState("");
   const [custPin, setCustPin] = useState("");
@@ -202,7 +207,7 @@ export default function NewInvoice() {
   // Resolve (or create) the customer for this sale, returning its id.
   const resolveCustomerId = async (): Promise<string | null> => {
     let customerId = selectedCustomerId;
-    if (isNewCustomer) {
+    if (customerMode === "new") {
       if (!newCustName.trim()) { toast.error("Enter customer name"); return null; }
       const newCust = await createCustomer.mutateAsync({
         name: newCustName,
@@ -276,8 +281,8 @@ export default function NewInvoice() {
         invoiceId: inv.id,
         invoiceNumber: inv.invoice_number,
         customerId,
-        customerName: cust?.name || (isNewCustomer ? newCustName : "Walk-in"),
-        phone: (isNewCustomer ? newCustPhone : cust?.phone) || "",
+        customerName: cust?.name || (customerMode === "new" ? newCustName : "Walk-in"),
+        phone: (customerMode === "new" ? newCustPhone : cust?.phone) || "",
         amount: stkAmount,
       });
       setStkOpen(true);
@@ -306,7 +311,7 @@ export default function NewInvoice() {
 
     // Suspended customers cannot take new credit (debt) directly — route for admin approval.
     // Existing (already saved) customers only; a brand-new customer has no history.
-    const holdForApproval = !isNewCustomer && needsApproval;
+    const holdForApproval = !customerMode === "new" && needsApproval;
 
     // eTIMS KRA PIN check
     if (etimsEnabled && selectedCustomer && selectedCustomer.customer_type === "regular" && !customerHasPin) {
@@ -316,7 +321,7 @@ export default function NewInvoice() {
 
     let customerId = selectedCustomerId;
 
-    if (isNewCustomer) {
+    if (customerMode === "new") {
       if (!newCustName.trim()) { toast.error("Enter customer name"); return; }
       try {
         const newCust = await createCustomer.mutateAsync({
@@ -439,11 +444,11 @@ export default function NewInvoice() {
             <CardHeader className="pb-2"><CardTitle className="text-base">Customer</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2">
-                <Switch checked={isNewCustomer} onCheckedChange={v => { setIsNewCustomer(v); if (v) setSelectedCustomerId(""); }} />
+                <Switch checked={customerMode === "new"} onCheckedChange={v => { setIsNewCustomer(v); if (v) setSelectedCustomerId(""); }} />
                 <Label className="text-xs">New customer</Label>
               </div>
 
-              {isNewCustomer ? (
+              {customerMode === "new" ? (
                 <>
                   <Input placeholder="Customer name" value={newCustName} onChange={e => setNewCustName(e.target.value)} />
                   <Input placeholder="Phone (optional)" value={newCustPhone} onChange={e => setNewCustPhone(e.target.value)} />
