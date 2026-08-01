@@ -13,7 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Search, AlertTriangle, UserPlus, Ban, Smartphone } from "lucide-react";
+import { Trash2, Search, AlertTriangle, UserPlus, Ban, Smartphone, User, Sparkles } from "lucide-react";
+import { useWalkinHistory, normalizePhone } from "@/hooks/useWalkins";
+import WalkinConvertDialog from "@/components/WalkinConvertDialog";
 import { StockSearchAutocomplete } from "@/components/StockSearchAutocomplete";
 import StkPushDialog from "@/components/StkPushDialog";
 import { toast } from "sonner";
@@ -49,7 +51,11 @@ export default function NewInvoice() {
   // Customer state
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [customerMode, setCustomerMode] = useState<"walkin" | "existing" | "new">("walkin");
+  const [walkinName, setWalkinName] = useState("");
+  const [walkinPhone, setWalkinPhone] = useState("");
+  const [showConvert, setShowConvert] = useState(false);
+  const { data: walkinHistory } = useWalkinHistory(walkinPhone);
   const [newCustName, setNewCustName] = useState("");
   const [newCustPhone, setNewCustPhone] = useState("");
   const [custPin, setCustPin] = useState("");
@@ -138,7 +144,7 @@ export default function NewInvoice() {
     const c = customers.find(c => c.id === id);
     if (c) setCustomerSearch(c.name);
     setShowCustDropdown(false);
-    setIsNewCustomer(false);
+    setCustomerMode("existing");
   };
 
   const addItem = (productId: string) => {
@@ -199,10 +205,18 @@ export default function NewInvoice() {
 
   const removeItem = (productId: string) => setItems(items.filter(i => i.product_id !== productId));
 
+  // The single shared "Walk-in Customer" ledger account (no record per walk-in).
+  const getWalkinAccountId = async (): Promise<string> => {
+    const walkin = customers.find(c => c.customer_type === "walk_in");
+    if (walkin) return walkin.id;
+    const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
+    return w.id;
+  };
+
   // Resolve (or create) the customer for this sale, returning its id.
   const resolveCustomerId = async (): Promise<string | null> => {
     let customerId = selectedCustomerId;
-    if (isNewCustomer) {
+    if (customerMode === "new") {
       if (!newCustName.trim()) { toast.error("Enter customer name"); return null; }
       const newCust = await createCustomer.mutateAsync({
         name: newCustName,
@@ -212,14 +226,7 @@ export default function NewInvoice() {
       });
       customerId = newCust.id;
     }
-    if (!customerId) {
-      const walkin = customers.find(c => c.customer_type === "walk_in");
-      if (walkin) customerId = walkin.id;
-      else {
-        const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
-        customerId = w.id;
-      }
-    }
+    if (!customerId) customerId = await getWalkinAccountId();
     return customerId;
   };
 
@@ -261,6 +268,8 @@ export default function NewInvoice() {
           status: (paid > 0 ? "partial" : "unpaid") as any,
           created_by: user?.id,
           approval_status: "approved",
+          walkin_name: customerMode === "walkin" ? (walkinName.trim() || null) : null,
+          walkin_phone: customerMode === "walkin" ? (normalizePhone(walkinPhone) || null) : null,
         } as any,
         items: items.map(i => ({
           product_id: i.product_id,
@@ -276,8 +285,8 @@ export default function NewInvoice() {
         invoiceId: inv.id,
         invoiceNumber: inv.invoice_number,
         customerId,
-        customerName: cust?.name || (isNewCustomer ? newCustName : "Walk-in"),
-        phone: (isNewCustomer ? newCustPhone : cust?.phone) || "",
+        customerName: customerMode === "new" ? newCustName : customerMode === "walkin" ? (walkinName || "Walk-in Customer") : (cust?.name || "Walk-in"),
+        phone: (customerMode === "new" ? newCustPhone : customerMode === "walkin" ? walkinPhone : cust?.phone) || "",
         amount: stkAmount,
       });
       setStkOpen(true);
@@ -290,10 +299,12 @@ export default function NewInvoice() {
     setMpesaAmount(0);
     setSelectedCustomerId("");
     setCustomerSearch("");
-    setIsNewCustomer(false);
+    setCustomerMode("walkin");
     setNewCustName("");
     setNewCustPhone("");
     setCustPin("");
+    setWalkinName("");
+    setWalkinPhone("");
   };
 
 
@@ -303,10 +314,14 @@ export default function NewInvoice() {
       toast.error("Amount doesn't cover total. Use 'Pay Later (Debt)' option.");
       return;
     }
+    if (customerMode === "walkin" && balance > 0) {
+      toast.error("Debt requires a customer account. Search an existing customer or create a new one.");
+      return;
+    }
 
     // Suspended customers cannot take new credit (debt) directly — route for admin approval.
     // Existing (already saved) customers only; a brand-new customer has no history.
-    const holdForApproval = !isNewCustomer && needsApproval;
+    const holdForApproval = customerMode !== "new" && needsApproval;
 
     // eTIMS KRA PIN check
     if (etimsEnabled && selectedCustomer && selectedCustomer.customer_type === "regular" && !customerHasPin) {
@@ -316,7 +331,7 @@ export default function NewInvoice() {
 
     let customerId = selectedCustomerId;
 
-    if (isNewCustomer) {
+    if (customerMode === "new") {
       if (!newCustName.trim()) { toast.error("Enter customer name"); return; }
       try {
         const newCust = await createCustomer.mutateAsync({
@@ -333,13 +348,10 @@ export default function NewInvoice() {
     }
 
     if (!customerId) {
-      const walkin = customers.find(c => c.customer_type === "walk_in");
-      if (walkin) { customerId = walkin.id; }
-      else {
-        const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
-        customerId = w.id;
-      }
+      try { customerId = await getWalkinAccountId(); }
+      catch (e: any) { toast.error("Failed: " + e.message); return; }
     }
+    const isWalkinSale = customerMode === "walkin";
 
     try {
       await createInvoice.mutateAsync({
@@ -357,6 +369,8 @@ export default function NewInvoice() {
           created_by: user?.id,
           approval_status: holdForApproval ? "pending" : "approved",
           approval_reason: holdForApproval ? (creditStatus?.reasons.join("; ") || null) : null,
+          walkin_name: isWalkinSale ? (walkinName.trim() || null) : null,
+          walkin_phone: isWalkinSale ? (normalizePhone(walkinPhone) || null) : null,
         } as any,
         items: items.map(i => ({
           product_id: i.product_id,
@@ -374,6 +388,8 @@ export default function NewInvoice() {
       setMpesaAmount(0);
       setSelectedCustomerId("");
       setCustomerSearch("");
+      setWalkinName("");
+      setWalkinPhone("");
     } catch (e: any) { toast.error("Failed: " + e.message); }
   };
 
@@ -438,18 +454,67 @@ export default function NewInvoice() {
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Customer</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Switch checked={isNewCustomer} onCheckedChange={v => { setIsNewCustomer(v); if (v) setSelectedCustomerId(""); }} />
-                <Label className="text-xs">New customer</Label>
+              <div className="grid grid-cols-3 gap-1 rounded-md bg-muted p-1">
+                {([
+                  { key: "walkin", label: "Walk-in" },
+                  { key: "existing", label: "Existing" },
+                  { key: "new", label: "New" },
+                ] as const).map(m => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => {
+                      setCustomerMode(m.key);
+                      if (m.key !== "existing") { setSelectedCustomerId(""); setCustomerSearch(""); }
+                    }}
+                    className={`rounded-sm px-2 py-1.5 text-xs font-medium transition-colors ${
+                      customerMode === m.key ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
               </div>
 
-              {isNewCustomer ? (
+              {customerMode === "walkin" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Walk-in Customer</span>
+                    <Badge variant="outline" className="text-[10px] ml-auto">No account created</Badge>
+                  </div>
+                  <Input placeholder="Phone (optional)" value={walkinPhone} onChange={e => setWalkinPhone(e.target.value)} />
+                  <Input placeholder="Name (optional)" value={walkinName} onChange={e => setWalkinName(e.target.value)} />
+
+                  {walkinHistory && (
+                    <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <div className="text-xs">
+                          <p className="font-semibold">Repeat walk-in detected</p>
+                          <p className="text-muted-foreground">
+                            {walkinHistory.visits} previous visit{walkinHistory.visits === 1 ? "" : "s"} · KES {walkinHistory.totalSpent.toLocaleString()} spent
+                            {walkinHistory.lastName ? ` · ${walkinHistory.lastName}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" className="w-full h-8" onClick={() => setShowConvert(true)}>
+                        <UserPlus className="h-3 w-3 mr-1" /> Convert to Customer
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {customerMode === "new" && (
                 <>
                   <Input placeholder="Customer name" value={newCustName} onChange={e => setNewCustName(e.target.value)} />
                   <Input placeholder="Phone (optional)" value={newCustPhone} onChange={e => setNewCustPhone(e.target.value)} />
                   <Input placeholder="KRA PIN (optional, enables VAT)" value={custPin} onChange={e => setCustPin(e.target.value)} />
                 </>
-              ) : (
+              )}
+
+              {customerMode === "existing" && (
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -469,14 +534,16 @@ export default function NewInvoice() {
                               <p className="text-sm font-medium">{c.name}</p>
                               <p className="text-xs text-muted-foreground">{c.customer_code} {c.phone ? `· ${c.phone}` : ""}</p>
                             </div>
-                            {Number(c.current_balance) > 0 && (
+                            {Number(c.current_balance) > 0 ? (
                               <Badge variant="destructive" className="text-xs">Owes {Number(c.current_balance).toLocaleString()}</Badge>
+                            ) : (
+                              <Badge className="bg-success/10 text-success text-xs">Good standing</Badge>
                             )}
                           </div>
                         </button>
                       ))}
                       {filteredCustomers.length === 0 && (
-                        <button className="w-full px-3 py-2 text-left hover:bg-accent flex items-center gap-2" onMouseDown={() => { setIsNewCustomer(true); setNewCustName(customerSearch); }}>
+                        <button className="w-full px-3 py-2 text-left hover:bg-accent flex items-center gap-2" onMouseDown={() => { setCustomerMode("new"); setNewCustName(customerSearch); }}>
                           <UserPlus className="h-4 w-4" />
                           <span className="text-sm">Add "{customerSearch}" as new customer</span>
                         </button>
@@ -489,14 +556,18 @@ export default function NewInvoice() {
               {selectedCustomer && (
                 <div className="text-xs space-y-1 bg-muted/50 rounded-md p-2">
                   <p>{selectedCustomer.customer_code} {selectedCustomer.kra_pin ? `· PIN: ${selectedCustomer.kra_pin}` : ""}</p>
+                  {selectedCustomer.phone && <p>{selectedCustomer.phone}</p>}
+                  {(selectedCustomer as any).location && <p>{(selectedCustomer as any).location}</p>}
                   {Number(selectedCustomer.current_balance) > 0 && (
                     <p className="text-destructive font-medium">Outstanding: KES {Number(selectedCustomer.current_balance).toLocaleString()}</p>
                   )}
                   {Number(selectedCustomer.debt_limit) > 0 && (
-                    <p>Credit Limit: KES {Number(selectedCustomer.debt_limit).toLocaleString()}</p>
+                    <p>Credit Limit: KES {Number(selectedCustomer.debt_limit).toLocaleString()} · {Number((selectedCustomer as any).credit_terms) || 0}d terms</p>
                   )}
+                  <p className="text-muted-foreground">{selectedCustomer.visit_count} visits · KES {Number(selectedCustomer.total_spent).toLocaleString()} lifetime</p>
                 </div>
               )}
+
             </CardContent>
           </Card>
 
@@ -579,6 +650,15 @@ export default function NewInvoice() {
           </Card>
         </div>
       </div>
+
+      <WalkinConvertDialog
+        open={showConvert}
+        onOpenChange={setShowConvert}
+        phone={normalizePhone(walkinPhone)}
+        defaultName={walkinName || walkinHistory?.lastName}
+        history={walkinHistory}
+        onConverted={(id) => { setCustomerMode("existing"); setSelectedCustomerId(id); setCustomerSearch(walkinName || walkinHistory?.lastName || ""); }}
+      />
 
       {stkData && (
         <StkPushDialog

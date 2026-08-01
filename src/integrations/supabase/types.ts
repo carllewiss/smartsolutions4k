@@ -491,6 +491,8 @@ export type Database = {
           tax: number
           total: number
           updated_at: string
+          walkin_name: string | null
+          walkin_phone: string | null
         }
         Insert: {
           approval_reason?: string | null
@@ -517,6 +519,8 @@ export type Database = {
           tax?: number
           total?: number
           updated_at?: string
+          walkin_name?: string | null
+          walkin_phone?: string | null
         }
         Update: {
           approval_reason?: string | null
@@ -543,6 +547,8 @@ export type Database = {
           tax?: number
           total?: number
           updated_at?: string
+          walkin_name?: string | null
+          walkin_phone?: string | null
         }
         Relationships: [
           {
@@ -1668,6 +1674,10 @@ export type Database = {
     }
     Functions: {
       convert_po_to_invoice: { Args: { p_po_id: string }; Returns: string }
+      convert_walkin_to_customer: {
+        Args: { p_customer_id: string; p_phone: string }
+        Returns: number
+      }
       create_credit_note: {
         Args: {
           p_invoice_id: string

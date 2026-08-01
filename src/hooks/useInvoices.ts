@@ -13,6 +13,7 @@ export interface InvoiceWithItems extends InvoiceRow {
   customer_code?: string | null;
   customer_email?: string | null;
   customer_credit_terms?: number | null;
+  is_walkin?: boolean;
 }
 
 export function useInvoices() {
@@ -21,15 +22,19 @@ export function useInvoices() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("*, invoice_items(*, products(name)), customers(name, phone, kra_pin, customer_code, email, credit_terms)")
+        .select("*, invoice_items(*, products(name)), customers(name, phone, kra_pin, customer_code, email, credit_terms, customer_type)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data?.map(inv => {
         const c = inv.customers as any;
+        const walkinName = (inv as any).walkin_name as string | null;
+        const walkinPhone = (inv as any).walkin_phone as string | null;
+        const isWalkin = !!walkinPhone || !!walkinName || c?.customer_type === "walk_in";
         return {
           ...inv,
-          customer_name: c?.name || "Walk-in",
-          customer_phone: c?.phone ?? null,
+          is_walkin: isWalkin,
+          customer_name: walkinName || c?.name || "Walk-in",
+          customer_phone: walkinPhone ?? c?.phone ?? null,
           customer_kra_pin: c?.kra_pin ?? null,
           customer_code: c?.customer_code ?? null,
           customer_email: c?.email ?? null,
