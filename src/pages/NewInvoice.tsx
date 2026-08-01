@@ -453,18 +453,67 @@ export default function NewInvoice() {
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Customer</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Switch checked={customerMode === "new"} onCheckedChange={v => { setIsNewCustomer(v); if (v) setSelectedCustomerId(""); }} />
-                <Label className="text-xs">New customer</Label>
+              <div className="grid grid-cols-3 gap-1 rounded-md bg-muted p-1">
+                {([
+                  { key: "walkin", label: "Walk-in" },
+                  { key: "existing", label: "Existing" },
+                  { key: "new", label: "New" },
+                ] as const).map(m => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => {
+                      setCustomerMode(m.key);
+                      if (m.key !== "existing") { setSelectedCustomerId(""); setCustomerSearch(""); }
+                    }}
+                    className={`rounded-sm px-2 py-1.5 text-xs font-medium transition-colors ${
+                      customerMode === m.key ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
               </div>
 
-              {customerMode === "new" ? (
+              {customerMode === "walkin" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Walk-in Customer</span>
+                    <Badge variant="outline" className="text-[10px] ml-auto">No account created</Badge>
+                  </div>
+                  <Input placeholder="Phone (optional)" value={walkinPhone} onChange={e => setWalkinPhone(e.target.value)} />
+                  <Input placeholder="Name (optional)" value={walkinName} onChange={e => setWalkinName(e.target.value)} />
+
+                  {walkinHistory && (
+                    <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <div className="text-xs">
+                          <p className="font-semibold">Repeat walk-in detected</p>
+                          <p className="text-muted-foreground">
+                            {walkinHistory.visits} previous visit{walkinHistory.visits === 1 ? "" : "s"} · KES {walkinHistory.totalSpent.toLocaleString()} spent
+                            {walkinHistory.lastName ? ` · ${walkinHistory.lastName}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" className="w-full h-8" onClick={() => setShowConvert(true)}>
+                        <UserPlus className="h-3 w-3 mr-1" /> Convert to Customer
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {customerMode === "new" && (
                 <>
                   <Input placeholder="Customer name" value={newCustName} onChange={e => setNewCustName(e.target.value)} />
                   <Input placeholder="Phone (optional)" value={newCustPhone} onChange={e => setNewCustPhone(e.target.value)} />
                   <Input placeholder="KRA PIN (optional, enables VAT)" value={custPin} onChange={e => setCustPin(e.target.value)} />
                 </>
-              ) : (
+              )}
+
+              {customerMode === "existing" && (
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -484,14 +533,16 @@ export default function NewInvoice() {
                               <p className="text-sm font-medium">{c.name}</p>
                               <p className="text-xs text-muted-foreground">{c.customer_code} {c.phone ? `· ${c.phone}` : ""}</p>
                             </div>
-                            {Number(c.current_balance) > 0 && (
+                            {Number(c.current_balance) > 0 ? (
                               <Badge variant="destructive" className="text-xs">Owes {Number(c.current_balance).toLocaleString()}</Badge>
+                            ) : (
+                              <Badge className="bg-success/10 text-success text-xs">Good standing</Badge>
                             )}
                           </div>
                         </button>
                       ))}
                       {filteredCustomers.length === 0 && (
-                        <button className="w-full px-3 py-2 text-left hover:bg-accent flex items-center gap-2" onMouseDown={() => { setIsNewCustomer(true); setNewCustName(customerSearch); }}>
+                        <button className="w-full px-3 py-2 text-left hover:bg-accent flex items-center gap-2" onMouseDown={() => { setCustomerMode("new"); setNewCustName(customerSearch); }}>
                           <UserPlus className="h-4 w-4" />
                           <span className="text-sm">Add "{customerSearch}" as new customer</span>
                         </button>
@@ -504,14 +555,18 @@ export default function NewInvoice() {
               {selectedCustomer && (
                 <div className="text-xs space-y-1 bg-muted/50 rounded-md p-2">
                   <p>{selectedCustomer.customer_code} {selectedCustomer.kra_pin ? `· PIN: ${selectedCustomer.kra_pin}` : ""}</p>
+                  {selectedCustomer.phone && <p>{selectedCustomer.phone}</p>}
+                  {(selectedCustomer as any).location && <p>{(selectedCustomer as any).location}</p>}
                   {Number(selectedCustomer.current_balance) > 0 && (
                     <p className="text-destructive font-medium">Outstanding: KES {Number(selectedCustomer.current_balance).toLocaleString()}</p>
                   )}
                   {Number(selectedCustomer.debt_limit) > 0 && (
-                    <p>Credit Limit: KES {Number(selectedCustomer.debt_limit).toLocaleString()}</p>
+                    <p>Credit Limit: KES {Number(selectedCustomer.debt_limit).toLocaleString()} · {Number((selectedCustomer as any).credit_terms) || 0}d terms</p>
                   )}
+                  <p className="text-muted-foreground">{selectedCustomer.visit_count} visits · KES {Number(selectedCustomer.total_spent).toLocaleString()} lifetime</p>
                 </div>
               )}
+
             </CardContent>
           </Card>
 
