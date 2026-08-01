@@ -143,7 +143,7 @@ export default function NewInvoice() {
     const c = customers.find(c => c.id === id);
     if (c) setCustomerSearch(c.name);
     setShowCustDropdown(false);
-    setIsNewCustomer(false);
+    setCustomerMode("existing");
   };
 
   const addItem = (productId: string) => {
@@ -204,6 +204,14 @@ export default function NewInvoice() {
 
   const removeItem = (productId: string) => setItems(items.filter(i => i.product_id !== productId));
 
+  // The single shared "Walk-in Customer" ledger account (no record per walk-in).
+  const getWalkinAccountId = async (): Promise<string> => {
+    const walkin = customers.find(c => c.customer_type === "walk_in");
+    if (walkin) return walkin.id;
+    const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
+    return w.id;
+  };
+
   // Resolve (or create) the customer for this sale, returning its id.
   const resolveCustomerId = async (): Promise<string | null> => {
     let customerId = selectedCustomerId;
@@ -217,14 +225,7 @@ export default function NewInvoice() {
       });
       customerId = newCust.id;
     }
-    if (!customerId) {
-      const walkin = customers.find(c => c.customer_type === "walk_in");
-      if (walkin) customerId = walkin.id;
-      else {
-        const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
-        customerId = w.id;
-      }
-    }
+    if (!customerId) customerId = await getWalkinAccountId();
     return customerId;
   };
 
@@ -266,6 +267,8 @@ export default function NewInvoice() {
           status: (paid > 0 ? "partial" : "unpaid") as any,
           created_by: user?.id,
           approval_status: "approved",
+          walkin_name: customerMode === "walkin" ? (walkinName.trim() || null) : null,
+          walkin_phone: customerMode === "walkin" ? (normalizePhone(walkinPhone) || null) : null,
         } as any,
         items: items.map(i => ({
           product_id: i.product_id,
@@ -281,8 +284,8 @@ export default function NewInvoice() {
         invoiceId: inv.id,
         invoiceNumber: inv.invoice_number,
         customerId,
-        customerName: cust?.name || (customerMode === "new" ? newCustName : "Walk-in"),
-        phone: (customerMode === "new" ? newCustPhone : cust?.phone) || "",
+        customerName: customerMode === "new" ? newCustName : customerMode === "walkin" ? (walkinName || "Walk-in Customer") : (cust?.name || "Walk-in"),
+        phone: (customerMode === "new" ? newCustPhone : customerMode === "walkin" ? walkinPhone : cust?.phone) || "",
         amount: stkAmount,
       });
       setStkOpen(true);
@@ -295,10 +298,12 @@ export default function NewInvoice() {
     setMpesaAmount(0);
     setSelectedCustomerId("");
     setCustomerSearch("");
-    setIsNewCustomer(false);
+    setCustomerMode("walkin");
     setNewCustName("");
     setNewCustPhone("");
     setCustPin("");
+    setWalkinName("");
+    setWalkinPhone("");
   };
 
 
@@ -308,10 +313,14 @@ export default function NewInvoice() {
       toast.error("Amount doesn't cover total. Use 'Pay Later (Debt)' option.");
       return;
     }
+    if (customerMode === "walkin" && balance > 0) {
+      toast.error("Debt requires a customer account. Search an existing customer or create a new one.");
+      return;
+    }
 
     // Suspended customers cannot take new credit (debt) directly — route for admin approval.
     // Existing (already saved) customers only; a brand-new customer has no history.
-    const holdForApproval = !customerMode === "new" && needsApproval;
+    const holdForApproval = customerMode !== "new" && needsApproval;
 
     // eTIMS KRA PIN check
     if (etimsEnabled && selectedCustomer && selectedCustomer.customer_type === "regular" && !customerHasPin) {
@@ -338,13 +347,10 @@ export default function NewInvoice() {
     }
 
     if (!customerId) {
-      const walkin = customers.find(c => c.customer_type === "walk_in");
-      if (walkin) { customerId = walkin.id; }
-      else {
-        const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
-        customerId = w.id;
-      }
+      try { customerId = await getWalkinAccountId(); }
+      catch (e: any) { toast.error("Failed: " + e.message); return; }
     }
+    const isWalkinSale = customerMode === "walkin";
 
     try {
       await createInvoice.mutateAsync({
@@ -362,6 +368,8 @@ export default function NewInvoice() {
           created_by: user?.id,
           approval_status: holdForApproval ? "pending" : "approved",
           approval_reason: holdForApproval ? (creditStatus?.reasons.join("; ") || null) : null,
+          walkin_name: isWalkinSale ? (walkinName.trim() || null) : null,
+          walkin_phone: isWalkinSale ? (normalizePhone(walkinPhone) || null) : null,
         } as any,
         items: items.map(i => ({
           product_id: i.product_id,
@@ -379,6 +387,8 @@ export default function NewInvoice() {
       setMpesaAmount(0);
       setSelectedCustomerId("");
       setCustomerSearch("");
+      setWalkinName("");
+      setWalkinPhone("");
     } catch (e: any) { toast.error("Failed: " + e.message); }
   };
 
