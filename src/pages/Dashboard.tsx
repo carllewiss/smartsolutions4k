@@ -3,6 +3,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDailySummary } from "@/hooks/useDailySummary";
 import { useProductWithStock } from "@/hooks/useProducts";
 import { useWifiTransactions } from "@/hooks/useWifi";
+import { useGLFinancials } from "@/hooks/useAccounting";
+import { computePL } from "@/lib/financials";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,9 +19,12 @@ import {
   Wifi,
   FileText,
   HandCoins,
+  TrendingUp,
+  Wallet,
+  Percent,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 
 const kes = (n: number) =>
   `KSh ${Number(n || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -27,12 +32,20 @@ const kes = (n: number) =>
 export default function Dashboard() {
   const { isAdmin, user, displayName } = useAuth();
   const [today] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const monthFrom = useMemo(() => format(startOfMonth(new Date()), "yyyy-MM-dd"), []);
+  const monthTo = useMemo(() => format(endOfMonth(new Date()), "yyyy-MM-dd"), []);
 
   const { data: summary, isLoading } = useDailySummary(today, {
     agentId: isAdmin ? null : user?.id ?? null,
   });
   const { data: products = [] } = useProductWithStock();
   const { data: wifiTxns = [] } = useWifiTransactions();
+  const { data: glRows, isLoading: glLoading } = useGLFinancials(
+    isAdmin ? monthFrom : "",
+    isAdmin ? monthTo : ""
+  );
+
+  const monthly = useMemo(() => (glRows ? computePL(glRows) : null), [glRows]);
 
   const lowStockProducts = products.filter(
     (p) => !p.is_service && p.stock_on_hand <= p.min_stock && p.min_stock > 0
@@ -43,6 +56,13 @@ export default function Dashboard() {
     [wifiTxns, today]
   );
   const wifiTodayRevenue = wifiToday.reduce((s: number, t: any) => s + Number(t.amount), 0);
+
+  const wifiMonth = useMemo(
+    () => wifiTxns.filter((t: any) => t.paid_at >= monthFrom && t.paid_at <= `${monthTo}T23:59:59`),
+    [wifiTxns, monthFrom, monthTo]
+  );
+  const wifiMonthRevenue = wifiMonth.reduce((s: number, t: any) => s + Number(t.amount), 0);
+
 
   if (isLoading || !summary) {
     return (
