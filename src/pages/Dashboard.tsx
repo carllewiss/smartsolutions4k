@@ -220,7 +220,9 @@ export default function Dashboard() {
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold font-heading">Monthly Overview</h2>
               <Badge variant="secondary" className="text-xs">{format(new Date(), "MMMM yyyy")}</Badge>
+              <span className="text-xs text-muted-foreground">{monthFrom} → {monthTo}</span>
             </div>
+
 
             {glLoading || !monthly ? (
               <Card>
@@ -268,9 +270,10 @@ export default function Dashboard() {
                     tone="warning"
                     label="COST OF SALES + EXPENSES"
                     value={kes(monthly.cogsTotal + monthly.opexTotal + monthly.financeTotal)}
-                    sub={`COGS ${kes(monthly.cogsTotal)}`}
+                    sub={`COGS ${kes(monthly.cogsTotal)} · Expenses ${kes(monthly.opexTotal + monthly.financeTotal)}`}
                     subTone="warning"
                   />
+
                 </div>
 
                 {/* Profit summary strip */}
