@@ -220,7 +220,9 @@ export default function Dashboard() {
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold font-heading">Monthly Overview</h2>
               <Badge variant="secondary" className="text-xs">{format(new Date(), "MMMM yyyy")}</Badge>
+              <span className="text-xs text-muted-foreground">{monthFrom} → {monthTo}</span>
             </div>
+
 
             {glLoading || !monthly ? (
               <Card>
