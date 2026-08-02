@@ -270,9 +270,10 @@ export default function Dashboard() {
                     tone="warning"
                     label="COST OF SALES + EXPENSES"
                     value={kes(monthly.cogsTotal + monthly.opexTotal + monthly.financeTotal)}
-                    sub={`COGS ${kes(monthly.cogsTotal)}`}
+                    sub={`COGS ${kes(monthly.cogsTotal)} · Expenses ${kes(monthly.opexTotal + monthly.financeTotal)}`}
                     subTone="warning"
                   />
+
                 </div>
 
                 {/* Profit summary strip */}
