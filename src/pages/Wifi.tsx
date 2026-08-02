@@ -116,6 +116,7 @@ export default function Wifi() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard icon={DollarSign} label="Today's WiFi Revenue" value={kes(stats.todayRevenue)} sub={`${stats.todayCount} payments`} color="text-success" />
         <StatCard icon={TrendingUp} label="Last 7 Days" value={kes(stats.sevenDay)} sub="WiFi revenue" color="text-primary" />
+        <StatCard icon={DollarSign} label="Monthly WiFi Collection" value={kes(stats.monthRevenue)} sub={`${stats.monthLabel} · ${stats.monthCount} payments`} color="text-success" />
         <StatCard icon={Ticket} label="Vouchers Today" value={String(stats.vouchersToday)} sub="assigned" color="text-warning" />
         <StatCard icon={WifiIcon} label="All-Time Revenue" value={kes(stats.totalRevenue)} sub={`${txns.length} payments`} color="text-primary" />
       </div>

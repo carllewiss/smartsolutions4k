@@ -26,6 +26,7 @@ import {
 import PaymentDialog from "@/components/PaymentDialog";
 import EditCustomerDialog from "@/components/EditCustomerDialog";
 import CustomerStatementPrint from "@/components/CustomerStatementPrint";
+import { unifiedPayments } from "@/lib/payments";
 import { toast } from "sonner";
 
 const BUCKETS = [
@@ -55,7 +56,10 @@ export default function CustomerQuery() {
 
   const customer = customers.find((c) => c.id === customerId);
   const customerInvoices = invoices.filter((i) => i.customer_id === customerId);
-  const customerPayments = payments.filter((p) => p.customer_id === customerId);
+  const customerPayments = useMemo(
+    () => unifiedPayments(customerInvoices, payments.filter((p) => p.customer_id === customerId)),
+    [customerInvoices, payments, customerId]
+  );
 
   const aging = useMemo(() => {
     const now = new Date();
