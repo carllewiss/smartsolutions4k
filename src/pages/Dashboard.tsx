@@ -477,3 +477,27 @@ function GlanceRow({
     </div>
   );
 }
+
+function ProfitItem({
+  icon: Icon,
+  label,
+  value,
+  tone = "primary",
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  tone?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className={`p-2.5 rounded-full ${TONES[tone]}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-lg font-bold font-heading">{value}</p>
+      </div>
+    </div>
+  );
+}
