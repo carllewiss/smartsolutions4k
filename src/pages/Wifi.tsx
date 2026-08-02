@@ -68,6 +68,13 @@ export default function Wifi() {
     const sevenDay = txns
       .filter((t) => new Date(t.paid_at) >= subDays(today, 7))
       .reduce((s, t) => s + Number(t.amount), 0);
+    const mStart = startOfMonth(today);
+    const mEnd = endOfMonth(today);
+    const monthTx = txns.filter((t) => {
+      const d = new Date(t.paid_at);
+      return d >= mStart && d <= mEnd;
+    });
+    const monthRevenue = monthTx.reduce((s, t) => s + Number(t.amount), 0);
     const vouchersToday = vouchers.filter((v) => v.used_at && isToday(new Date(v.used_at))).length;
 
     const daily = Array.from({ length: 7 }, (_, i) => {
@@ -79,8 +86,13 @@ export default function Wifi() {
       return { name: format(d, "EEE"), revenue };
     });
 
-    return { todayRevenue, totalRevenue, sevenDay, todayCount: todayTx.length, vouchersToday, daily };
+    return {
+      todayRevenue, totalRevenue, sevenDay, monthRevenue,
+      monthCount: monthTx.length, monthLabel: format(today, "MMMM yyyy"),
+      todayCount: todayTx.length, vouchersToday, daily,
+    };
   }, [txns, vouchers]);
+
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
