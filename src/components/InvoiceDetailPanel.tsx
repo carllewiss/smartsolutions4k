@@ -6,6 +6,7 @@ import {
   CheckCircle2, Circle, Receipt, User, Phone, Hash, FileClock, Smartphone,
 } from "lucide-react";
 import type { InvoiceWithItems } from "@/hooks/useInvoices";
+import { posPaymentFromInvoice } from "@/lib/payments";
 
 type PaymentRow = {
   id: string;
@@ -187,21 +188,28 @@ export function InvoiceDetailPanel({
                 <thead className="bg-muted/50 text-xs text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2 text-left">Date</th>
+                    <th className="px-3 py-2 text-left">Source</th>
                     <th className="px-3 py-2 text-right">Cash</th>
                     <th className="px-3 py-2 text-right">M-Pesa</th>
                     <th className="px-3 py-2 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {invPayments.map((p) => (
+                  {invPayments.map((p: any) => (
                     <tr key={p.id} className="border-t">
                       <td className="px-3 py-2">{format(new Date(p.payment_date), "dd MMM yyyy HH:mm")}</td>
+                      <td className="px-3 py-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          {p.source === "pos" ? "At sale" : "Debt payment"}
+                        </Badge>
+                      </td>
                       <td className="px-3 py-2 text-right font-mono">{Number(p.cash_amount).toLocaleString()}</td>
                       <td className="px-3 py-2 text-right font-mono">{Number(p.mpesa_amount).toLocaleString()}</td>
                       <td className="px-3 py-2 text-right font-mono font-medium">KES {Number(p.amount).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             </div>
           )}
