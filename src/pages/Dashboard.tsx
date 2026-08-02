@@ -3,6 +3,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDailySummary } from "@/hooks/useDailySummary";
 import { useProductWithStock } from "@/hooks/useProducts";
 import { useWifiTransactions } from "@/hooks/useWifi";
+import { useGLFinancials } from "@/hooks/useAccounting";
+import { computePL } from "@/lib/financials";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,9 +19,12 @@ import {
   Wifi,
   FileText,
   HandCoins,
+  TrendingUp,
+  Wallet,
+  Percent,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 
 const kes = (n: number) =>
   `KSh ${Number(n || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -27,12 +32,19 @@ const kes = (n: number) =>
 export default function Dashboard() {
   const { isAdmin, user, displayName } = useAuth();
   const [today] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const monthFrom = useMemo(() => format(startOfMonth(new Date()), "yyyy-MM-dd"), []);
+  const monthTo = useMemo(() => format(endOfMonth(new Date()), "yyyy-MM-dd"), []);
 
   const { data: summary, isLoading } = useDailySummary(today, {
     agentId: isAdmin ? null : user?.id ?? null,
   });
   const { data: products = [] } = useProductWithStock();
   const { data: wifiTxns = [] } = useWifiTransactions();
+  const { data: glRows, isLoading: glLoading } = useGLFinancials(monthFrom, monthTo, {
+    enabled: isAdmin,
+  });
+
+  const monthly = useMemo(() => (glRows ? computePL(glRows) : null), [glRows]);
 
   const lowStockProducts = products.filter(
     (p) => !p.is_service && p.stock_on_hand <= p.min_stock && p.min_stock > 0
@@ -43,6 +55,13 @@ export default function Dashboard() {
     [wifiTxns, today]
   );
   const wifiTodayRevenue = wifiToday.reduce((s: number, t: any) => s + Number(t.amount), 0);
+
+  const wifiMonth = useMemo(
+    () => wifiTxns.filter((t: any) => t.paid_at >= monthFrom && t.paid_at <= `${monthTo}T23:59:59`),
+    [wifiTxns, monthFrom, monthTo]
+  );
+  const wifiMonthRevenue = wifiMonth.reduce((s: number, t: any) => s + Number(t.amount), 0);
+
 
   if (isLoading || !summary) {
     return (
@@ -196,6 +215,94 @@ export default function Dashboard() {
       {/* ── Admin only: per-agent breakdown + wifi ── */}
       {isAdmin && (
         <>
+          {/* ── Monthly overview ─────────────────── */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold font-heading">Monthly Overview</h2>
+              <Badge variant="secondary" className="text-xs">{format(new Date(), "MMMM yyyy")}</Badge>
+            </div>
+
+            {glLoading || !monthly ? (
+              <Card>
+                <CardContent className="p-8 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                  <span className="ml-3 text-sm text-muted-foreground">Loading month figures from the ledger…</span>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard
+                    icon={ShoppingCart}
+                    tone="success"
+                    label="MONTHLY SALES"
+                    value={kes(monthly.salesTotal)}
+                    sub="Product & service revenue"
+                    subTone="success"
+                  />
+                  <Link to="/wifi" className="block">
+                    <StatCard
+                      icon={Wifi}
+                      tone="success"
+                      label="WIFI MONTHLY COLLECTION"
+                      value={kes(wifiMonthRevenue)}
+                      sub={`${wifiMonth.length} payments`}
+                      subTone="success"
+                    />
+                  </Link>
+                  <StatCard
+                    icon={TrendingUp}
+                    tone="primary"
+                    label="TOTAL PROFIT"
+                    value={kes(monthly.netProfit)}
+                    valueTone={monthly.netProfit >= 0 ? "success" : "warning"}
+                    sub={`${
+                      monthly.salesTotal + monthly.otherIncomeTotal > 0
+                        ? ((monthly.netProfit / (monthly.salesTotal + monthly.otherIncomeTotal)) * 100).toFixed(1)
+                        : "0.0"
+                    }% net margin`}
+                    subTone="primary"
+                  />
+                  <StatCard
+                    icon={Wallet}
+                    tone="warning"
+                    label="COST OF SALES + EXPENSES"
+                    value={kes(monthly.cogsTotal + monthly.opexTotal + monthly.financeTotal)}
+                    sub={`COGS ${kes(monthly.cogsTotal)}`}
+                    subTone="warning"
+                  />
+                </div>
+
+                {/* Profit summary strip */}
+                <Card className="bg-muted/30">
+                  <CardContent className="p-4">
+                    <p className="text-sm font-semibold text-primary mb-4">Profit Summary (This Month)</p>
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+                      <ProfitItem icon={ShoppingCart} tone="success" label="Total Sales" value={kes(monthly.salesTotal + monthly.otherIncomeTotal)} />
+                      <span className="text-2xl text-muted-foreground">−</span>
+                      <ProfitItem icon={Wallet} tone="warning" label="Cost of Sales & Expenses" value={kes(monthly.cogsTotal + monthly.opexTotal + monthly.financeTotal)} />
+                      <span className="text-2xl text-muted-foreground">=</span>
+                      <ProfitItem icon={TrendingUp} tone="primary" label="Net Profit" value={kes(monthly.netProfit)} />
+                      <span className="hidden md:block h-10 w-px bg-border" />
+                      <ProfitItem
+                        icon={Percent}
+                        tone="primary"
+                        label="Profit Margin"
+                        value={`${
+                          monthly.salesTotal + monthly.otherIncomeTotal > 0
+                            ? ((monthly.netProfit / (monthly.salesTotal + monthly.otherIncomeTotal)) * 100).toFixed(1)
+                            : "0.0"
+                        }%`}
+                      />
+                      <ProfitItem icon={Coins} tone="success" label="Gross Profit" value={kes(monthly.grossProfit)} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+
+
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Collections by Agent — Today</CardTitle>
@@ -367,6 +474,30 @@ function GlanceRow({
       </div>
       <span className="text-sm flex-1">{label}</span>
       <span className="text-sm font-bold">{value}</span>
+    </div>
+  );
+}
+
+function ProfitItem({
+  icon: Icon,
+  label,
+  value,
+  tone = "primary",
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  tone?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className={`p-2.5 rounded-full ${TONES[tone]}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-lg font-bold font-heading">{value}</p>
+      </div>
     </div>
   );
 }

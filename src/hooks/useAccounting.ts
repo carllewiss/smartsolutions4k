@@ -52,8 +52,9 @@ export interface GLAgg {
  * All financial statements derive from these GL figures (never from
  * invoices/expenses tables) so adjustments, journals & accruals are included.
  */
-export function useGLFinancials(from: string, to: string) {
+export function useGLFinancials(from: string, to: string, opts?: { enabled?: boolean }) {
   return useQuery({
+    enabled: opts?.enabled ?? true,
     queryKey: ["gl-financials", from, to],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("gl_financials", { p_from: from, p_to: to });
