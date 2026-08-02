@@ -46,8 +46,8 @@ export default function CustomerStatementPrint({
     })),
     ...payments.filter((p) => within(p.payment_date)).map((p) => ({
       date: p.payment_date,
-      desc: "Payment Received",
-      ref: p.id?.slice(0, 8).toUpperCase(),
+      desc: p.source === "pos" ? "Payment (at sale)" : "Payment Received",
+      ref: p.invoice_number || p.id?.replace("pos-", "").slice(0, 8).toUpperCase(),
       debit: 0,
       credit: Number(p.amount),
     })),
