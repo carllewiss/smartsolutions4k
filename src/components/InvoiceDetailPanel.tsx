@@ -6,6 +6,7 @@ import {
   CheckCircle2, Circle, Receipt, User, Phone, Hash, FileClock, Smartphone,
 } from "lucide-react";
 import type { InvoiceWithItems } from "@/hooks/useInvoices";
+import { posPaymentFromInvoice } from "@/lib/payments";
 
 type PaymentRow = {
   id: string;
@@ -76,9 +77,11 @@ export function InvoiceDetailPanel({
   onStatement: () => void;
   onStk?: () => void;
 }) {
-  const invPayments = payments
-    .filter((p) => p.invoice_id === invoice.id)
-    .sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime());
+  const posRow = posPaymentFromInvoice(invoice);
+  const invPayments = [
+    ...(posRow ? [posRow] : []),
+    ...payments.filter((p) => p.invoice_id === invoice.id).map((p) => ({ ...p, source: "allocation" as const })),
+  ].sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime());
 
   const bal = Number(invoice.balance);
   const overdue = bal > 0 && differenceInDays(new Date(), new Date(invoice.created_at)) > (invoice.customer_credit_terms || 30);
@@ -185,21 +188,28 @@ export function InvoiceDetailPanel({
                 <thead className="bg-muted/50 text-xs text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2 text-left">Date</th>
+                    <th className="px-3 py-2 text-left">Source</th>
                     <th className="px-3 py-2 text-right">Cash</th>
                     <th className="px-3 py-2 text-right">M-Pesa</th>
                     <th className="px-3 py-2 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {invPayments.map((p) => (
+                  {invPayments.map((p: any) => (
                     <tr key={p.id} className="border-t">
                       <td className="px-3 py-2">{format(new Date(p.payment_date), "dd MMM yyyy HH:mm")}</td>
+                      <td className="px-3 py-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          {p.source === "pos" ? "At sale" : "Debt payment"}
+                        </Badge>
+                      </td>
                       <td className="px-3 py-2 text-right font-mono">{Number(p.cash_amount).toLocaleString()}</td>
                       <td className="px-3 py-2 text-right font-mono">{Number(p.mpesa_amount).toLocaleString()}</td>
                       <td className="px-3 py-2 text-right font-mono font-medium">KES {Number(p.amount).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             </div>
           )}

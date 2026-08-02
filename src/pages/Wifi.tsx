@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { format, subDays, isToday } from "date-fns";
+import { format, subDays, isToday, startOfMonth, endOfMonth } from "date-fns";
 import VoucherInventory from "@/components/VoucherInventory";
 import type { WifiVoucher } from "@/hooks/useWifi";
 
@@ -68,6 +68,13 @@ export default function Wifi() {
     const sevenDay = txns
       .filter((t) => new Date(t.paid_at) >= subDays(today, 7))
       .reduce((s, t) => s + Number(t.amount), 0);
+    const mStart = startOfMonth(today);
+    const mEnd = endOfMonth(today);
+    const monthTx = txns.filter((t) => {
+      const d = new Date(t.paid_at);
+      return d >= mStart && d <= mEnd;
+    });
+    const monthRevenue = monthTx.reduce((s, t) => s + Number(t.amount), 0);
     const vouchersToday = vouchers.filter((v) => v.used_at && isToday(new Date(v.used_at))).length;
 
     const daily = Array.from({ length: 7 }, (_, i) => {
@@ -79,8 +86,13 @@ export default function Wifi() {
       return { name: format(d, "EEE"), revenue };
     });
 
-    return { todayRevenue, totalRevenue, sevenDay, todayCount: todayTx.length, vouchersToday, daily };
+    return {
+      todayRevenue, totalRevenue, sevenDay, monthRevenue,
+      monthCount: monthTx.length, monthLabel: format(today, "MMMM yyyy"),
+      todayCount: todayTx.length, vouchersToday, daily,
+    };
   }, [txns, vouchers]);
+
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
@@ -104,6 +116,7 @@ export default function Wifi() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard icon={DollarSign} label="Today's WiFi Revenue" value={kes(stats.todayRevenue)} sub={`${stats.todayCount} payments`} color="text-success" />
         <StatCard icon={TrendingUp} label="Last 7 Days" value={kes(stats.sevenDay)} sub="WiFi revenue" color="text-primary" />
+        <StatCard icon={DollarSign} label="Monthly WiFi Collection" value={kes(stats.monthRevenue)} sub={`${stats.monthLabel} · ${stats.monthCount} payments`} color="text-success" />
         <StatCard icon={Ticket} label="Vouchers Today" value={String(stats.vouchersToday)} sub="assigned" color="text-warning" />
         <StatCard icon={WifiIcon} label="All-Time Revenue" value={kes(stats.totalRevenue)} sub={`${txns.length} payments`} color="text-primary" />
       </div>
