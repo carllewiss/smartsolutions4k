@@ -40,10 +40,9 @@ export default function Dashboard() {
   });
   const { data: products = [] } = useProductWithStock();
   const { data: wifiTxns = [] } = useWifiTransactions();
-  const { data: glRows, isLoading: glLoading } = useGLFinancials(
-    isAdmin ? monthFrom : "",
-    isAdmin ? monthTo : ""
-  );
+  const { data: glRows, isLoading: glLoading } = useGLFinancials(monthFrom, monthTo, {
+    enabled: isAdmin,
+  });
 
   const monthly = useMemo(() => (glRows ? computePL(glRows) : null), [glRows]);
 
