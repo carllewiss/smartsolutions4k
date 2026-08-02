@@ -215,6 +215,94 @@ export default function Dashboard() {
       {/* ── Admin only: per-agent breakdown + wifi ── */}
       {isAdmin && (
         <>
+          {/* ── Monthly overview ─────────────────── */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold font-heading">Monthly Overview</h2>
+              <Badge variant="secondary" className="text-xs">{format(new Date(), "MMMM yyyy")}</Badge>
+            </div>
+
+            {glLoading || !monthly ? (
+              <Card>
+                <CardContent className="p-8 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                  <span className="ml-3 text-sm text-muted-foreground">Loading month figures from the ledger…</span>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard
+                    icon={ShoppingCart}
+                    tone="success"
+                    label="MONTHLY SALES"
+                    value={kes(monthly.salesTotal)}
+                    sub="Product & service revenue"
+                    subTone="success"
+                  />
+                  <Link to="/wifi" className="block">
+                    <StatCard
+                      icon={Wifi}
+                      tone="success"
+                      label="WIFI MONTHLY COLLECTION"
+                      value={kes(wifiMonthRevenue)}
+                      sub={`${wifiMonth.length} payments`}
+                      subTone="success"
+                    />
+                  </Link>
+                  <StatCard
+                    icon={TrendingUp}
+                    tone="primary"
+                    label="TOTAL PROFIT"
+                    value={kes(monthly.netProfit)}
+                    valueTone={monthly.netProfit >= 0 ? "success" : "warning"}
+                    sub={`${
+                      monthly.salesTotal + monthly.otherIncomeTotal > 0
+                        ? ((monthly.netProfit / (monthly.salesTotal + monthly.otherIncomeTotal)) * 100).toFixed(1)
+                        : "0.0"
+                    }% net margin`}
+                    subTone="primary"
+                  />
+                  <StatCard
+                    icon={Wallet}
+                    tone="warning"
+                    label="COST OF SALES + EXPENSES"
+                    value={kes(monthly.cogsTotal + monthly.opexTotal + monthly.financeTotal)}
+                    sub={`COGS ${kes(monthly.cogsTotal)}`}
+                    subTone="warning"
+                  />
+                </div>
+
+                {/* Profit summary strip */}
+                <Card className="bg-muted/30">
+                  <CardContent className="p-4">
+                    <p className="text-sm font-semibold text-primary mb-4">Profit Summary (This Month)</p>
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+                      <ProfitItem icon={ShoppingCart} tone="success" label="Total Sales" value={kes(monthly.salesTotal + monthly.otherIncomeTotal)} />
+                      <span className="text-2xl text-muted-foreground">−</span>
+                      <ProfitItem icon={Wallet} tone="warning" label="Cost of Sales & Expenses" value={kes(monthly.cogsTotal + monthly.opexTotal + monthly.financeTotal)} />
+                      <span className="text-2xl text-muted-foreground">=</span>
+                      <ProfitItem icon={TrendingUp} tone="primary" label="Net Profit" value={kes(monthly.netProfit)} />
+                      <span className="hidden md:block h-10 w-px bg-border" />
+                      <ProfitItem
+                        icon={Percent}
+                        tone="primary"
+                        label="Profit Margin"
+                        value={`${
+                          monthly.salesTotal + monthly.otherIncomeTotal > 0
+                            ? ((monthly.netProfit / (monthly.salesTotal + monthly.otherIncomeTotal)) * 100).toFixed(1)
+                            : "0.0"
+                        }%`}
+                      />
+                      <ProfitItem icon={Coins} tone="success" label="Gross Profit" value={kes(monthly.grossProfit)} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+
+
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Collections by Agent — Today</CardTitle>
