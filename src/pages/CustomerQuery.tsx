@@ -328,23 +328,28 @@ export default function CustomerQuery() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
+                    <TableHead>Invoice</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Cash</TableHead>
                     <TableHead className="text-right">M-Pesa</TableHead>
-                    <TableHead>Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {customerPayments.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-mono text-xs">{format(new Date(p.payment_date), "dd/MM/yyyy HH:mm")}</TableCell>
+                      <TableCell className="font-mono text-xs">{p.invoice_number || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">{p.source === "pos" ? "At sale" : "Debt payment"}</Badge>
+                      </TableCell>
                       <TableCell className="text-right font-semibold text-success">+ KES {Number(p.amount).toLocaleString()}</TableCell>
                       <TableCell className="text-right text-sm">{Number(p.cash_amount).toLocaleString()}</TableCell>
                       <TableCell className="text-right text-sm">{Number(p.mpesa_amount).toLocaleString()}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{p.notes || "—"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
+
               </Table>
             )}
           </TabsContent>
