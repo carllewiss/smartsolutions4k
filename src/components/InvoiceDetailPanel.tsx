@@ -76,9 +76,11 @@ export function InvoiceDetailPanel({
   onStatement: () => void;
   onStk?: () => void;
 }) {
-  const invPayments = payments
-    .filter((p) => p.invoice_id === invoice.id)
-    .sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime());
+  const posRow = posPaymentFromInvoice(invoice);
+  const invPayments = [
+    ...(posRow ? [posRow] : []),
+    ...payments.filter((p) => p.invoice_id === invoice.id).map((p) => ({ ...p, source: "allocation" as const })),
+  ].sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime());
 
   const bal = Number(invoice.balance);
   const overdue = bal > 0 && differenceInDays(new Date(), new Date(invoice.created_at)) > (invoice.customer_credit_terms || 30);
