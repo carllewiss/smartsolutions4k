@@ -3,6 +3,21 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const normalizePhone = (p?: string | null) => (p || "").replace(/\s+/g, "").trim();
 
+/** The single shared walk-in ledger account every untagged walk-in sale is booked to. */
+export const WALKIN_CUSTOMER_CODE = "4K-CUST-015";
+export const WALKIN_CUSTOMER_NAME = "WALKIN-CUSTOMER";
+
+/** Picks the official walk-in account from a customer list (never any other walk_in row). */
+export function findWalkinAccount<T extends { customer_code?: string | null; name?: string | null; customer_type?: string | null }>(
+  customers: T[]
+): T | undefined {
+  return (
+    customers.find((c) => c.customer_code === WALKIN_CUSTOMER_CODE) ||
+    customers.find((c) => (c.name || "").trim().toUpperCase() === WALKIN_CUSTOMER_NAME) ||
+    customers.find((c) => c.customer_type === "walk_in")
+  );
+}
+
 export interface WalkinHistory {
   phone: string;
   visits: number;
