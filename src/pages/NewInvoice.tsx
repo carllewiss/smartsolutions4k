@@ -205,11 +205,11 @@ export default function NewInvoice() {
 
   const removeItem = (productId: string) => setItems(items.filter(i => i.product_id !== productId));
 
-  // The single shared "Walk-in Customer" ledger account (no record per walk-in).
+  // The single shared "WALKIN-CUSTOMER" ledger account (no record per walk-in).
   const getWalkinAccountId = async (): Promise<string> => {
-    const walkin = customers.find(c => c.customer_type === "walk_in");
-    if (walkin) return walkin.id;
-    const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
+    const walkin = findWalkinAccount(customers as any);
+    if (walkin) return (walkin as any).id;
+    const w = await createCustomer.mutateAsync({ name: WALKIN_CUSTOMER_NAME, customer_type: "walk_in" });
     return w.id;
   };
 
