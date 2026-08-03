@@ -76,6 +76,11 @@ export default function NewInvoice() {
   const [stkOpen, setStkOpen] = useState(false);
   const [stkData, setStkData] = useState<{ invoiceId: string; invoiceNumber?: string; customerId: string | null; customerName?: string; phone: string; amount: number } | null>(null);
 
+  // Overpayment state
+  const [overpayOpen, setOverpayOpen] = useState(false);
+  const [overpayData, setOverpayData] = useState<{ invoiceId: string; invoiceNumber?: string; customerId: string; customerName: string; overpaid: number; cash: number; mpesa: number } | null>(null);
+
+
   // Customer search (fuzzy)
   const filteredCustomers = useMemo(() => {
     if (!customerSearch.trim()) return customers.filter(c => c.customer_type !== "walk_in").slice(0, 10);
