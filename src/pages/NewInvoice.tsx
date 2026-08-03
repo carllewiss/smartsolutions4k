@@ -354,8 +354,10 @@ export default function NewInvoice() {
     }
     const isWalkinSale = customerMode === "walkin";
 
+    const overpaid = Math.max(0, Math.round((paidAmount - total) * 100) / 100);
+
     try {
-      await createInvoice.mutateAsync({
+      const inv = await createInvoice.mutateAsync({
         invoice: {
           customer_id: customerId,
           subtotal,
@@ -384,6 +386,22 @@ export default function NewInvoice() {
       toast.success(holdForApproval
         ? "Invoice held for admin approval (customer over limit / overdue)."
         : "Invoice created!");
+
+      if (overpaid > 0) {
+        setOverpayData({
+          invoiceId: inv.id,
+          invoiceNumber: (inv as any).invoice_number,
+          customerId,
+          customerName: customerMode === "walkin"
+            ? (walkinName.trim() || "Walk-in customer")
+            : (selectedCustomer?.name || newCustName || "Customer"),
+          overpaid,
+          cash: paymentMethod === "mpesa" ? 0 : Math.max(0, cashAmount - total),
+          mpesa: paymentMethod === "cash" ? 0 : Math.max(0, overpaid - Math.max(0, cashAmount - total)),
+        });
+        setOverpayOpen(true);
+      }
+
       setItems([]);
       setCashAmount(0);
       setMpesaAmount(0);
