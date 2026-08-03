@@ -83,6 +83,8 @@ export default function CustomerQuery() {
   const lastPayment = customerPayments[0];
   const avgInvoice = customerInvoices.length ? totalSales / customerInvoices.length : 0;
   const unpaidInvoices = customerInvoices.filter((i) => Number(i.balance) > 0);
+  /** Money the customer has overpaid — sits as a credit against future invoices. */
+  const creditBalance = customerInvoices.reduce((s, i) => s + Math.max(0, -Number(i.balance)), 0);
 
   const pieData = BUCKETS.map((b) => ({ name: b.label, value: aging[b.key] || 0, color: b.color }));
   const barData = pieData.map((d) => ({ name: d.name, value: d.value, color: d.color }));
