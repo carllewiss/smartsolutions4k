@@ -202,8 +202,14 @@ export default function CustomerQuery() {
               ) : (
                 <p className="text-3xl font-bold text-success">KES 0</p>
               )}
+              {creditBalance > 0 && (
+                <p className="text-sm font-semibold text-success mt-1">
+                  Credit on account: KES {creditBalance.toLocaleString()} CR
+                </p>
+              )}
             </div>
           </div>
+
 
           <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4 pt-6 border-t">
             <Field icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={customer.phone || "—"} />
