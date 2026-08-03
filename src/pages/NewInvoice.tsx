@@ -697,6 +697,20 @@ export default function NewInvoice() {
           onPaid={resetAfterSale}
         />
       )}
+
+      {overpayData && (
+        <OverpaymentDialog
+          open={overpayOpen}
+          onOpenChange={(o) => { setOverpayOpen(o); if (!o) setOverpayData(null); }}
+          customerId={overpayData.customerId}
+          customerName={overpayData.customerName}
+          invoiceId={overpayData.invoiceId}
+          invoiceNumber={overpayData.invoiceNumber}
+          overpaid={overpayData.overpaid}
+          cashAmount={overpayData.cash}
+          mpesaAmount={overpayData.mpesa}
+        />
+      )}
     </div>
   );
 }
