@@ -49,6 +49,8 @@ export default function PaymentDialog({ open, onOpenChange, customerId, customer
       totalAmount
     );
     if (allocations.length === 0) { toast.error("No invoices to allocate to"); return; }
+    const allocated = allocations.reduce((s, a) => s + a.amount, 0);
+    const credit = Math.round((totalAmount - allocated) * 100) / 100;
 
     try {
       await allocatePayment.mutateAsync({
@@ -57,9 +59,15 @@ export default function PaymentDialog({ open, onOpenChange, customerId, customer
         cash_amount: cashAmount,
         mpesa_amount: mpesaAmount,
         allocations,
+        credit_amount: credit > 0 ? credit : 0,
+        credit_invoice_id: credit > 0 ? allocations[allocations.length - 1].invoice_id : undefined,
         created_by: user?.id,
       });
-      toast.success(`KES ${totalAmount.toLocaleString()} allocated to ${allocations.length} invoice(s)`);
+      toast.success(
+        credit > 0
+          ? `KES ${allocated.toLocaleString()} allocated · KES ${credit.toLocaleString()} kept as credit`
+          : `KES ${totalAmount.toLocaleString()} allocated to ${allocations.length} invoice(s)`
+      );
       onOpenChange(false);
       resetForm();
     } catch (e: any) { toast.error(e.message); }
@@ -71,7 +79,9 @@ export default function PaymentDialog({ open, onOpenChange, customerId, customer
       .map(([invoice_id, amount]) => ({ invoice_id, amount }));
 
     if (allocations.length === 0) { toast.error("Allocate amounts to invoices"); return; }
-    const total = allocations.reduce((s, a) => s + a.amount, 0);
+    const allocated = allocations.reduce((s, a) => s + a.amount, 0);
+    const total = Math.max(totalAmount, allocated);
+    const credit = Math.round((total - allocated) * 100) / 100;
 
     try {
       await allocatePayment.mutateAsync({
@@ -80,9 +90,15 @@ export default function PaymentDialog({ open, onOpenChange, customerId, customer
         cash_amount: cashAmount,
         mpesa_amount: mpesaAmount,
         allocations,
+        credit_amount: credit > 0 ? credit : 0,
+        credit_invoice_id: credit > 0 ? allocations[allocations.length - 1].invoice_id : undefined,
         created_by: user?.id,
       });
-      toast.success(`KES ${total.toLocaleString()} allocated manually`);
+      toast.success(
+        credit > 0
+          ? `KES ${allocated.toLocaleString()} allocated · KES ${credit.toLocaleString()} kept as credit`
+          : `KES ${total.toLocaleString()} allocated manually`
+      );
       onOpenChange(false);
       resetForm();
     } catch (e: any) { toast.error(e.message); }
