@@ -123,11 +123,20 @@ export default function CustomerStatementPrint({
             );
           })}
           <tr className="border-y-2 border-black bg-gray-100 font-bold">
-            <td className="p-2" colSpan={3}>CLOSING BALANCE</td>
+            <td className="p-2" colSpan={3}>{closing < 0 ? "CLOSING CREDIT BALANCE" : "CLOSING BALANCE"}</td>
             <td className="p-2 text-right">{totalDebit.toLocaleString()}</td>
             <td className="p-2 text-right">{totalCredit.toLocaleString()}</td>
-            <td className="p-2 text-right text-base">KES {closing.toLocaleString()}</td>
+            <td className="p-2 text-right text-base">
+              KES {Math.abs(closing).toLocaleString()}{closing < 0 ? " CR" : ""}
+            </td>
           </tr>
+          {closing < 0 && (
+            <tr>
+              <td colSpan={6} className="p-2 text-[9pt] italic">
+                Credit of KES {Math.abs(closing).toLocaleString()} is held on your account and will be applied to future invoices.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 

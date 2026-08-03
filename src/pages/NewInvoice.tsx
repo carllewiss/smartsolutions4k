@@ -14,7 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Search, AlertTriangle, UserPlus, Ban, Smartphone, User, Sparkles } from "lucide-react";
-import { useWalkinHistory, normalizePhone } from "@/hooks/useWalkins";
+import { useWalkinHistory, normalizePhone, findWalkinAccount, WALKIN_CUSTOMER_NAME } from "@/hooks/useWalkins";
+import OverpaymentDialog from "@/components/OverpaymentDialog";
 import WalkinConvertDialog from "@/components/WalkinConvertDialog";
 import { StockSearchAutocomplete } from "@/components/StockSearchAutocomplete";
 import StkPushDialog from "@/components/StkPushDialog";
@@ -74,6 +75,11 @@ export default function NewInvoice() {
   // STK Push (M-Pesa) state
   const [stkOpen, setStkOpen] = useState(false);
   const [stkData, setStkData] = useState<{ invoiceId: string; invoiceNumber?: string; customerId: string | null; customerName?: string; phone: string; amount: number } | null>(null);
+
+  // Overpayment state
+  const [overpayOpen, setOverpayOpen] = useState(false);
+  const [overpayData, setOverpayData] = useState<{ invoiceId: string; invoiceNumber?: string; customerId: string; customerName: string; overpaid: number; cash: number; mpesa: number } | null>(null);
+
 
   // Customer search (fuzzy)
   const filteredCustomers = useMemo(() => {
@@ -205,11 +211,11 @@ export default function NewInvoice() {
 
   const removeItem = (productId: string) => setItems(items.filter(i => i.product_id !== productId));
 
-  // The single shared "Walk-in Customer" ledger account (no record per walk-in).
+  // The single shared "WALKIN-CUSTOMER" ledger account (no record per walk-in).
   const getWalkinAccountId = async (): Promise<string> => {
-    const walkin = customers.find(c => c.customer_type === "walk_in");
-    if (walkin) return walkin.id;
-    const w = await createCustomer.mutateAsync({ name: "Walk-in Customer", customer_type: "walk_in" });
+    const walkin = findWalkinAccount(customers as any);
+    if (walkin) return (walkin as any).id;
+    const w = await createCustomer.mutateAsync({ name: WALKIN_CUSTOMER_NAME, customer_type: "walk_in" });
     return w.id;
   };
 
@@ -353,8 +359,10 @@ export default function NewInvoice() {
     }
     const isWalkinSale = customerMode === "walkin";
 
+    const overpaid = Math.max(0, Math.round((paidAmount - total) * 100) / 100);
+
     try {
-      await createInvoice.mutateAsync({
+      const inv = await createInvoice.mutateAsync({
         invoice: {
           customer_id: customerId,
           subtotal,
@@ -383,6 +391,22 @@ export default function NewInvoice() {
       toast.success(holdForApproval
         ? "Invoice held for admin approval (customer over limit / overdue)."
         : "Invoice created!");
+
+      if (overpaid > 0) {
+        setOverpayData({
+          invoiceId: inv.id,
+          invoiceNumber: (inv as any).invoice_number,
+          customerId,
+          customerName: customerMode === "walkin"
+            ? (walkinName.trim() || "Walk-in customer")
+            : (selectedCustomer?.name || newCustName || "Customer"),
+          overpaid,
+          cash: paymentMethod === "mpesa" ? 0 : Math.max(0, cashAmount - total),
+          mpesa: paymentMethod === "cash" ? 0 : Math.max(0, overpaid - Math.max(0, cashAmount - total)),
+        });
+        setOverpayOpen(true);
+      }
+
       setItems([]);
       setCashAmount(0);
       setMpesaAmount(0);
@@ -671,6 +695,20 @@ export default function NewInvoice() {
           defaultPhone={stkData.phone}
           amount={stkData.amount}
           onPaid={resetAfterSale}
+        />
+      )}
+
+      {overpayData && (
+        <OverpaymentDialog
+          open={overpayOpen}
+          onOpenChange={(o) => { setOverpayOpen(o); if (!o) setOverpayData(null); }}
+          customerId={overpayData.customerId}
+          customerName={overpayData.customerName}
+          invoiceId={overpayData.invoiceId}
+          invoiceNumber={overpayData.invoiceNumber}
+          overpaid={overpayData.overpaid}
+          cashAmount={overpayData.cash}
+          mpesaAmount={overpayData.mpesa}
         />
       )}
     </div>

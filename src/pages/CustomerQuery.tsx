@@ -83,6 +83,8 @@ export default function CustomerQuery() {
   const lastPayment = customerPayments[0];
   const avgInvoice = customerInvoices.length ? totalSales / customerInvoices.length : 0;
   const unpaidInvoices = customerInvoices.filter((i) => Number(i.balance) > 0);
+  /** Money the customer has overpaid — sits as a credit against future invoices. */
+  const creditBalance = customerInvoices.reduce((s, i) => s + Math.max(0, -Number(i.balance)), 0);
 
   const pieData = BUCKETS.map((b) => ({ name: b.label, value: aging[b.key] || 0, color: b.color }));
   const barData = pieData.map((d) => ({ name: d.name, value: d.value, color: d.color }));
@@ -200,8 +202,14 @@ export default function CustomerQuery() {
               ) : (
                 <p className="text-3xl font-bold text-success">KES 0</p>
               )}
+              {creditBalance > 0 && (
+                <p className="text-sm font-semibold text-success mt-1">
+                  Credit on account: KES {creditBalance.toLocaleString()} CR
+                </p>
+              )}
             </div>
           </div>
+
 
           <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4 pt-6 border-t">
             <Field icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={customer.phone || "—"} />
