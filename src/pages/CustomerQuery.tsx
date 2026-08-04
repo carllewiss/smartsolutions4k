@@ -184,11 +184,10 @@ export default function CustomerQuery() {
               </div>
             </PopoverContent>
           </Popover>
-          {isAdmin && (
-            <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
-              <Pencil className="h-4 w-4 mr-1.5" /> Edit
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+            <Pencil className="h-4 w-4 mr-1.5" /> {isAdmin ? "Edit Customer" : "Update Contact"}
+          </Button>
+
           {totalDebt > 0 && (
             <Button size="sm" onClick={() => setShowPay(true)}>
               <CreditCard className="h-4 w-4 mr-1.5" /> Take Payment
