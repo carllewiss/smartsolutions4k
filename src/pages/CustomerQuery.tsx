@@ -48,6 +48,7 @@ export default function CustomerQuery() {
   const { data: customers = [] } = useCustomers();
   const { data: invoices = [] } = useInvoices();
   const { data: payments = [] } = usePayments();
+  const { data: allCreditNotes = [] } = useCreditNotes();
   const { data: notes = [] } = useCustomerNotes(customerId);
   const createNote = useCreateCustomerNote();
   const delNote = useDeleteCustomerNote();
@@ -55,16 +56,23 @@ export default function CustomerQuery() {
   const [newNote, setNewNote] = useState("");
   const [showPay, setShowPay] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [openInvoice, setOpenInvoice] = useState<any>(null);
+  const [openCN, setOpenCN] = useState<any>(null);
   const [stmtFrom, setStmtFrom] = useState(format(startOfMonth(subMonths(new Date(), 5)), "yyyy-MM-dd"));
   const [stmtTo, setStmtTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const printRef = useRef<HTMLDivElement>(null);
 
   const customer = customers.find((c) => c.id === customerId);
   const customerInvoices = invoices.filter((i) => i.customer_id === customerId);
+  const creditNotes = useMemo(
+    () => (allCreditNotes as any[]).filter((c) => c.customer_id === customerId),
+    [allCreditNotes, customerId]
+  );
   const customerPayments = useMemo(
     () => unifiedPayments(customerInvoices, payments.filter((p) => p.customer_id === customerId)),
     [customerInvoices, payments, customerId]
   );
+
 
   const aging = useMemo(() => {
     const now = new Date();
