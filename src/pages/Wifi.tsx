@@ -153,6 +153,7 @@ export default function Wifi() {
                     <TableHead>Time</TableHead>
                     <TableHead>Phone (Paid By)</TableHead>
                     <TableHead>Package</TableHead>
+                    <TableHead>Source</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>M-Pesa Code</TableHead>
                     <TableHead>Voucher</TableHead>
@@ -160,7 +161,8 @@ export default function Wifi() {
                 </TableHeader>
                 <TableBody>
                   {pageTxns.map((t) => {
-                    const voucher = matchVoucher(t.client_mac, t.paid_at, t.voucher_code);
+                    const isPos = t.source === "pos";
+                    const voucher = isPos ? null : matchVoucher(t.client_mac, t.paid_at, t.voucher_code);
                     return (
                       <TableRow key={t.id}>
                         <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
@@ -168,12 +170,18 @@ export default function Wifi() {
                         </TableCell>
                         <TableCell className="font-medium">{t.phone_number || "—"}</TableCell>
                         <TableCell><Badge variant="secondary">{pkgLabel(t.package_type)}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant={isPos ? "outline" : "secondary"}>
+                            {isPos ? `POS ${t.reference || ""}`.trim() : "Portal"}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-right font-semibold">{kes(Number(t.amount))}</TableCell>
                         <TableCell className="font-mono text-xs">{t.mpesa_receipt || "—"}</TableCell>
                         <TableCell className="font-mono text-xs">{voucher || "—"}</TableCell>
                       </TableRow>
                     );
                   })}
+
                 </TableBody>
               </Table>
 
