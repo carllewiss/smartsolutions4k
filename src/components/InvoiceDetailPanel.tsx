@@ -246,7 +246,7 @@ export function CreditNoteDetailPanel({
   onPrint,
 }: {
   note: any;
-  onPrint: () => void;
+  onPrint?: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
