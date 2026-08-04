@@ -8,12 +8,15 @@ import { useUpdateCustomer } from "@/hooks/useCustomers";
 import { toast } from "sonner";
 
 export default function EditCustomerDialog({
-  open, onOpenChange, customer,
+  open, onOpenChange, customer, canEditCredit = true,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   customer: any;
+  /** Only admins may change credit limit, terms and suspension. */
+  canEditCredit?: boolean;
 }) {
+
   const update = useUpdateCustomer();
   const [form, setForm] = useState({
     name: "", phone: "", email: "", kra_pin: "", location: "",
