@@ -70,11 +70,11 @@ export function InvoiceDetailPanel({
   invoice: InvoiceWithItems;
   payments: PaymentRow[];
   isAdmin: boolean;
-  onPrint: () => void;
-  onEmail: () => void;
-  onCreditNote: () => void;
-  onAllocate: () => void;
-  onStatement: () => void;
+  onPrint?: () => void;
+  onEmail?: () => void;
+  onCreditNote?: () => void;
+  onAllocate?: () => void;
+  onStatement?: () => void;
   onStk?: () => void;
 }) {
   const posRow = posPaymentFromInvoice(invoice);
@@ -106,17 +106,17 @@ export function InvoiceDetailPanel({
             <div className="mt-2">{etimsBadge(invoice.etims_status)}</div>
           </div>
           <div className="flex flex-wrap justify-end gap-2">
-            <Button size="sm" onClick={onPrint}><Printer className="h-4 w-4 mr-1" /> Print</Button>
-            <Button size="sm" variant="outline" onClick={onEmail}><Mail className="h-4 w-4 mr-1" /> Email</Button>
+            {onPrint && <Button size="sm" onClick={onPrint}><Printer className="h-4 w-4 mr-1" /> Print</Button>}
+            {onEmail && <Button size="sm" variant="outline" onClick={onEmail}><Mail className="h-4 w-4 mr-1" /> Email</Button>}
             {bal > 0 && onStk && (
               <Button size="sm" className="bg-success hover:bg-success/90 text-success-foreground" onClick={onStk}>
                 <Smartphone className="h-4 w-4 mr-1" /> Send STK
               </Button>
             )}
-            {bal > 0 && (
+            {bal > 0 && onAllocate && (
               <Button size="sm" variant="outline" onClick={onAllocate}><Wallet className="h-4 w-4 mr-1" /> Allocate</Button>
             )}
-            {isAdmin && (
+            {isAdmin && onCreditNote && (
               <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={onCreditNote}>
                 <Undo2 className="h-4 w-4 mr-1" /> Credit Note
               </Button>
@@ -124,6 +124,7 @@ export function InvoiceDetailPanel({
           </div>
         </div>
       </div>
+
 
       <div className="flex-1 overflow-auto p-5 space-y-6">
         {/* Customer + meta */}
