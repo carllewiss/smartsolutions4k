@@ -262,7 +262,8 @@ export function CreditNoteDetailPanel({
               <p className="mt-1 text-xs text-muted-foreground">Against invoice {note.invoices.invoice_number}</p>
             )}
           </div>
-          <Button size="sm" onClick={onPrint}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+          {onPrint && <Button size="sm" onClick={onPrint}><Printer className="h-4 w-4 mr-1" /> Print</Button>}
+
         </div>
       </div>
 
