@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
+import { useCreditNotes } from "@/hooks/useCreditNotes";
 import { useCustomerNotes, useCreateCustomerNote, useDeleteCustomerNote } from "@/hooks/useCustomerNotes";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -14,9 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import {
   ArrowLeft, CreditCard, Trash2, Plus, Pencil, Printer, FileText,
-  Phone, Mail, Hash, Calendar, ChevronRight,
+  Phone, Mail, Hash, Calendar, ChevronRight, ChevronLeft, MapPin, Ban,
 } from "lucide-react";
 import { differenceInDays, format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import {
@@ -26,8 +29,10 @@ import {
 import PaymentDialog from "@/components/PaymentDialog";
 import EditCustomerDialog from "@/components/EditCustomerDialog";
 import CustomerStatementPrint from "@/components/CustomerStatementPrint";
+import { InvoiceDetailPanel, CreditNoteDetailPanel } from "@/components/InvoiceDetailPanel";
 import { unifiedPayments } from "@/lib/payments";
 import { toast } from "sonner";
+
 
 const BUCKETS = [
   { key: "current", label: "0 - 30 Days", color: "hsl(var(--success))" },
@@ -43,6 +48,7 @@ export default function CustomerQuery() {
   const { data: customers = [] } = useCustomers();
   const { data: invoices = [] } = useInvoices();
   const { data: payments = [] } = usePayments();
+  const { data: allCreditNotes = [] } = useCreditNotes();
   const { data: notes = [] } = useCustomerNotes(customerId);
   const createNote = useCreateCustomerNote();
   const delNote = useDeleteCustomerNote();
@@ -50,16 +56,23 @@ export default function CustomerQuery() {
   const [newNote, setNewNote] = useState("");
   const [showPay, setShowPay] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [openInvoice, setOpenInvoice] = useState<any>(null);
+  const [openCN, setOpenCN] = useState<any>(null);
   const [stmtFrom, setStmtFrom] = useState(format(startOfMonth(subMonths(new Date(), 5)), "yyyy-MM-dd"));
   const [stmtTo, setStmtTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const printRef = useRef<HTMLDivElement>(null);
 
   const customer = customers.find((c) => c.id === customerId);
   const customerInvoices = invoices.filter((i) => i.customer_id === customerId);
+  const creditNotes = useMemo(
+    () => (allCreditNotes as any[]).filter((c) => c.customer_id === customerId),
+    [allCreditNotes, customerId]
+  );
   const customerPayments = useMemo(
     () => unifiedPayments(customerInvoices, payments.filter((p) => p.customer_id === customerId)),
     [customerInvoices, payments, customerId]
   );
+
 
   const aging = useMemo(() => {
     const now = new Date();
@@ -85,6 +98,17 @@ export default function CustomerQuery() {
   const unpaidInvoices = customerInvoices.filter((i) => Number(i.balance) > 0);
   /** Money the customer has overpaid — sits as a credit against future invoices. */
   const creditBalance = customerInvoices.reduce((s, i) => s + Math.max(0, -Number(i.balance)), 0);
+  const creditLimit = Number(customer?.debt_limit || 0);
+  const terms = Number(customer?.credit_terms || 30);
+  const overdueInvoices = customerInvoices.filter(
+    (i) => Number(i.balance) > 0 && differenceInDays(new Date(), new Date(i.created_at)) > terms
+  );
+  const overdueAmount = overdueInvoices.reduce((s, i) => s + Number(i.balance), 0);
+  const availableCredit = Math.max(0, creditLimit - totalDebt);
+  const limitUsedPct = creditLimit > 0 ? Math.min(100, (totalDebt / creditLimit) * 100) : 0;
+  const lastPurchase = customerInvoices[0];
+
+
 
   const pieData = BUCKETS.map((b) => ({ name: b.label, value: aging[b.key] || 0, color: b.color }));
   const barData = pieData.map((d) => ({ name: d.name, value: d.value, color: d.color }));
@@ -160,11 +184,10 @@ export default function CustomerQuery() {
               </div>
             </PopoverContent>
           </Popover>
-          {isAdmin && (
-            <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
-              <Pencil className="h-4 w-4 mr-1.5" /> Edit
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+            <Pencil className="h-4 w-4 mr-1.5" /> {isAdmin ? "Edit Customer" : "Update Contact"}
+          </Button>
+
           {totalDebt > 0 && (
             <Button size="sm" onClick={() => setShowPay(true)}>
               <CreditCard className="h-4 w-4 mr-1.5" /> Take Payment
@@ -185,11 +208,20 @@ export default function CustomerQuery() {
               <div className="pb-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold tracking-tight">{customer.name}</h1>
+                  {(customer as any).is_suspended ? (
+                    <Badge variant="destructive" className="gap-1"><Ban className="h-3 w-3" /> Suspended</Badge>
+                  ) : (
+                    <Badge className="bg-success/10 text-success hover:bg-success/15">Active</Badge>
+                  )}
                   {customer.kra_pin && <Badge className="bg-primary/10 text-primary hover:bg-primary/15">Taxable</Badge>}
                   {customer.credit_terms > 0 && <Badge variant="outline">{customer.credit_terms}d Terms</Badge>}
                   {customer.visit_count >= 3 && <Badge className="bg-success/10 text-success hover:bg-success/15">Repeat</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 font-mono">{customer.customer_code}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Customer since {format(new Date(customer.created_at), "dd MMM yyyy")}
+                  {lastPurchase && ` · Last purchase ${format(new Date(lastPurchase.created_at), "dd MMM yyyy")}`}
+                </p>
               </div>
             </div>
             <div className="lg:text-right">
@@ -214,13 +246,51 @@ export default function CustomerQuery() {
           <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4 pt-6 border-t">
             <Field icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={customer.phone || "—"} />
             <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={(customer as any).email || "—"} />
+            <Field icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={(customer as any).location || "—"} />
             <Field icon={<FileText className="h-3.5 w-3.5" />} label="KRA PIN" value={customer.kra_pin || "—"} mono />
-            <Field icon={<CreditCard className="h-3.5 w-3.5" />} label="Credit Limit" value={`KES ${Number(customer.debt_limit).toLocaleString()}`} />
+            <Field icon={<CreditCard className="h-3.5 w-3.5" />} label="Credit Limit" value={`KES ${creditLimit.toLocaleString()}`} />
             <Field icon={<Calendar className="h-3.5 w-3.5" />} label="Payment Terms" value={`${customer.credit_terms || 0} Days`} />
-            <Field icon={<Hash className="h-3.5 w-3.5" />} label="Total Sales" value={`KES ${totalSales.toLocaleString()}`} />
           </div>
         </CardContent>
       </Card>
+
+      {/* Credit position */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Credit Limit</p>
+            <p className="text-xl font-bold mt-1">KES {creditLimit.toLocaleString()}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{customer.credit_terms || 0} day terms</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Total Debt Owed</p>
+            <p className="text-xl font-bold mt-1 text-destructive">KES {totalDebt.toLocaleString()}</p>
+            <Progress value={limitUsedPct} className="h-1.5 mt-2" />
+            <p className="text-[11px] text-muted-foreground mt-1">{limitUsedPct.toFixed(1)}% of limit used</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Overdue Amount</p>
+            <p className={`text-xl font-bold mt-1 ${overdueAmount > 0 ? "text-destructive" : "text-success"}`}>
+              KES {overdueAmount.toLocaleString()}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">{overdueInvoices.length} invoice(s) overdue</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Available Credit</p>
+            <p className="text-xl font-bold mt-1 text-success">KES {availableCredit.toLocaleString()}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {creditLimit > 0 ? `${(100 - limitUsedPct).toFixed(1)}% of limit available` : "No credit limit set"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
 
       {/* Quick metrics */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -317,17 +387,24 @@ export default function CustomerQuery() {
             <TabsTrigger value="payments" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
               Payments ({customerPayments.length})
             </TabsTrigger>
+            <TabsTrigger value="credit_notes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Credit Notes ({creditNotes.length})
+            </TabsTrigger>
             <TabsTrigger value="notes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
               Notes ({notes.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="invoices" className="m-0 p-2">
-            <InvoiceTable invoices={customerInvoices} navigate={navigate} />
+            <InvoiceTable invoices={customerInvoices} terms={terms} onOpen={setOpenInvoice} />
           </TabsContent>
           <TabsContent value="outstanding" className="m-0 p-2">
-            <InvoiceTable invoices={unpaidInvoices} navigate={navigate} emptyText="No outstanding invoices. 🎉" />
+            <InvoiceTable invoices={unpaidInvoices} terms={terms} onOpen={setOpenInvoice} emptyText="No outstanding invoices. 🎉" />
           </TabsContent>
+          <TabsContent value="credit_notes" className="m-0 p-2">
+            <CreditNoteTable notes={creditNotes} onOpen={setOpenCN} />
+          </TabsContent>
+
           <TabsContent value="payments" className="m-0 p-2">
             {customerPayments.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm py-8">No payments yet.</p>
@@ -406,9 +483,30 @@ export default function CustomerQuery() {
           customerId={customer.id} customerName={customer.name} currentBalance={totalDebt}
         />
       )}
-      {showEdit && isAdmin && (
-        <EditCustomerDialog open={showEdit} onOpenChange={setShowEdit} customer={customer} />
+      {showEdit && (
+        <EditCustomerDialog open={showEdit} onOpenChange={setShowEdit} customer={customer} canEditCredit={isAdmin} />
       )}
+
+      {/* Invoice detail modal */}
+      <Dialog open={!!openInvoice} onOpenChange={(o) => !o && setOpenInvoice(null)}>
+        <DialogContent className="max-w-3xl p-0 max-h-[88vh] overflow-auto">
+          {openInvoice && (
+            <InvoiceDetailPanel
+              invoice={openInvoice}
+              payments={payments as any}
+              isAdmin={isAdmin}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit note detail modal */}
+      <Dialog open={!!openCN} onOpenChange={(o) => !o && setOpenCN(null)}>
+        <DialogContent className="max-w-3xl p-0 max-h-[88vh] overflow-auto">
+          {openCN && <CreditNoteDetailPanel note={openCN} />}
+        </DialogContent>
+      </Dialog>
+
 
       {/* Print only */}
       <div ref={printRef}>
@@ -453,41 +551,121 @@ function MetricCard({ label, value, sub, accent }: { label: string; value: strin
   );
 }
 
-function InvoiceTable({ invoices, navigate, emptyText = "No invoices yet." }: { invoices: any[]; navigate: any; emptyText?: string }) {
+const PAGE_SIZE = 10;
+
+function Pager({ page, pages, setPage, total }: { page: number; pages: number; setPage: (n: number) => void; total: number }) {
+  if (pages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between px-3 py-2 border-t">
+      <p className="text-xs text-muted-foreground">
+        Page {page} of {pages} · {total} record{total !== 1 ? "s" : ""}
+      </p>
+      <div className="flex items-center gap-1">
+        <Button size="icon" variant="outline" className="h-7 w-7" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </Button>
+        <Button size="icon" variant="outline" className="h-7 w-7" disabled={page >= pages} onClick={() => setPage(page + 1)}>
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function InvoiceTable({
+  invoices, terms, onOpen, emptyText = "No invoices yet.",
+}: { invoices: any[]; terms: number; onOpen: (inv: any) => void; emptyText?: string }) {
+  const [page, setPage] = useState(1);
+  const pages = Math.max(1, Math.ceil(invoices.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const rows = invoices.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
   if (invoices.length === 0)
     return <p className="text-center text-muted-foreground text-sm py-8">{emptyText}</p>;
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Date</TableHead>
-          <TableHead>Invoice #</TableHead>
-          <TableHead className="text-right">Total</TableHead>
-          <TableHead className="text-right">Paid</TableHead>
-          <TableHead className="text-right">Balance</TableHead>
-          <TableHead>Status</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {invoices.map((inv) => (
-          <TableRow key={inv.id} className="cursor-pointer" onClick={() => navigate(`/invoices`)}>
-            <TableCell className="font-mono text-xs">{format(new Date(inv.created_at), "dd/MM/yyyy")}</TableCell>
-            <TableCell className="font-semibold text-primary">{inv.invoice_number}</TableCell>
-            <TableCell className="text-right">KES {Number(inv.total).toLocaleString()}</TableCell>
-            <TableCell className="text-right">KES {Number(inv.paid_amount).toLocaleString()}</TableCell>
-            <TableCell className={`text-right font-semibold ${Number(inv.balance) > 0 ? "text-destructive" : ""}`}>
-              KES {Number(inv.balance).toLocaleString()}
-            </TableCell>
-            <TableCell>
-              <Badge className={
-                inv.status === "paid" ? "bg-success/10 text-success hover:bg-success/15" :
-                inv.status === "partial" ? "bg-warning/10 text-warning hover:bg-warning/15" :
-                "bg-destructive/10 text-destructive hover:bg-destructive/15"
-              }>{inv.status}</Badge>
-            </TableCell>
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Invoice #</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right">Paid</TableHead>
+            <TableHead className="text-right">Balance</TableHead>
+            <TableHead>Status</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {rows.map((inv) => {
+            const overdue = Number(inv.balance) > 0 && differenceInDays(new Date(), new Date(inv.created_at)) > terms;
+            const status = overdue ? "overdue" : inv.status;
+            return (
+              <TableRow key={inv.id} className="cursor-pointer" onClick={() => onOpen(inv)}>
+                <TableCell className="font-mono text-xs">{format(new Date(inv.created_at), "dd/MM/yyyy")}</TableCell>
+                <TableCell className="font-semibold text-primary">{inv.invoice_number}</TableCell>
+                <TableCell className="text-right">KES {Number(inv.total).toLocaleString()}</TableCell>
+                <TableCell className="text-right">KES {Number(inv.paid_amount).toLocaleString()}</TableCell>
+                <TableCell className={`text-right font-semibold ${Number(inv.balance) > 0 ? "text-destructive" : ""}`}>
+                  KES {Number(inv.balance).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  <Badge className={
+                    status === "paid" ? "bg-success/10 text-success hover:bg-success/15" :
+                    status === "partial" ? "bg-warning/10 text-warning hover:bg-warning/15" :
+                    "bg-destructive/10 text-destructive hover:bg-destructive/15"
+                  }>{status}</Badge>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      <Pager page={current} pages={pages} setPage={setPage} total={invoices.length} />
+    </div>
+  );
+}
+
+function CreditNoteTable({ notes, onOpen }: { notes: any[]; onOpen: (cn: any) => void }) {
+  const [page, setPage] = useState(1);
+  const pages = Math.max(1, Math.ceil(notes.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const rows = notes.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
+  if (notes.length === 0)
+    return <p className="text-center text-muted-foreground text-sm py-8">No credit notes issued for this customer.</p>;
+
+  return (
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Credit Note #</TableHead>
+            <TableHead>Against Invoice</TableHead>
+            <TableHead>Settlement</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((cn) => (
+            <TableRow key={cn.id} className="cursor-pointer" onClick={() => onOpen(cn)}>
+              <TableCell className="font-mono text-xs">{format(new Date(cn.created_at), "dd/MM/yyyy")}</TableCell>
+              <TableCell className="font-semibold text-primary">{cn.credit_note_number}</TableCell>
+              <TableCell className="text-sm">{cn.invoices?.invoice_number || "—"}</TableCell>
+              <TableCell>
+                <Badge variant="outline" className="capitalize text-[10px]">
+                  {String(cn.refund_method).replace(/_/g, " ")}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right font-semibold text-destructive">
+                - KES {Number(cn.total).toLocaleString()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Pager page={current} pages={pages} setPage={setPage} total={notes.length} />
+    </div>
   );
 }
