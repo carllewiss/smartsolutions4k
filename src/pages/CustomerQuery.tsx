@@ -648,5 +648,3 @@ function CreditNoteTable({ notes, onOpen }: { notes: any[]; onOpen: (cn: any) =>
     </div>
   );
 }
-
-}
