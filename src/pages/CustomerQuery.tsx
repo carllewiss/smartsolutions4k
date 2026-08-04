@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
+import { useCreditNotes } from "@/hooks/useCreditNotes";
 import { useCustomerNotes, useCreateCustomerNote, useDeleteCustomerNote } from "@/hooks/useCustomerNotes";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -14,9 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import {
   ArrowLeft, CreditCard, Trash2, Plus, Pencil, Printer, FileText,
-  Phone, Mail, Hash, Calendar, ChevronRight,
+  Phone, Mail, Hash, Calendar, ChevronRight, ChevronLeft, MapPin, Ban,
 } from "lucide-react";
 import { differenceInDays, format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import {
@@ -26,8 +29,10 @@ import {
 import PaymentDialog from "@/components/PaymentDialog";
 import EditCustomerDialog from "@/components/EditCustomerDialog";
 import CustomerStatementPrint from "@/components/CustomerStatementPrint";
+import { InvoiceDetailPanel, CreditNoteDetailPanel } from "@/components/InvoiceDetailPanel";
 import { unifiedPayments } from "@/lib/payments";
 import { toast } from "sonner";
+
 
 const BUCKETS = [
   { key: "current", label: "0 - 30 Days", color: "hsl(var(--success))" },
