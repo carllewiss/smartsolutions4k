@@ -98,6 +98,17 @@ export default function CustomerQuery() {
   const unpaidInvoices = customerInvoices.filter((i) => Number(i.balance) > 0);
   /** Money the customer has overpaid — sits as a credit against future invoices. */
   const creditBalance = customerInvoices.reduce((s, i) => s + Math.max(0, -Number(i.balance)), 0);
+  const creditLimit = Number(customer?.debt_limit || 0);
+  const terms = Number(customer?.credit_terms || 30);
+  const overdueInvoices = customerInvoices.filter(
+    (i) => Number(i.balance) > 0 && differenceInDays(new Date(), new Date(i.created_at)) > terms
+  );
+  const overdueAmount = overdueInvoices.reduce((s, i) => s + Number(i.balance), 0);
+  const availableCredit = Math.max(0, creditLimit - totalDebt);
+  const limitUsedPct = creditLimit > 0 ? Math.min(100, (totalDebt / creditLimit) * 100) : 0;
+  const lastPurchase = customerInvoices[0];
+
+
 
   const pieData = BUCKETS.map((b) => ({ name: b.label, value: aging[b.key] || 0, color: b.color }));
   const barData = pieData.map((d) => ({ name: d.name, value: d.value, color: d.color }));
