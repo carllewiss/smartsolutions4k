@@ -208,11 +208,20 @@ export default function CustomerQuery() {
               <div className="pb-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold tracking-tight">{customer.name}</h1>
+                  {(customer as any).is_suspended ? (
+                    <Badge variant="destructive" className="gap-1"><Ban className="h-3 w-3" /> Suspended</Badge>
+                  ) : (
+                    <Badge className="bg-success/10 text-success hover:bg-success/15">Active</Badge>
+                  )}
                   {customer.kra_pin && <Badge className="bg-primary/10 text-primary hover:bg-primary/15">Taxable</Badge>}
                   {customer.credit_terms > 0 && <Badge variant="outline">{customer.credit_terms}d Terms</Badge>}
                   {customer.visit_count >= 3 && <Badge className="bg-success/10 text-success hover:bg-success/15">Repeat</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 font-mono">{customer.customer_code}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Customer since {format(new Date(customer.created_at), "dd MMM yyyy")}
+                  {lastPurchase && ` · Last purchase ${format(new Date(lastPurchase.created_at), "dd MMM yyyy")}`}
+                </p>
               </div>
             </div>
             <div className="lg:text-right">
@@ -237,13 +246,51 @@ export default function CustomerQuery() {
           <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4 pt-6 border-t">
             <Field icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={customer.phone || "—"} />
             <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={(customer as any).email || "—"} />
+            <Field icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={(customer as any).location || "—"} />
             <Field icon={<FileText className="h-3.5 w-3.5" />} label="KRA PIN" value={customer.kra_pin || "—"} mono />
-            <Field icon={<CreditCard className="h-3.5 w-3.5" />} label="Credit Limit" value={`KES ${Number(customer.debt_limit).toLocaleString()}`} />
+            <Field icon={<CreditCard className="h-3.5 w-3.5" />} label="Credit Limit" value={`KES ${creditLimit.toLocaleString()}`} />
             <Field icon={<Calendar className="h-3.5 w-3.5" />} label="Payment Terms" value={`${customer.credit_terms || 0} Days`} />
-            <Field icon={<Hash className="h-3.5 w-3.5" />} label="Total Sales" value={`KES ${totalSales.toLocaleString()}`} />
           </div>
         </CardContent>
       </Card>
+
+      {/* Credit position */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Credit Limit</p>
+            <p className="text-xl font-bold mt-1">KES {creditLimit.toLocaleString()}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{customer.credit_terms || 0} day terms</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Total Debt Owed</p>
+            <p className="text-xl font-bold mt-1 text-destructive">KES {totalDebt.toLocaleString()}</p>
+            <Progress value={limitUsedPct} className="h-1.5 mt-2" />
+            <p className="text-[11px] text-muted-foreground mt-1">{limitUsedPct.toFixed(1)}% of limit used</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Overdue Amount</p>
+            <p className={`text-xl font-bold mt-1 ${overdueAmount > 0 ? "text-destructive" : "text-success"}`}>
+              KES {overdueAmount.toLocaleString()}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">{overdueInvoices.length} invoice(s) overdue</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Available Credit</p>
+            <p className="text-xl font-bold mt-1 text-success">KES {availableCredit.toLocaleString()}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {creditLimit > 0 ? `${(100 - limitUsedPct).toFixed(1)}% of limit available` : "No credit limit set"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
 
       {/* Quick metrics */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
