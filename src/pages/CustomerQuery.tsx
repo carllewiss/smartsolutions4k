@@ -387,17 +387,24 @@ export default function CustomerQuery() {
             <TabsTrigger value="payments" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
               Payments ({customerPayments.length})
             </TabsTrigger>
+            <TabsTrigger value="credit_notes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
+              Credit Notes ({creditNotes.length})
+            </TabsTrigger>
             <TabsTrigger value="notes" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-3 text-sm">
               Notes ({notes.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="invoices" className="m-0 p-2">
-            <InvoiceTable invoices={customerInvoices} navigate={navigate} />
+            <InvoiceTable invoices={customerInvoices} terms={terms} onOpen={setOpenInvoice} />
           </TabsContent>
           <TabsContent value="outstanding" className="m-0 p-2">
-            <InvoiceTable invoices={unpaidInvoices} navigate={navigate} emptyText="No outstanding invoices. 🎉" />
+            <InvoiceTable invoices={unpaidInvoices} terms={terms} onOpen={setOpenInvoice} emptyText="No outstanding invoices. 🎉" />
           </TabsContent>
+          <TabsContent value="credit_notes" className="m-0 p-2">
+            <CreditNoteTable notes={creditNotes} onOpen={setOpenCN} />
+          </TabsContent>
+
           <TabsContent value="payments" className="m-0 p-2">
             {customerPayments.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm py-8">No payments yet.</p>
