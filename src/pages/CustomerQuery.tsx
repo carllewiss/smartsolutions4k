@@ -483,9 +483,30 @@ export default function CustomerQuery() {
           customerId={customer.id} customerName={customer.name} currentBalance={totalDebt}
         />
       )}
-      {showEdit && isAdmin && (
-        <EditCustomerDialog open={showEdit} onOpenChange={setShowEdit} customer={customer} />
+      {showEdit && (
+        <EditCustomerDialog open={showEdit} onOpenChange={setShowEdit} customer={customer} canEditCredit={isAdmin} />
       )}
+
+      {/* Invoice detail modal */}
+      <Dialog open={!!openInvoice} onOpenChange={(o) => !o && setOpenInvoice(null)}>
+        <DialogContent className="max-w-3xl p-0 max-h-[88vh] overflow-auto">
+          {openInvoice && (
+            <InvoiceDetailPanel
+              invoice={openInvoice}
+              payments={payments as any}
+              isAdmin={isAdmin}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit note detail modal */}
+      <Dialog open={!!openCN} onOpenChange={(o) => !o && setOpenCN(null)}>
+        <DialogContent className="max-w-3xl p-0 max-h-[88vh] overflow-auto">
+          {openCN && <CreditNoteDetailPanel note={openCN} />}
+        </DialogContent>
+      </Dialog>
+
 
       {/* Print only */}
       <div ref={printRef}>
