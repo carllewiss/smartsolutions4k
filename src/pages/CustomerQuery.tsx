@@ -530,41 +530,123 @@ function MetricCard({ label, value, sub, accent }: { label: string; value: strin
   );
 }
 
-function InvoiceTable({ invoices, navigate, emptyText = "No invoices yet." }: { invoices: any[]; navigate: any; emptyText?: string }) {
+const PAGE_SIZE = 10;
+
+function Pager({ page, pages, setPage, total }: { page: number; pages: number; setPage: (n: number) => void; total: number }) {
+  if (pages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between px-3 py-2 border-t">
+      <p className="text-xs text-muted-foreground">
+        Page {page} of {pages} · {total} record{total !== 1 ? "s" : ""}
+      </p>
+      <div className="flex items-center gap-1">
+        <Button size="icon" variant="outline" className="h-7 w-7" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </Button>
+        <Button size="icon" variant="outline" className="h-7 w-7" disabled={page >= pages} onClick={() => setPage(page + 1)}>
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function InvoiceTable({
+  invoices, terms, onOpen, emptyText = "No invoices yet.",
+}: { invoices: any[]; terms: number; onOpen: (inv: any) => void; emptyText?: string }) {
+  const [page, setPage] = useState(1);
+  const pages = Math.max(1, Math.ceil(invoices.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const rows = invoices.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
   if (invoices.length === 0)
     return <p className="text-center text-muted-foreground text-sm py-8">{emptyText}</p>;
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Date</TableHead>
-          <TableHead>Invoice #</TableHead>
-          <TableHead className="text-right">Total</TableHead>
-          <TableHead className="text-right">Paid</TableHead>
-          <TableHead className="text-right">Balance</TableHead>
-          <TableHead>Status</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {invoices.map((inv) => (
-          <TableRow key={inv.id} className="cursor-pointer" onClick={() => navigate(`/invoices`)}>
-            <TableCell className="font-mono text-xs">{format(new Date(inv.created_at), "dd/MM/yyyy")}</TableCell>
-            <TableCell className="font-semibold text-primary">{inv.invoice_number}</TableCell>
-            <TableCell className="text-right">KES {Number(inv.total).toLocaleString()}</TableCell>
-            <TableCell className="text-right">KES {Number(inv.paid_amount).toLocaleString()}</TableCell>
-            <TableCell className={`text-right font-semibold ${Number(inv.balance) > 0 ? "text-destructive" : ""}`}>
-              KES {Number(inv.balance).toLocaleString()}
-            </TableCell>
-            <TableCell>
-              <Badge className={
-                inv.status === "paid" ? "bg-success/10 text-success hover:bg-success/15" :
-                inv.status === "partial" ? "bg-warning/10 text-warning hover:bg-warning/15" :
-                "bg-destructive/10 text-destructive hover:bg-destructive/15"
-              }>{inv.status}</Badge>
-            </TableCell>
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Invoice #</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right">Paid</TableHead>
+            <TableHead className="text-right">Balance</TableHead>
+            <TableHead>Status</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {rows.map((inv) => {
+            const overdue = Number(inv.balance) > 0 && differenceInDays(new Date(), new Date(inv.created_at)) > terms;
+            const status = overdue ? "overdue" : inv.status;
+            return (
+              <TableRow key={inv.id} className="cursor-pointer" onClick={() => onOpen(inv)}>
+                <TableCell className="font-mono text-xs">{format(new Date(inv.created_at), "dd/MM/yyyy")}</TableCell>
+                <TableCell className="font-semibold text-primary">{inv.invoice_number}</TableCell>
+                <TableCell className="text-right">KES {Number(inv.total).toLocaleString()}</TableCell>
+                <TableCell className="text-right">KES {Number(inv.paid_amount).toLocaleString()}</TableCell>
+                <TableCell className={`text-right font-semibold ${Number(inv.balance) > 0 ? "text-destructive" : ""}`}>
+                  KES {Number(inv.balance).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  <Badge className={
+                    status === "paid" ? "bg-success/10 text-success hover:bg-success/15" :
+                    status === "partial" ? "bg-warning/10 text-warning hover:bg-warning/15" :
+                    "bg-destructive/10 text-destructive hover:bg-destructive/15"
+                  }>{status}</Badge>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      <Pager page={current} pages={pages} setPage={setPage} total={invoices.length} />
+    </div>
   );
+}
+
+function CreditNoteTable({ notes, onOpen }: { notes: any[]; onOpen: (cn: any) => void }) {
+  const [page, setPage] = useState(1);
+  const pages = Math.max(1, Math.ceil(notes.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const rows = notes.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
+  if (notes.length === 0)
+    return <p className="text-center text-muted-foreground text-sm py-8">No credit notes issued for this customer.</p>;
+
+  return (
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Credit Note #</TableHead>
+            <TableHead>Against Invoice</TableHead>
+            <TableHead>Settlement</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((cn) => (
+            <TableRow key={cn.id} className="cursor-pointer" onClick={() => onOpen(cn)}>
+              <TableCell className="font-mono text-xs">{format(new Date(cn.created_at), "dd/MM/yyyy")}</TableCell>
+              <TableCell className="font-semibold text-primary">{cn.credit_note_number}</TableCell>
+              <TableCell className="text-sm">{cn.invoices?.invoice_number || "—"}</TableCell>
+              <TableCell>
+                <Badge variant="outline" className="capitalize text-[10px]">
+                  {String(cn.refund_method).replace(/_/g, " ")}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right font-semibold text-destructive">
+                - KES {Number(cn.total).toLocaleString()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Pager page={current} pages={pages} setPage={setPage} total={notes.length} />
+    </div>
+  );
+}
+
 }
