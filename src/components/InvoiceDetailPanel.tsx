@@ -228,11 +228,14 @@ export function InvoiceDetailPanel({
         </div>
 
         {/* Statement */}
-        <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={onStatement}>
-            <FileClock className="h-4 w-4 mr-1" /> Generate Customer Statement
-          </Button>
-        </div>
+        {onStatement && (
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={onStatement}>
+              <FileClock className="h-4 w-4 mr-1" /> Generate Customer Statement
+            </Button>
+          </div>
+        )}
+
       </div>
     </div>
   );
