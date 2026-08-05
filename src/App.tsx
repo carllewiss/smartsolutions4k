@@ -14,6 +14,7 @@ import Customers from "./pages/Customers";
 import CustomerQuery from "./pages/CustomerQuery";
 import Inventory from "./pages/Inventory";
 import StockQuery from "./pages/StockQuery";
+import OpeningStock from "./pages/OpeningStock";
 import Purchases from "./pages/Purchases";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
