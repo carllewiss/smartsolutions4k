@@ -23,3 +23,4 @@ Cost prices visible to admin only; sales agents see selling price + stock only.
 - [Customer Mgmt & Credit Suspension](mem://features/customer-credit-suspension) — Add/edit customers (location, PIN, limit, terms), auto-suspend over limit/overdue, /approvals invoice queue
 - [WiFi Captive Portal](mem://features/wifi-captive-portal) — Syncs Omada WiFi M-Pesa payments + vouchers from separate Supabase project (tyqcalkdvsmeczbbqfns) into /wifi, auto-posts to GL (1030→4020), 15-min cron
 - [Walk-in Customers](mem://features/walkin-customers) — Walk-in default POS mode, no account created, debt blocked, repeat detection + conversion of past invoices
+- [Opening Stock](mem://features/opening-stock) — Pre-system inventory load: batches + Inventory/Owner Capital journal, Excel upload, never via fake supplier
