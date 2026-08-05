@@ -754,6 +754,47 @@ export type Database = {
           },
         ]
       }
+      opening_stock_runs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          id: string
+          item_count: number
+          journal_id: string | null
+          notes: string | null
+          total_value: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          item_count?: number
+          journal_id?: string | null
+          notes?: string | null
+          total_value?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          item_count?: number
+          journal_id?: string | null
+          notes?: string | null
+          total_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opening_stock_runs_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1760,6 +1801,10 @@ export type Database = {
           p_reference_id: string
           p_reference_type: string
         }
+        Returns: string
+      }
+      post_opening_stock: {
+        Args: { p_entry_date?: string; p_items: Json; p_notes?: string }
         Returns: string
       }
       post_purchase: { Args: { p_id: string }; Returns: string }
