@@ -91,17 +91,29 @@ export default function FinancialStatements() {
         <div>
           <h1 className="text-2xl font-bold font-heading">Accountant Dashboard</h1>
           <p className="text-sm text-muted-foreground">GL-driven financial statements — P&L, Balance Sheet & Cash Flow</p>
+          <p className="text-xs text-muted-foreground">Accounting period: 1 January – 31 December</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={preset} onValueChange={(v) => setPreset(v as Preset)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="fy">Financial Year (Jan–Dec)</SelectItem>
               <SelectItem value="ytd">Year to Date</SelectItem>
               <SelectItem value="all">All Time</SelectItem>
               <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
+          {preset === "fy" && (
+            <Select value={String(fyYear)} onValueChange={(v) => setFyYear(Number(v))}>
+              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 6 }, (_, i) => thisYear - i).map((y) => (
+                  <SelectItem key={y} value={String(y)}>FY {y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button variant="outline" size="sm" onClick={exportCsv}><Download className="h-4 w-4 mr-1" /> CSV</Button>
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
         </div>
@@ -113,6 +125,7 @@ export default function FinancialStatements() {
           <div><Label className="text-xs">To</Label><Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-44" /></div>
         </div>
       )}
+
 
       <div className="hidden print:block">
         <h1 className="text-xl font-bold">4K Smart Solutions Ltd — Financial Statements</h1>
