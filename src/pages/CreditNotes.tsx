@@ -9,6 +9,7 @@ import { Printer } from "lucide-react";
 import { CreditNotePrintView } from "@/components/CreditNotePrintView";
 import { VirtualizedTable } from "@/components/VirtualizedTable";
 import { ColumnDef } from "@tanstack/react-table";
+import { printDocument } from "@/lib/print";
 import { toast } from "sonner";
 
 export default function CreditNotes() {
@@ -130,7 +131,7 @@ export default function CreditNotes() {
               <CreditNotePrintView {...printData} />
               <div className="p-3 border-t flex justify-end gap-2 sticky bottom-0 bg-background">
                 <Button variant="outline" onClick={() => setPrintData(null)}>Close</Button>
-                <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+                <Button onClick={() => printDocument()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
               </div>
             </>
           )}
