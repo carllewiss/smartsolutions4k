@@ -17,6 +17,7 @@ import CustomerStatementPrint from "@/components/CustomerStatementPrint";
 import PaymentDialog from "@/components/PaymentDialog";
 import StkPushDialog from "@/components/StkPushDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { printDocument } from "@/lib/print";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -344,7 +345,7 @@ export default function Invoices() {
               <CreditNotePrintView {...cnPrint} />
               <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-background p-3">
                 <Button variant="outline" onClick={() => setCnPrint(null)}>Close</Button>
-                <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+                <Button onClick={() => printDocument()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
               </div>
             </>
           )}
@@ -370,7 +371,7 @@ export default function Invoices() {
               />
               <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-background p-3">
                 <Button variant="outline" onClick={() => setStatementFor(null)}>Close</Button>
-                <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+                <Button onClick={() => printDocument()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
               </div>
             </>
           )}

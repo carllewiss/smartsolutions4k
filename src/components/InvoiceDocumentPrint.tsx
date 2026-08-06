@@ -47,8 +47,8 @@ interface CopyDef {
 const COPIES: CopyDef[] = [
   { label: "CUSTOMER COPY", isFileCopy: false },
   { label: "FILE COPY", isFileCopy: true },
-  { label: "FILE COPY", isFileCopy: true },
 ];
+
 
 const money = (n: number) =>
   n.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, PackagePlus, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet,
+  Store, HandCoins, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,6 +23,7 @@ export function AppSidebar() {
     ...(isAdmin ? [{ title: "Approvals", url: "/approvals", icon: ClipboardCheck, badge: pendingApprovals.length || undefined }] : []),
     ...(isAdmin ? [{ title: "Credit Notes", url: "/credit-notes", icon: Undo2 }] : []),
     { title: "Customers", url: "/customers", icon: Users },
+    { title: "Receivables", url: "/receivables", icon: HandCoins },
   ];
 
   const inventoryItems = isAdmin ? [

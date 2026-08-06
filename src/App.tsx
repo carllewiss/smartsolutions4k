@@ -12,6 +12,7 @@ import NewInvoice from "./pages/NewInvoice";
 import Invoices from "./pages/Invoices";
 import Customers from "./pages/Customers";
 import CustomerQuery from "./pages/CustomerQuery";
+import Receivables from "./pages/Receivables";
 import Inventory from "./pages/Inventory";
 import StockQuery from "./pages/StockQuery";
 import OpeningStock from "./pages/OpeningStock";
@@ -84,6 +85,7 @@ function ErpRoutes() {
         <Route path="/credit-notes" element={<ProtectedRoute adminOnly><CreditNotes /></ProtectedRoute>} />
         <Route path="/approvals" element={<ProtectedRoute adminOnly><Approvals /></ProtectedRoute>} />
         <Route path="/customers" element={<Customers />} />
+        <Route path="/receivables" element={<Receivables />} />
         <Route path="/customers/:customerId" element={<CustomerQuery />} />
         <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
         <Route path="/inventory/opening-stock" element={<ProtectedRoute adminOnly><OpeningStock /></ProtectedRoute>} />

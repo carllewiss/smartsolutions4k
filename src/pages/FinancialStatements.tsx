@@ -15,20 +15,29 @@ import { computePL, computeBalanceSheet, computeCashFlow, computeVat, type Perio
 const fmt = (n: number) => `KES ${Math.round(Number(n || 0)).toLocaleString()}`;
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 
-type Preset = "month" | "ytd" | "all" | "custom";
+type Preset = "month" | "fy" | "ytd" | "all" | "custom";
+
+// Accounting period / financial year: 1 January – 31 December
+const FY_START_MONTH = 0; // January
+const fyStart = (year: number) => new Date(year, FY_START_MONTH, 1);
+const fyEnd = (year: number) => new Date(year, 11, 31);
 
 export default function FinancialStatements() {
-  const [preset, setPreset] = useState<Preset>("ytd");
+  const thisYear = new Date().getFullYear();
+  const [preset, setPreset] = useState<Preset>("fy");
+  const [fyYear, setFyYear] = useState(thisYear);
   const [customFrom, setCustomFrom] = useState(iso(startOfMonth(new Date())));
   const [customTo, setCustomTo] = useState(iso(new Date()));
 
   const period: Period = useMemo(() => {
     const today = new Date();
     if (preset === "month") return { from: iso(startOfMonth(today)), to: iso(endOfMonth(today)) };
+    if (preset === "fy") return { from: iso(fyStart(fyYear)), to: iso(fyEnd(fyYear)) };
     if (preset === "ytd") return { from: iso(startOfYear(today)), to: iso(today) };
     if (preset === "all") return { from: "1900-01-01", to: iso(today) };
     return { from: customFrom, to: customTo };
-  }, [preset, customFrom, customTo]);
+  }, [preset, fyYear, customFrom, customTo]);
+
 
   const { data: rows = [], isLoading } = useGLFinancials(period.from, period.to);
 
@@ -82,17 +91,29 @@ export default function FinancialStatements() {
         <div>
           <h1 className="text-2xl font-bold font-heading">Accountant Dashboard</h1>
           <p className="text-sm text-muted-foreground">GL-driven financial statements — P&L, Balance Sheet & Cash Flow</p>
+          <p className="text-xs text-muted-foreground">Accounting period: 1 January – 31 December</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={preset} onValueChange={(v) => setPreset(v as Preset)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="fy">Financial Year (Jan–Dec)</SelectItem>
               <SelectItem value="ytd">Year to Date</SelectItem>
               <SelectItem value="all">All Time</SelectItem>
               <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
+          {preset === "fy" && (
+            <Select value={String(fyYear)} onValueChange={(v) => setFyYear(Number(v))}>
+              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 6 }, (_, i) => thisYear - i).map((y) => (
+                  <SelectItem key={y} value={String(y)}>FY {y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button variant="outline" size="sm" onClick={exportCsv}><Download className="h-4 w-4 mr-1" /> CSV</Button>
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
         </div>
@@ -104,6 +125,7 @@ export default function FinancialStatements() {
           <div><Label className="text-xs">To</Label><Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-44" /></div>
         </div>
       )}
+
 
       <div className="hidden print:block">
         <h1 className="text-xl font-bold">4K Smart Solutions Ltd — Financial Statements</h1>

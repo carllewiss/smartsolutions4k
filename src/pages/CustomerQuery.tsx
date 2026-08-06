@@ -31,6 +31,7 @@ import EditCustomerDialog from "@/components/EditCustomerDialog";
 import CustomerStatementPrint from "@/components/CustomerStatementPrint";
 import { InvoiceDetailPanel, CreditNoteDetailPanel } from "@/components/InvoiceDetailPanel";
 import { unifiedPayments } from "@/lib/payments";
+import { printDocument } from "@/lib/print";
 import { toast } from "sonner";
 
 
@@ -147,7 +148,7 @@ export default function CustomerQuery() {
   };
 
   const printStatement = () => {
-    setTimeout(() => window.print(), 100);
+    printDocument();
   };
 
   return (

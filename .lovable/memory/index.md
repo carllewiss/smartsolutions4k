@@ -24,3 +24,4 @@ Cost prices visible to admin only; sales agents see selling price + stock only.
 - [WiFi Captive Portal](mem://features/wifi-captive-portal) — Syncs Omada WiFi M-Pesa payments + vouchers from separate Supabase project (tyqcalkdvsmeczbbqfns) into /wifi, auto-posts to GL (1030→4020), 15-min cron
 - [Walk-in Customers](mem://features/walkin-customers) — Walk-in default POS mode, no account created, debt blocked, repeat detection + conversion of past invoices
 - [Opening Stock](mem://features/opening-stock) — Pre-system inventory load: batches + Inventory/Owner Capital journal, Excel upload, never via fake supplier
+- [Receivables & Printing](mem://features/receivables-printing) — Debtor list/AR aging page, Jan–Dec accounting period, print isolation rules
