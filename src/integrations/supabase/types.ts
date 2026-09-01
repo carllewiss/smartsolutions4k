@@ -59,6 +59,162 @@ export type Database = {
           },
         ]
       }
+      asset_depreciation: {
+        Row: {
+          amount: number
+          asset_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          journal_id: string | null
+          period_date: string
+        }
+        Insert: {
+          amount: number
+          asset_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          period_date: string
+        }
+        Update: {
+          amount?: number
+          asset_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          period_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_depreciation_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_depreciation_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_disposals: {
+        Row: {
+          asset_id: string
+          created_at: string
+          created_by: string | null
+          disposal_date: string
+          gain_loss: number
+          id: string
+          journal_id: string | null
+          method: Database["public"]["Enums"]["disposal_method"]
+          net_book_value: number
+          notes: string | null
+          proceeds: number
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          created_by?: string | null
+          disposal_date?: string
+          gain_loss?: number
+          id?: string
+          journal_id?: string | null
+          method?: Database["public"]["Enums"]["disposal_method"]
+          net_book_value?: number
+          notes?: string | null
+          proceeds?: number
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          created_by?: string | null
+          disposal_date?: string
+          gain_loss?: number
+          id?: string
+          journal_id?: string | null
+          method?: Database["public"]["Enums"]["disposal_method"]
+          net_book_value?: number
+          notes?: string | null
+          proceeds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_disposals_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_disposals_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_maintenance: {
+        Row: {
+          asset_id: string
+          cost: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          journal_id: string | null
+          next_service_date: string | null
+          provider: string | null
+          service_date: string
+        }
+        Insert: {
+          asset_id: string
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          journal_id?: string | null
+          next_service_date?: string | null
+          provider?: string | null
+          service_date?: string
+        }
+        Update: {
+          asset_id?: string
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          journal_id?: string | null
+          next_service_date?: string | null
+          provider?: string | null
+          service_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_maintenance_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_maintenance_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -426,6 +582,301 @@ export type Database = {
           },
           {
             foreignKeyName: "expenses_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fixed_assets: {
+        Row: {
+          accumulated_depreciation: number
+          asset_no: string
+          category: Database["public"]["Enums"]["asset_category"]
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string | null
+          journal_id: string | null
+          location: string | null
+          name: string
+          notes: string | null
+          purchase_cost: number
+          purchase_date: string
+          salvage_value: number
+          serial_number: string | null
+          status: Database["public"]["Enums"]["asset_status"]
+          supplier_id: string | null
+          updated_at: string
+          useful_life_years: number
+          warranty_expiry: string | null
+        }
+        Insert: {
+          accumulated_depreciation?: number
+          asset_no: string
+          category?: Database["public"]["Enums"]["asset_category"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          journal_id?: string | null
+          location?: string | null
+          name: string
+          notes?: string | null
+          purchase_cost?: number
+          purchase_date?: string
+          salvage_value?: number
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          supplier_id?: string | null
+          updated_at?: string
+          useful_life_years?: number
+          warranty_expiry?: string | null
+        }
+        Update: {
+          accumulated_depreciation?: number
+          asset_no?: string
+          category?: Database["public"]["Enums"]["asset_category"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          journal_id?: string | null
+          location?: string | null
+          name?: string
+          notes?: string | null
+          purchase_cost?: number
+          purchase_date?: string
+          salvage_value?: number
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          supplier_id?: string | null
+          updated_at?: string
+          useful_life_years?: number
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_assets_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goods_return_attachments: {
+        Row: {
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          return_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          return_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          return_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_return_attachments_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "goods_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goods_return_items: {
+        Row: {
+          condition_note: string | null
+          created_at: string
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          return_id: string
+          total: number
+          unit_value: number
+        }
+        Insert: {
+          condition_note?: string | null
+          created_at?: string
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          return_id: string
+          total?: number
+          unit_value?: number
+        }
+        Update: {
+          condition_note?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          return_id?: string
+          total?: number
+          unit_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_return_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_return_items_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "goods_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goods_returns: {
+        Row: {
+          adjustment_id: string | null
+          created_at: string
+          created_by: string | null
+          credit_note_id: string | null
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          journal_id: string | null
+          kind: Database["public"]["Enums"]["return_kind"]
+          notes: string | null
+          purchase_id: string | null
+          reason: Database["public"]["Enums"]["return_reason"]
+          resolution: Database["public"]["Enums"]["return_resolution"]
+          restock: boolean
+          return_date: string
+          rma_no: string
+          status: Database["public"]["Enums"]["return_status"]
+          supplier_id: string | null
+          total_value: number
+          updated_at: string
+        }
+        Insert: {
+          adjustment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_note_id?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          journal_id?: string | null
+          kind: Database["public"]["Enums"]["return_kind"]
+          notes?: string | null
+          purchase_id?: string | null
+          reason?: Database["public"]["Enums"]["return_reason"]
+          resolution?: Database["public"]["Enums"]["return_resolution"]
+          restock?: boolean
+          return_date?: string
+          rma_no: string
+          status?: Database["public"]["Enums"]["return_status"]
+          supplier_id?: string | null
+          total_value?: number
+          updated_at?: string
+        }
+        Update: {
+          adjustment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_note_id?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          journal_id?: string | null
+          kind?: Database["public"]["Enums"]["return_kind"]
+          notes?: string | null
+          purchase_id?: string | null
+          reason?: Database["public"]["Enums"]["return_reason"]
+          resolution?: Database["public"]["Enums"]["return_resolution"]
+          restock?: boolean
+          return_date?: string
+          rma_no?: string
+          status?: Database["public"]["Enums"]["return_status"]
+          supplier_id?: string | null
+          total_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_returns_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_adjustments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_returns_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_returns_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_returns_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_returns_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_returns_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_returns_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
@@ -1899,6 +2350,10 @@ export type Database = {
         Args: { p_type: Database["public"]["Enums"]["adjustment_type"] }
         Returns: string
       }
+      asset_account_code: {
+        Args: { p_cat: Database["public"]["Enums"]["asset_category"] }
+        Returns: string
+      }
       convert_po_to_invoice: { Args: { p_po_id: string }; Returns: string }
       convert_walkin_to_customer: {
         Args: { p_customer_id: string; p_phone: string }
@@ -1916,6 +2371,16 @@ export type Database = {
       deduct_stock_fifo: {
         Args: { p_product_id: string; p_quantity: number }
         Returns: number
+      }
+      dispose_asset: {
+        Args: {
+          p_asset_id: string
+          p_date?: string
+          p_method: Database["public"]["Enums"]["disposal_method"]
+          p_notes?: string
+          p_proceeds: number
+        }
+        Returns: string
       }
       get_product_stock: { Args: { p_product_id: string }; Returns: number }
       gl_financials: {
@@ -1975,7 +2440,9 @@ export type Database = {
         Returns: string
       }
       post_purchase: { Args: { p_id: string }; Returns: string }
+      post_supplier_return: { Args: { p_return_id: string }; Returns: string }
       reverse_expense: { Args: { p_expense_id: string }; Returns: undefined }
+      run_asset_depreciation: { Args: { p_period: string }; Returns: number }
     }
     Enums: {
       adjustment_type:
@@ -1991,6 +2458,16 @@ export type Database = {
         | "data_correction"
         | "repackaging"
       app_role: "admin" | "sales_agent"
+      asset_category:
+        | "computer"
+        | "printer"
+        | "router"
+        | "furniture"
+        | "vehicle"
+        | "ups"
+        | "generator"
+        | "other"
+      asset_status: "active" | "under_maintenance" | "disposed" | "written_off"
       credit_note_refund_method:
         | "none"
         | "credit_balance"
@@ -1998,6 +2475,7 @@ export type Database = {
         | "mpesa_refund"
       credit_note_status: "issued" | "void"
       customer_type: "walk_in" | "regular"
+      disposal_method: "sale" | "scrap" | "write_off" | "donation"
       etims_status: "not_required" | "pending_sync" | "signed" | "failed"
       invoice_status: "paid" | "partial" | "unpaid"
       payment_method: "cash" | "mpesa" | "cash_mpesa" | "partial_debt"
@@ -2014,6 +2492,16 @@ export type Database = {
         | "invoiced"
       purchase_payment_mode: "credit" | "cash" | "mpesa" | "bank"
       purchase_status: "draft" | "posted" | "cancelled"
+      return_kind: "customer" | "supplier"
+      return_reason: "damaged" | "expired" | "wrong_item" | "faulty" | "other"
+      return_resolution:
+        | "pending"
+        | "credit_note"
+        | "replacement"
+        | "refund"
+        | "scrap"
+        | "supplier_claim"
+      return_status: "logged" | "approved" | "resolved" | "cancelled"
       shop_order_status:
         | "pending"
         | "paid"
@@ -2162,6 +2650,17 @@ export const Constants = {
         "repackaging",
       ],
       app_role: ["admin", "sales_agent"],
+      asset_category: [
+        "computer",
+        "printer",
+        "router",
+        "furniture",
+        "vehicle",
+        "ups",
+        "generator",
+        "other",
+      ],
+      asset_status: ["active", "under_maintenance", "disposed", "written_off"],
       credit_note_refund_method: [
         "none",
         "credit_balance",
@@ -2170,6 +2669,7 @@ export const Constants = {
       ],
       credit_note_status: ["issued", "void"],
       customer_type: ["walk_in", "regular"],
+      disposal_method: ["sale", "scrap", "write_off", "donation"],
       etims_status: ["not_required", "pending_sync", "signed", "failed"],
       invoice_status: ["paid", "partial", "unpaid"],
       payment_method: ["cash", "mpesa", "cash_mpesa", "partial_debt"],
@@ -2188,6 +2688,17 @@ export const Constants = {
       ],
       purchase_payment_mode: ["credit", "cash", "mpesa", "bank"],
       purchase_status: ["draft", "posted", "cancelled"],
+      return_kind: ["customer", "supplier"],
+      return_reason: ["damaged", "expired", "wrong_item", "faulty", "other"],
+      return_resolution: [
+        "pending",
+        "credit_note",
+        "replacement",
+        "refund",
+        "scrap",
+        "supplier_claim",
+      ],
+      return_status: ["logged", "approved", "resolved", "cancelled"],
       shop_order_status: [
         "pending",
         "paid",
