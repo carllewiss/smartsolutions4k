@@ -1,77 +1,66 @@
-## Supplier Procurement Module
+# Inventory Adjustments, Returns (RMA) & Fixed Assets
 
-A complete procurement workflow: Purchase Orders → Goods Receipts → Purchase Invoices, with draft state, receipt attachments, VAT/withholding tax capture, and monthly receipt PDF compilation. Inspired by the uploaded mockup.
+Three new modules, built in phases so each one is usable as soon as it lands. All of them post to the existing double-entry GL and keep FIFO batches intact.
 
-### What you get
+## Phase 1 — Inventory Adjustments (the core)
 
-**1. Purchase Orders (PO)**
-- Create PO with supplier, expected delivery date, line items (autocomplete product search like the mockup), unit cost, VAT %, withholding tax %
-- Save as **Draft** (editable) or **Issued** (sent to supplier, locked from edits except cancel)
-- PO number auto-generated (`PO/2026/0001`)
-- Convert PO → Purchase Invoice in one click (carries lines, VAT, supplier)
+A dedicated module at `/inventory/adjustments` — never a silent stock edit.
 
-**2. Purchase Invoices (Bills)**
-- Matches the mockup: supplier picker w/ balance, invoice #, date, payment terms, due date, payment mode (Credit/Cash/M-Pesa), reference field
-- Line items table with **autocomplete product search**, qty, unit cost, VAT % per line, line total
-- Right-side cards: Invoice Summary, Supplier Info, Recent Purchases
-- Captures: subtotal, total VAT, withholding tax (2% optional), grand total
-- Posts to GL automatically (existing trigger handles it; we extend for VAT input + WHT)
-- Adjusts stock: creates `stock_batches` for the received qty at the entered unit cost (FIFO-ready)
-- Status: `draft` (no stock impact, no GL) → `posted` (stock + GL committed, immutable)
+**Adjustment types** (each maps to a fixed GL treatment):
 
-**3. Receipt Attachments**
-- Upload one or more receipt files (JPG/PNG/PDF, ≤5MB each) per purchase invoice
-- Stored in a new `purchase-receipts` Cloud storage bucket (private, admin-only)
-- Per-invoice: view, download, print single receipt
-- **Monthly compilation**: pick a month → generate a single PDF combining every receipt image for that month, with a cover page (totals by supplier) — downloadable & reprintable
+| Type | Effect | Posting |
+|---|---|---|
+| Damaged goods | Reduce | Dr Inventory Loss, Cr Inventory |
+| Expired items | Reduce | Dr Expired Stock Expense, Cr Inventory |
+| Lost / missing | Reduce | Dr Shrinkage, Cr Inventory |
+| Theft | Reduce | Dr Theft Expense, Cr Inventory |
+| Promotional giveaway | Reduce | Dr Marketing, Cr Inventory |
+| Internal use | Reduce | Dr Office Supplies, Cr Inventory |
+| Supplier replacement | Increase | Dr Inventory, Cr Supplier Claims |
+| Stock found | Increase | Dr Inventory, Cr Inventory Gain |
+| Opening balance correction | Either | Opening Balance Equity |
+| Barcode / data correction | No qty change | Audit only |
+| Repackaging / unit conversion | Qty change | Internal movement, no P&L |
 
-**4. Suppliers panel (light upgrade)**
-- Existing `suppliers` table reused; add quick balance view (sum of unpaid bills)
-- Already-built supplier creation dialog reused
+**Adjustment screen**
+- Auto number `ADJ-2026-000021`, type, reason, date, created-by.
+- Debounced stock search (name, category, later barcode/SKU) showing on-hand, FIFO cost, selling price, last purchase.
+- Multi-line: quantity to adjust, cost auto from FIFO, computed value.
+- Reason notes + photo/PDF evidence upload (private storage bucket).
+- Save → posts stock movement + journal in one atomic database function.
 
-### Where it lives
+**FIFO rules**: decreases consume oldest remaining batches (no batch cost rewrite); increases create a new batch at the chosen/last cost. Old layers are never recalculated.
 
-- New sidebar group **Purchases** with: Purchase Orders, Purchase Invoices, GRN/Receipts, Suppliers, Monthly Receipts PDF
-- Existing simple `Purchases.tsx` becomes the **Purchase Invoices** list (upgraded)
-- All admin-only (sales agents see nothing new)
+**Item timeline**: the product page gets a unified movement history — purchases, sales, credit notes, adjustments, opening stock — each with its reference number.
 
-### Technical details
+## Phase 2 — Analytics & controls
 
-**Database (one migration):**
-- `purchase_orders` (id, po_number, supplier_id, status[draft|issued|received|cancelled|invoiced], order_date, expected_date, subtotal, vat_total, wht_total, total, notes, reference, created_by)
-- `purchase_order_items` (id, po_id, product_id, description, quantity, unit_cost, vat_rate, vat_amount, line_total)
-- Extend `purchases` table: add `status`(draft|posted), `invoice_number`, `invoice_date`, `due_date`, `payment_terms_days`, `payment_mode`, `reference`, `vat_total`, `wht_total`, `subtotal`, `notes`, `po_id` (nullable FK), `posted_at`
-- Extend `purchase_items`: add `vat_rate`, `vat_amount`, `description`
-- New `purchase_receipts` (id, purchase_id, file_path, mime_type, file_size, uploaded_by, uploaded_at)
-- New storage bucket `purchase-receipts` (private, admin RLS)
-- Sequence functions for `PO/YYYY/####` and `BP/INV/YYYY/####`
-- Update `post_purchase_item_journal` trigger to also post VAT input (1300 debit) and WHT (2200 credit) when present, and only fire when parent purchase is `posted`
-- Trigger: when purchase moves draft → posted, create `stock_batches` for each line (current code creates batches on insert; we'll move that to a "post" RPC instead)
+- Dashboard: loss by month, damage by category, top adjusted products.
+- Variance detection: shrinkage % trend with a warning when it climbs month over month.
+- Frequent-adjustment alert: same product adjusted repeatedly in a week, with the likely-cause checklist.
+- Inventory heat map: healthy / low / zero / negative per product.
+- Permissions: agents view only; admins create, attach cost, and approve negative-stock adjustments.
 
-**RPCs:**
-- `create_purchase_draft(payload jsonb)` — header + items, no stock, no GL
-- `post_purchase(p_id uuid)` — validates, creates batches, sets status=posted, fires GL
-- `convert_po_to_invoice(po_id uuid)` — clones PO into a draft purchase
-- `issue_po(po_id uuid)`, `cancel_po(po_id uuid)`
+## Phase 3 — Returns (RMA)
 
-**Frontend:**
-- `src/pages/PurchaseOrders.tsx` — list + create/edit dialog
-- `src/pages/PurchaseInvoices.tsx` — list (replaces current Purchases page)
-- `src/pages/NewPurchaseInvoice.tsx` — full-page form matching the mockup (left form, right summary/supplier/recent cards)
-- `src/components/PurchaseLineAutocomplete.tsx` — product search, reuses `useProductWithStock`
-- `src/components/PurchaseReceiptsUpload.tsx` — drag/drop, list, delete
-- `src/components/MonthlyReceiptsDialog.tsx` — month picker + "Generate PDF" using `pdf-lib` (combines images + cover page)
-- `src/hooks/usePurchaseOrders.ts`, extend `src/hooks/usePurchases.ts`
-- Sidebar: add Purchases group with sub-items (admin only)
+`/returns` covering customer returns, supplier returns, damaged, expired and wrong-item cases.
+- Customer return → restock (or scrap to an adjustment) and generate a **credit note**, **replacement**, or **refund** — reusing the existing credit note engine so the GL stays consistent.
+- Supplier return → debit note against the supplier, stock out, AP reduced.
+- Status flow: logged → approved → resolved, with photo evidence and printable RMA slip.
 
-**Misc:**
-- Add `#lovable-badge { display: none !important; }` to `src/index.css`
-- `pdf-lib` dependency added (no other new deps)
+## Phase 4 — Fixed Assets
 
-### Out of scope (ask if you want them)
-- Supplier payments UI (already partially in Finance — can be extended later)
-- Three-way match (PO ↔ GRN ↔ Invoice) — we collapse GRN into the invoice posting step
-- OCR on uploaded receipts
-- Email PO to supplier
+`/assets` register for company-owned computers, printers, routers, furniture, vehicles, UPS and generators.
+- Purchase: cost, date, supplier, category, location, serial, warranty, photo.
+- Depreciation: straight-line by category with a monthly run that posts Dr Depreciation Expense / Cr Accumulated Depreciation, plus a depreciation schedule per asset.
+- Maintenance log: date, provider, cost, notes — costs post to repairs & maintenance.
+- Disposal: sale, scrap or write-off with automatic gain/loss on disposal posting.
+- Asset register report with net book value.
 
-Ready to build?
+## Technical notes
+
+- New tables: `inventory_adjustments`, `inventory_adjustment_items`, `returns` + `return_items`, `fixed_assets`, `asset_depreciation`, `asset_maintenance`, `asset_disposals` — all with RLS (admin write, agent read) and GL links.
+- New GL accounts for inventory loss, expired stock, shrinkage, theft, inventory gain, supplier claims, accumulated depreciation, depreciation expense, gain/loss on disposal.
+- Posting handled by security-definer database functions that call the existing `post_journal`, so every entry flows into Trial Balance, P&L and Balance Sheet automatically.
+- Journals stay immutable: corrections are reversals, never edits.
+- Evidence files in a private storage bucket with signed-URL access.
