@@ -433,6 +433,158 @@ export type Database = {
           },
         ]
       }
+      inventory_adjustment_attachments: {
+        Row: {
+          adjustment_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          adjustment_id: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          adjustment_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_adjustment_attachments_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_adjustments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_adjustment_items: {
+        Row: {
+          adjustment_id: string
+          batch_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          unit_cost: number
+          value: number
+        }
+        Insert: {
+          adjustment_id: string
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+          unit_cost?: number
+          value?: number
+        }
+        Update: {
+          adjustment_id?: string
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          unit_cost?: number
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_adjustment_items_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_adjustments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_adjustment_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "stock_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_adjustment_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_adjustments: {
+        Row: {
+          adjustment_date: string
+          adjustment_no: string
+          adjustment_type: Database["public"]["Enums"]["adjustment_type"]
+          created_at: string
+          created_by: string | null
+          id: string
+          journal_id: string | null
+          notes: string | null
+          reason: string | null
+          total_value: number
+          updated_at: string
+          warehouse: string
+        }
+        Insert: {
+          adjustment_date?: string
+          adjustment_no: string
+          adjustment_type: Database["public"]["Enums"]["adjustment_type"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          notes?: string | null
+          reason?: string | null
+          total_value?: number
+          updated_at?: string
+          warehouse?: string
+        }
+        Update: {
+          adjustment_date?: string
+          adjustment_no?: string
+          adjustment_type?: Database["public"]["Enums"]["adjustment_type"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          notes?: string | null
+          reason?: string | null
+          total_value?: number
+          updated_at?: string
+          warehouse?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_adjustments_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           batch_id: string | null
@@ -1743,6 +1895,10 @@ export type Database = {
       }
     }
     Functions: {
+      adjustment_accounts: {
+        Args: { p_type: Database["public"]["Enums"]["adjustment_type"] }
+        Returns: string
+      }
       convert_po_to_invoice: { Args: { p_po_id: string }; Returns: string }
       convert_walkin_to_customer: {
         Args: { p_customer_id: string; p_phone: string }
@@ -1793,6 +1949,17 @@ export type Database = {
       }
       mark_credit_note_reprint: { Args: { p_id: string }; Returns: number }
       post_credit_note_journal: { Args: { p_cn_id: string }; Returns: string }
+      post_inventory_adjustment: {
+        Args: {
+          p_date?: string
+          p_items: Json
+          p_notes: string
+          p_reason: string
+          p_type: Database["public"]["Enums"]["adjustment_type"]
+          p_warehouse?: string
+        }
+        Returns: string
+      }
       post_journal: {
         Args: {
           p_description: string
@@ -1811,6 +1978,18 @@ export type Database = {
       reverse_expense: { Args: { p_expense_id: string }; Returns: undefined }
     }
     Enums: {
+      adjustment_type:
+        | "damaged"
+        | "expired"
+        | "lost"
+        | "theft"
+        | "promotional"
+        | "internal_use"
+        | "supplier_replacement"
+        | "found"
+        | "opening_correction"
+        | "data_correction"
+        | "repackaging"
       app_role: "admin" | "sales_agent"
       credit_note_refund_method:
         | "none"
@@ -1969,6 +2148,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      adjustment_type: [
+        "damaged",
+        "expired",
+        "lost",
+        "theft",
+        "promotional",
+        "internal_use",
+        "supplier_replacement",
+        "found",
+        "opening_correction",
+        "data_correction",
+        "repackaging",
+      ],
       app_role: ["admin", "sales_agent"],
       credit_note_refund_method: [
         "none",
