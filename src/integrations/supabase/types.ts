@@ -1585,51 +1585,93 @@ export type Database = {
       }
       purchase_items: {
         Row: {
+          asset_category: Database["public"]["Enums"]["asset_category"] | null
+          asset_id: string | null
+          asset_useful_life: number | null
           batch_id: string | null
           created_at: string
           description: string | null
+          expense_account_id: string | null
           id: string
-          product_id: string
+          line_type: Database["public"]["Enums"]["purchase_line_type"]
+          product_id: string | null
           purchase_id: string
           quantity: number
           total: number
           unit_cost: number
           vat_amount: number
           vat_rate: number
+          vat_treatment: Database["public"]["Enums"]["vat_treatment"]
+          warehouse: string | null
         }
         Insert: {
+          asset_category?: Database["public"]["Enums"]["asset_category"] | null
+          asset_id?: string | null
+          asset_useful_life?: number | null
           batch_id?: string | null
           created_at?: string
           description?: string | null
+          expense_account_id?: string | null
           id?: string
-          product_id: string
+          line_type?: Database["public"]["Enums"]["purchase_line_type"]
+          product_id?: string | null
           purchase_id: string
           quantity: number
           total: number
           unit_cost: number
           vat_amount?: number
           vat_rate?: number
+          vat_treatment?: Database["public"]["Enums"]["vat_treatment"]
+          warehouse?: string | null
         }
         Update: {
+          asset_category?: Database["public"]["Enums"]["asset_category"] | null
+          asset_id?: string | null
+          asset_useful_life?: number | null
           batch_id?: string | null
           created_at?: string
           description?: string | null
+          expense_account_id?: string | null
           id?: string
-          product_id?: string
+          line_type?: Database["public"]["Enums"]["purchase_line_type"]
+          product_id?: string | null
           purchase_id?: string
           quantity?: number
           total?: number
           unit_cost?: number
           vat_amount?: number
           vat_rate?: number
+          vat_treatment?: Database["public"]["Enums"]["vat_treatment"]
+          warehouse?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "purchase_items_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchase_items_batch_id_fkey"
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "stock_batches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_expense_account_id_fkey"
+            columns: ["expense_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_expense_account_id_fkey"
+            columns: ["expense_account_id"]
+            isOneToOne: false
+            referencedRelation: "v_trial_balance"
+            referencedColumns: ["account_id"]
           },
           {
             foreignKeyName: "purchase_items_product_id_fkey"
@@ -1806,6 +1848,7 @@ export type Database = {
       }
       purchases: {
         Row: {
+          amount_paid: number
           created_at: string
           created_by: string | null
           due_date: string | null
@@ -1825,9 +1868,11 @@ export type Database = {
           supplier_id: string
           total: number
           vat_total: number
+          warehouse: string
           wht_total: number
         }
         Insert: {
+          amount_paid?: number
           created_at?: string
           created_by?: string | null
           due_date?: string | null
@@ -1847,9 +1892,11 @@ export type Database = {
           supplier_id: string
           total?: number
           vat_total?: number
+          warehouse?: string
           wht_total?: number
         }
         Update: {
+          amount_paid?: number
           created_at?: string
           created_by?: string | null
           due_date?: string | null
@@ -1869,6 +1916,7 @@ export type Database = {
           supplier_id?: string
           total?: number
           vat_total?: number
+          warehouse?: string
           wht_total?: number
         }
         Relationships: [
@@ -2162,6 +2210,145 @@ export type Database = {
           },
         ]
       }
+      supplier_payment_allocations: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          payment_id: string
+          purchase_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_id: string
+          purchase_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_id?: string
+          purchase_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payment_allocations_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_payments: {
+        Row: {
+          amount: number
+          charge_account_id: string | null
+          charge_amount: number
+          charge_type: Database["public"]["Enums"]["payment_charge_type"]
+          created_at: string
+          created_by: string | null
+          id: string
+          journal_id: string | null
+          method: Database["public"]["Enums"]["supplier_payment_method"]
+          notes: string | null
+          payment_account_id: string | null
+          payment_date: string
+          payment_no: string
+          reference: string | null
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          charge_account_id?: string | null
+          charge_amount?: number
+          charge_type?: Database["public"]["Enums"]["payment_charge_type"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          method?: Database["public"]["Enums"]["supplier_payment_method"]
+          notes?: string | null
+          payment_account_id?: string | null
+          payment_date?: string
+          payment_no: string
+          reference?: string | null
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          charge_account_id?: string | null
+          charge_amount?: number
+          charge_type?: Database["public"]["Enums"]["payment_charge_type"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          method?: Database["public"]["Enums"]["supplier_payment_method"]
+          notes?: string | null
+          payment_account_id?: string | null
+          payment_date?: string
+          payment_no?: string
+          reference?: string | null
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_payments_charge_account_id_fkey"
+            columns: ["charge_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_charge_account_id_fkey"
+            columns: ["charge_account_id"]
+            isOneToOne: false
+            referencedRelation: "v_trial_balance"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "v_trial_balance"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           created_at: string
@@ -2413,6 +2600,25 @@ export type Database = {
         Returns: string
       }
       mark_credit_note_reprint: { Args: { p_id: string }; Returns: number }
+      pay_supplier: {
+        Args: {
+          p_allocations?: Json
+          p_amount: number
+          p_charge_amount?: number
+          p_charge_type?: Database["public"]["Enums"]["payment_charge_type"]
+          p_date?: string
+          p_method: Database["public"]["Enums"]["supplier_payment_method"]
+          p_notes?: string
+          p_payment_account: string
+          p_reference?: string
+          p_supplier_id: string
+        }
+        Returns: string
+      }
+      payment_charge_account: {
+        Args: { p_type: Database["public"]["Enums"]["payment_charge_type"] }
+        Returns: string
+      }
       post_credit_note_journal: { Args: { p_cn_id: string }; Returns: string }
       post_inventory_adjustment: {
         Args: {
@@ -2478,12 +2684,20 @@ export type Database = {
       disposal_method: "sale" | "scrap" | "write_off" | "donation"
       etims_status: "not_required" | "pending_sync" | "signed" | "failed"
       invoice_status: "paid" | "partial" | "unpaid"
+      payment_charge_type:
+        | "none"
+        | "mpesa_fee"
+        | "bank_charge"
+        | "transfer_fee"
+        | "cheque_fee"
+        | "other"
       payment_method: "cash" | "mpesa" | "cash_mpesa" | "partial_debt"
       product_category:
         | "Phone Accessories"
         | "Internet Services"
         | "Printing Services"
         | "Other Services"
+      purchase_line_type: "stock" | "expense" | "service" | "asset"
       purchase_order_status:
         | "draft"
         | "issued"
@@ -2508,7 +2722,9 @@ export type Database = {
         | "failed"
         | "cancelled"
         | "fulfilled"
+      supplier_payment_method: "cash" | "mpesa" | "bank" | "cheque" | "other"
       tax_category: "standard" | "zero_rated" | "exempt"
+      vat_treatment: "standard" | "zero_rated" | "exempt" | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2672,6 +2888,14 @@ export const Constants = {
       disposal_method: ["sale", "scrap", "write_off", "donation"],
       etims_status: ["not_required", "pending_sync", "signed", "failed"],
       invoice_status: ["paid", "partial", "unpaid"],
+      payment_charge_type: [
+        "none",
+        "mpesa_fee",
+        "bank_charge",
+        "transfer_fee",
+        "cheque_fee",
+        "other",
+      ],
       payment_method: ["cash", "mpesa", "cash_mpesa", "partial_debt"],
       product_category: [
         "Phone Accessories",
@@ -2679,6 +2903,7 @@ export const Constants = {
         "Printing Services",
         "Other Services",
       ],
+      purchase_line_type: ["stock", "expense", "service", "asset"],
       purchase_order_status: [
         "draft",
         "issued",
@@ -2706,7 +2931,9 @@ export const Constants = {
         "cancelled",
         "fulfilled",
       ],
+      supplier_payment_method: ["cash", "mpesa", "bank", "cheque", "other"],
       tax_category: ["standard", "zero_rated", "exempt"],
+      vat_treatment: ["standard", "zero_rated", "exempt", "custom"],
     },
   },
 } as const
