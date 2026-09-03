@@ -16,6 +16,7 @@ import Receivables from "./pages/Receivables";
 import Inventory from "./pages/Inventory";
 import StockQuery from "./pages/StockQuery";
 import OpeningStock from "./pages/OpeningStock";
+import InventoryAdjustments from "./pages/InventoryAdjustments";
 import Purchases from "./pages/Purchases";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
@@ -89,6 +90,7 @@ function ErpRoutes() {
         <Route path="/customers/:customerId" element={<CustomerQuery />} />
         <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
         <Route path="/inventory/opening-stock" element={<ProtectedRoute adminOnly><OpeningStock /></ProtectedRoute>} />
+        <Route path="/inventory/adjustments" element={<ProtectedRoute adminOnly><InventoryAdjustments /></ProtectedRoute>} />
         <Route path="/inventory/:productId" element={<StockQuery />} />
 
         <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />

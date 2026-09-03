@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, PackagePlus, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, HandCoins, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet,
+  Store, HandCoins, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet, SlidersHorizontal,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +29,7 @@ export function AppSidebar() {
   const inventoryItems = isAdmin ? [
     { title: "Inventory", url: "/inventory", icon: Package },
     { title: "Opening Stock", url: "/inventory/opening-stock", icon: PackagePlus },
+    { title: "Adjustments", url: "/inventory/adjustments", icon: SlidersHorizontal },
     { title: "Purchases", url: "/purchases", icon: ShoppingCart },
   ] : [];
 
