@@ -111,8 +111,16 @@ export function useSavePurchase() {
         const lineNet = it.quantity * it.unit_cost;
         const v = lineNet * (it.vat_rate || 0) / 100;
         return {
-          purchase_id: id, product_id: it.product_id, description: it.description ?? null,
+          purchase_id: id,
+          line_type: it.line_type,
+          product_id: it.product_id || null,
+          description: it.description ?? null,
           quantity: it.quantity, unit_cost: it.unit_cost, vat_rate: it.vat_rate,
+          vat_treatment: it.vat_treatment ?? "standard",
+          expense_account_id: it.expense_account_id || null,
+          asset_category: it.asset_category || null,
+          asset_useful_life: it.asset_useful_life ?? null,
+          warehouse: it.warehouse || null,
           vat_amount: v, total: lineNet + v,
         };
       });
