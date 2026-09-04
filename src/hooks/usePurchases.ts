@@ -197,3 +197,43 @@ export async function getReceiptSignedUrl(path: string, expires = 3600) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+export type SupplierPaymentInput = {
+  supplier_id: string;
+  amount: number;
+  method: "cash" | "mpesa" | "bank" | "cheque" | "other";
+  payment_account: string; // GL account code
+  reference?: string;
+  charge_type?: "none" | "mpesa_fee" | "bank_charge" | "transfer_fee" | "cheque_fee" | "other";
+  charge_amount?: number;
+  allocations?: { purchase_id: string; amount: number }[];
+  date?: string;
+  notes?: string;
+};
+
+export function usePaySupplier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: SupplierPaymentInput) => {
+      const { data, error } = await (supabase as any).rpc("pay_supplier", {
+        p_supplier_id: p.supplier_id,
+        p_amount: p.amount,
+        p_method: p.method,
+        p_payment_account: p.payment_account,
+        p_reference: p.reference || null,
+        p_charge_type: p.charge_type || "none",
+        p_charge_amount: p.charge_amount || 0,
+        p_allocations: p.allocations || [],
+        p_date: p.date || new Date().toISOString().slice(0, 10),
+        p_notes: p.notes || null,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["purchases"] });
+      qc.invalidateQueries({ queryKey: ["supplier-balances"] });
+      qc.invalidateQueries({ queryKey: ["trial-balance"] });
+    },
+  });
+}
