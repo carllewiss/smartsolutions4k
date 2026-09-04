@@ -1,12 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type PurchaseLineType = "stock" | "expense" | "service" | "asset";
+export type VatTreatment = "standard" | "zero_rated" | "exempt" | "custom";
+
 export type PurchaseLine = {
-  product_id: string;
+  line_type: PurchaseLineType;
+  product_id?: string | null;
   description?: string;
   quantity: number;
   unit_cost: number;
   vat_rate: number; // %
+  vat_treatment?: VatTreatment;
+  expense_account_id?: string | null;
+  asset_category?: string | null;
+  asset_useful_life?: number | null;
+  warehouse?: string | null;
 };
 
 export function usePurchases(status?: string) {
