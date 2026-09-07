@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { differenceInDays } from "date-fns";
 import {
-  Search, Download, Eye, CreditCard, FileText, Phone, Mail, Hash, MapPin, X, ChevronLeft, ChevronRight,
+  Search, Download, Eye, CreditCard, FileText, Phone, Mail, Hash, MapPin, X, ChevronLeft, ChevronRight, Printer,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
