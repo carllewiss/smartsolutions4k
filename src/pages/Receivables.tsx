@@ -153,7 +153,8 @@ export default function Receivables() {
           <p className="text-sm text-muted-foreground">Customers with outstanding balances — highest debt first</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={exportCsv}><Download className="h-4 w-4 mr-1" /> Export</Button>
+          <Button variant="outline" size="sm" onClick={exportCsv}><Download className="h-4 w-4 mr-1" /> Export CSV</Button>
+          <Button variant="outline" size="sm" onClick={() => printDocument()}><Printer className="h-4 w-4 mr-1" /> Export PDF</Button>
         </div>
       </div>
 
