@@ -31,6 +31,7 @@ export function AppSidebar() {
     { title: "Opening Stock", url: "/inventory/opening-stock", icon: PackagePlus },
     { title: "Adjustments", url: "/inventory/adjustments", icon: SlidersHorizontal },
     { title: "Purchases", url: "/purchases", icon: ShoppingCart },
+    { title: "Suppliers", url: "/purchases/suppliers", icon: Truck },
   ] : [];
 
   const financeItems = isAdmin ? [

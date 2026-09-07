@@ -20,6 +20,8 @@ import InventoryAdjustments from "./pages/InventoryAdjustments";
 import Purchases from "./pages/Purchases";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
+import Suppliers from "./pages/Suppliers";
+import SupplierDetail from "./pages/SupplierDetail";
 import Expenses from "./pages/Expenses";
 import NewExpense from "./pages/NewExpense";
 import UserManagement from "./pages/UserManagement";
