@@ -274,6 +274,11 @@ export default function Receivables() {
                       <Progress value={Math.min(d.usage, 100)} className="h-1 mt-1" />
                     </TableCell>
                     <TableCell><Badge className={d.risk.cls}>{d.risk.label}</Badge></TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setPayFor(d); }}>
+                        <CreditCard className="h-3.5 w-3.5 mr-1" /> Pay
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {pageRows.length === 0 && (
