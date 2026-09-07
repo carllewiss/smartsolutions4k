@@ -399,6 +399,54 @@ export default function Receivables() {
           currentBalance={payFor.outstanding}
         />
       )}
+
+      {/* Printable debtors report (screen-hidden, print-only) */}
+      <div id="debtors-print" className="hidden print:block text-black text-[11px]">
+        <div style={{ textAlign: "center", marginBottom: 10 }}>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{COMPANY.name}</div>
+          <div>{COMPANY.address} · {COMPANY.phone} · KRA PIN: {COMPANY.kraPin}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginTop: 6 }}>DEBTORS (ACCOUNTS RECEIVABLE) REPORT</div>
+          <div>As at {new Date().toLocaleDateString("en-GB")} · Total outstanding: {fmt(totals.total)} · {filtered.length} customers</div>
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {["#", "Customer", "Code", "Phone", "Limit", "Outstanding", ...BUCKETS.map((b) => b.short), "Used %", "Risk"].map((h) => (
+                <th key={h} style={{ border: "1px solid #000", padding: "3px 4px", textAlign: "left", background: "#eee" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((d, i) => (
+              <tr key={d.customer.id}>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{i + 1}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{d.customer.name}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{d.customer.customer_code}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{d.customer.phone || "-"}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px", textAlign: "right" }}>{d.limit.toLocaleString()}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px", textAlign: "right", fontWeight: 700 }}>{Math.round(d.outstanding).toLocaleString()}</td>
+                {BUCKETS.map((b) => (
+                  <td key={b.key} style={{ border: "1px solid #999", padding: "3px 4px", textAlign: "right" }}>{Math.round(d.buckets[b.key]).toLocaleString()}</td>
+                ))}
+                <td style={{ border: "1px solid #999", padding: "3px 4px", textAlign: "right" }}>{Math.round(d.usage)}%</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{d.risk.label}</td>
+              </tr>
+            ))}
+            <tr>
+              <td colSpan={5} style={{ border: "1px solid #000", padding: "3px 4px", fontWeight: 700, textAlign: "right" }}>TOTAL</td>
+              <td style={{ border: "1px solid #000", padding: "3px 4px", textAlign: "right", fontWeight: 700 }}>
+                {Math.round(filtered.reduce((s, d) => s + d.outstanding, 0)).toLocaleString()}
+              </td>
+              {BUCKETS.map((b) => (
+                <td key={b.key} style={{ border: "1px solid #000", padding: "3px 4px", textAlign: "right", fontWeight: 700 }}>
+                  {Math.round(filtered.reduce((s, d) => s + d.buckets[b.key], 0)).toLocaleString()}
+                </td>
+              ))}
+              <td style={{ border: "1px solid #000" }} colSpan={2} />
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
