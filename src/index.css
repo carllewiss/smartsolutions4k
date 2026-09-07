@@ -180,12 +180,15 @@
   body.printing-invoice #printable-credit-note,
   body.printing-invoice #printable-credit-note *,
   body.printing-invoice #statement-print,
-  body.printing-invoice #statement-print * {
+  body.printing-invoice #statement-print *,
+  body.printing-invoice #debtors-print,
+  body.printing-invoice #debtors-print * {
     visibility: visible;
   }
   body.printing-invoice #invoice-print-root,
   body.printing-invoice #printable-invoice,
   body.printing-invoice #printable-credit-note,
+  body.printing-invoice #debtors-print,
   body.printing-invoice #statement-print {
     position: absolute;
     left: 0;

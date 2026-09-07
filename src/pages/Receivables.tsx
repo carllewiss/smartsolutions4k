@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { differenceInDays } from "date-fns";
 import {
-  Search, Download, Eye, CreditCard, FileText, Phone, Mail, Hash, MapPin, X, ChevronLeft, ChevronRight,
+  Search, Download, Eye, CreditCard, FileText, Phone, Mail, Hash, MapPin, X, ChevronLeft, ChevronRight, Printer,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,6 +18,8 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useAuth } from "@/hooks/useAuth";
 import PaymentDialog from "@/components/PaymentDialog";
+import { printDocument } from "@/lib/print";
+import { COMPANY } from "@/lib/company";
 
 const BUCKETS = [
   { key: "current", label: "Current (0 - 13 Days)", short: "Current", color: "hsl(var(--success))" },
@@ -153,7 +155,8 @@ export default function Receivables() {
           <p className="text-sm text-muted-foreground">Customers with outstanding balances — highest debt first</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={exportCsv}><Download className="h-4 w-4 mr-1" /> Export</Button>
+          <Button variant="outline" size="sm" onClick={exportCsv}><Download className="h-4 w-4 mr-1" /> Export CSV</Button>
+          <Button variant="outline" size="sm" onClick={() => printDocument()}><Printer className="h-4 w-4 mr-1" /> Export PDF</Button>
         </div>
       </div>
 
@@ -243,6 +246,7 @@ export default function Receivables() {
                   {BUCKETS.map((b) => <TableHead key={b.key} className="text-right hidden lg:table-cell">{b.short}</TableHead>)}
                   <TableHead className="text-right">Used</TableHead>
                   <TableHead>Risk</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -270,6 +274,11 @@ export default function Receivables() {
                       <Progress value={Math.min(d.usage, 100)} className="h-1 mt-1" />
                     </TableCell>
                     <TableCell><Badge className={d.risk.cls}>{d.risk.label}</Badge></TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setPayFor(d); }}>
+                        <CreditCard className="h-3.5 w-3.5 mr-1" /> Pay
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {pageRows.length === 0 && (
@@ -368,14 +377,12 @@ export default function Receivables() {
                   <Button variant="outline" size="sm" onClick={() => navigate(`/customers/${selected.customer.id}`)}>
                     <FileText className="h-4 w-4 mr-1" /> Statement
                   </Button>
-                  {isAdmin && (
-                    <Button size="sm" className="col-span-2" onClick={() => setPayFor(selected)}>
-                      <CreditCard className="h-4 w-4 mr-1" /> Receive Payment
-                    </Button>
-                  )}
+                  <Button size="sm" className="col-span-2" onClick={() => setPayFor(selected)}>
+                    <CreditCard className="h-4 w-4 mr-1" /> Receive Payment
+                  </Button>
                 </div>
                 {!isAdmin && (
-                  <p className="text-[11px] text-muted-foreground">View-only access — payments and credit changes are admin actions.</p>
+                  <p className="text-[11px] text-muted-foreground">You can receive payments and print statements. Credit limits and terms are admin-only.</p>
                 )}
               </>
             )}
@@ -392,6 +399,54 @@ export default function Receivables() {
           currentBalance={payFor.outstanding}
         />
       )}
+
+      {/* Printable debtors report (screen-hidden, print-only) */}
+      <div id="debtors-print" className="hidden print:block text-black text-[11px]">
+        <div style={{ textAlign: "center", marginBottom: 10 }}>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{COMPANY.name}</div>
+          <div>{COMPANY.address} · {COMPANY.phone} · KRA PIN: {COMPANY.kraPin}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginTop: 6 }}>DEBTORS (ACCOUNTS RECEIVABLE) REPORT</div>
+          <div>As at {new Date().toLocaleDateString("en-GB")} · Total outstanding: {fmt(totals.total)} · {filtered.length} customers</div>
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {["#", "Customer", "Code", "Phone", "Limit", "Outstanding", ...BUCKETS.map((b) => b.short), "Used %", "Risk"].map((h) => (
+                <th key={h} style={{ border: "1px solid #000", padding: "3px 4px", textAlign: "left", background: "#eee" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((d, i) => (
+              <tr key={d.customer.id}>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{i + 1}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{d.customer.name}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{d.customer.customer_code}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{d.customer.phone || "-"}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px", textAlign: "right" }}>{d.limit.toLocaleString()}</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px", textAlign: "right", fontWeight: 700 }}>{Math.round(d.outstanding).toLocaleString()}</td>
+                {BUCKETS.map((b) => (
+                  <td key={b.key} style={{ border: "1px solid #999", padding: "3px 4px", textAlign: "right" }}>{Math.round(d.buckets[b.key]).toLocaleString()}</td>
+                ))}
+                <td style={{ border: "1px solid #999", padding: "3px 4px", textAlign: "right" }}>{Math.round(d.usage)}%</td>
+                <td style={{ border: "1px solid #999", padding: "3px 4px" }}>{d.risk.label}</td>
+              </tr>
+            ))}
+            <tr>
+              <td colSpan={5} style={{ border: "1px solid #000", padding: "3px 4px", fontWeight: 700, textAlign: "right" }}>TOTAL</td>
+              <td style={{ border: "1px solid #000", padding: "3px 4px", textAlign: "right", fontWeight: 700 }}>
+                {Math.round(filtered.reduce((s, d) => s + d.outstanding, 0)).toLocaleString()}
+              </td>
+              {BUCKETS.map((b) => (
+                <td key={b.key} style={{ border: "1px solid #000", padding: "3px 4px", textAlign: "right", fontWeight: 700 }}>
+                  {Math.round(filtered.reduce((s, d) => s + d.buckets[b.key], 0)).toLocaleString()}
+                </td>
+              ))}
+              <td style={{ border: "1px solid #000" }} colSpan={2} />
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
