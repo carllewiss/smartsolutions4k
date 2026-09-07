@@ -97,6 +97,8 @@ function ErpRoutes() {
 
         <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
         <Route path="/purchases/orders" element={<ProtectedRoute adminOnly><PurchaseOrders /></ProtectedRoute>} />
+        <Route path="/purchases/suppliers" element={<ProtectedRoute adminOnly><Suppliers /></ProtectedRoute>} />
+        <Route path="/purchases/suppliers/:id" element={<ProtectedRoute adminOnly><SupplierDetail /></ProtectedRoute>} />
         <Route path="/purchases/new" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
         <Route path="/purchases/:id" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
         <Route path="/purchases/:id/edit" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
