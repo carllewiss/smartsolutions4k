@@ -18,6 +18,8 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useAuth } from "@/hooks/useAuth";
 import PaymentDialog from "@/components/PaymentDialog";
+import { printDocument } from "@/lib/print";
+import { COMPANY } from "@/lib/company";
 
 const BUCKETS = [
   { key: "current", label: "Current (0 - 13 Days)", short: "Current", color: "hsl(var(--success))" },
