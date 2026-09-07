@@ -246,6 +246,7 @@ export default function Receivables() {
                   {BUCKETS.map((b) => <TableHead key={b.key} className="text-right hidden lg:table-cell">{b.short}</TableHead>)}
                   <TableHead className="text-right">Used</TableHead>
                   <TableHead>Risk</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
