@@ -371,14 +371,12 @@ export default function Receivables() {
                   <Button variant="outline" size="sm" onClick={() => navigate(`/customers/${selected.customer.id}`)}>
                     <FileText className="h-4 w-4 mr-1" /> Statement
                   </Button>
-                  {isAdmin && (
-                    <Button size="sm" className="col-span-2" onClick={() => setPayFor(selected)}>
-                      <CreditCard className="h-4 w-4 mr-1" /> Receive Payment
-                    </Button>
-                  )}
+                  <Button size="sm" className="col-span-2" onClick={() => setPayFor(selected)}>
+                    <CreditCard className="h-4 w-4 mr-1" /> Receive Payment
+                  </Button>
                 </div>
                 {!isAdmin && (
-                  <p className="text-[11px] text-muted-foreground">View-only access — payments and credit changes are admin actions.</p>
+                  <p className="text-[11px] text-muted-foreground">You can receive payments and print statements. Credit limits and terms are admin-only.</p>
                 )}
               </>
             )}
