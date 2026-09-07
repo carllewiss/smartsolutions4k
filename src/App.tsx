@@ -20,6 +20,8 @@ import InventoryAdjustments from "./pages/InventoryAdjustments";
 import Purchases from "./pages/Purchases";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
+import Suppliers from "./pages/Suppliers";
+import SupplierDetail from "./pages/SupplierDetail";
 import Expenses from "./pages/Expenses";
 import NewExpense from "./pages/NewExpense";
 import UserManagement from "./pages/UserManagement";
@@ -95,6 +97,8 @@ function ErpRoutes() {
 
         <Route path="/purchases" element={<ProtectedRoute adminOnly><Purchases /></ProtectedRoute>} />
         <Route path="/purchases/orders" element={<ProtectedRoute adminOnly><PurchaseOrders /></ProtectedRoute>} />
+        <Route path="/purchases/suppliers" element={<ProtectedRoute adminOnly><Suppliers /></ProtectedRoute>} />
+        <Route path="/purchases/suppliers/:id" element={<ProtectedRoute adminOnly><SupplierDetail /></ProtectedRoute>} />
         <Route path="/purchases/new" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
         <Route path="/purchases/:id" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
         <Route path="/purchases/:id/edit" element={<ProtectedRoute adminOnly><NewPurchaseInvoice /></ProtectedRoute>} />
