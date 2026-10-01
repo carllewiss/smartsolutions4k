@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -91,6 +92,35 @@ export function useWifiVouchers() {
       return (data || []) as WifiVoucher[];
     },
   });
+}
+
+/** Live WiFi feed: realtime updates + silent background sync while open. */
+export function useWifiLive(intervalMs = 20000) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const refresh = () => {
+      qc.invalidateQueries({ queryKey: ["wifi_transactions"] });
+      qc.invalidateQueries({ queryKey: ["wifi_vouchers"] });
+    };
+    const channel = supabase
+      .channel("wifi-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "wifi_transactions" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "wifi_vouchers" }, refresh)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "invoice_items" }, refresh)
+      .subscribe();
+    let busy = false;
+    const tick = async () => {
+      if (busy || document.hidden) return;
+      busy = true;
+      try {
+        const { data } = await supabase.functions.invoke("sync-wifi-payments");
+        if (data?.newPayments || data?.syncedVouchers) refresh();
+      } catch { /* silent */ } finally { busy = false; }
+    };
+    tick();
+    const id = setInterval(tick, intervalMs);
+    return () => { clearInterval(id); supabase.removeChannel(channel); };
+  }, [qc, intervalMs]);
 }
 
 export function useSyncWifi() {
