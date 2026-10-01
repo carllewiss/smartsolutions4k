@@ -30,10 +30,8 @@ async function portalGet(portal: (typeof PORTALS)[number], path: string) {
     const m = body.match(/column \w+\.(\w+) does not exist/);
     if (res.status === 400 && m) {
       const col = m[1];
-      const reduced = path
-        .replace(new RegExp(`(^|,)${col}(?=,|&|$)`), "$1")
-        .replace(/select=,/, "select=")
-        .replace(/,(?=&)/, "");
+      const reduced = path.replace(/select=([^&]*)/, (_s, list: string) =>
+        "select=" + list.split(",").filter((c) => c && c !== col).join(","));
       if (reduced !== path) return portalGet(portal, reduced);
     }
     throw new Error(`Portal fetch failed (${res.status}): ${body}`);
