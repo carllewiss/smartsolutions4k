@@ -24,7 +24,20 @@ async function portalGet(portal: (typeof PORTALS)[number], path: string) {
   const res = await fetch(`${portal.url}/rest/v1/${path}`, {
     headers: { apikey: portal.anon, Authorization: `Bearer ${portal.anon}` },
   });
-  if (!res.ok) throw new Error(`Portal fetch failed (${res.status}): ${await res.text()}`);
+  if (!res.ok) {
+    const body = await res.text();
+    // Some portals lack optional columns (e.g. authenticated_at) — retry without them.
+    const m = body.match(/column \w+\.(\w+) does not exist/);
+    if (res.status === 400 && m) {
+      const col = m[1];
+      const reduced = path
+        .replace(new RegExp(`(^|,)${col}(?=,|&|$)`), "$1")
+        .replace(/select=,/, "select=")
+        .replace(/,(?=&)/, "");
+      if (reduced !== path) return portalGet(portal, reduced);
+    }
+    throw new Error(`Portal fetch failed (${res.status}): ${body}`);
+  }
   return await res.json();
 }
 
