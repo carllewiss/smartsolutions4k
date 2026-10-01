@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useWifiTransactions, useWifiVouchers, useSyncWifi } from "@/hooks/useWifi";
+import { useWifiTransactions, useWifiVouchers, useSyncWifi, useWifiLive } from "@/hooks/useWifi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,7 @@ export default function Wifi() {
   const { data: txns = [], isLoading } = useWifiTransactions();
   const { data: vouchers = [] } = useWifiVouchers();
   const sync = useSyncWifi();
+  useWifiLive();
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
