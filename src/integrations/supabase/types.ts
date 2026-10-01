@@ -2437,6 +2437,7 @@ export type Database = {
           paid_at: string
           phone_number: string | null
           remote_id: string
+          source: string
           ssid: string | null
           status: string
           synced_at: string
@@ -2454,6 +2455,7 @@ export type Database = {
           paid_at?: string
           phone_number?: string | null
           remote_id: string
+          source?: string
           ssid?: string | null
           status?: string
           synced_at?: string
@@ -2471,6 +2473,7 @@ export type Database = {
           paid_at?: string
           phone_number?: string | null
           remote_id?: string
+          source?: string
           ssid?: string | null
           status?: string
           synced_at?: string
@@ -2486,6 +2489,7 @@ export type Database = {
           id: string
           package_type: string | null
           remote_id: string
+          source: string
           status: string | null
           synced_at: string
           used_at: string | null
@@ -2498,6 +2502,7 @@ export type Database = {
           id?: string
           package_type?: string | null
           remote_id: string
+          source?: string
           status?: string | null
           synced_at?: string
           used_at?: string | null
@@ -2510,6 +2515,7 @@ export type Database = {
           id?: string
           package_type?: string | null
           remote_id?: string
+          source?: string
           status?: string | null
           synced_at?: string
           used_at?: string | null
