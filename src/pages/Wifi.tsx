@@ -76,6 +76,13 @@ export default function Wifi() {
       return d >= mStart && d <= mEnd;
     });
     const monthRevenue = monthTx.reduce((s, t) => s + Number(t.amount), 0);
+    const prevStart = startOfMonth(subDays(mStart, 1));
+    const prevEnd = endOfMonth(subDays(mStart, 1));
+    const prevTx = txns.filter((t) => {
+      const d = new Date(t.paid_at);
+      return d >= prevStart && d <= prevEnd;
+    });
+    const prevRevenue = prevTx.reduce((s, t) => s + Number(t.amount), 0);
     const vouchersToday = vouchers.filter((v) => v.used_at && isToday(new Date(v.used_at))).length;
 
     const daily = Array.from({ length: 7 }, (_, i) => {
@@ -90,6 +97,7 @@ export default function Wifi() {
     return {
       todayRevenue, totalRevenue, sevenDay, monthRevenue,
       monthCount: monthTx.length, monthLabel: format(today, "MMMM yyyy"),
+      prevRevenue, prevLabel: format(prevStart, "MMMM yyyy"),
       todayCount: todayTx.length, vouchersToday, daily,
     };
   }, [txns, vouchers]);
