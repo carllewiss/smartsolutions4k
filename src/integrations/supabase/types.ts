@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closed_reason: string | null
+          created_at: string
+          end_date: string
+          id: string
+          period_name: string
+          start_date: string
+          status: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          period_name: string
+          start_date: string
+          status?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          period_name?: string
+          start_date?: string
+          status?: string
+        }
+        Relationships: []
+      }
       accounts: {
         Row: {
           code: string
@@ -1398,6 +1434,105 @@ export type Database = {
           },
         ]
       }
+      payment_corrections: {
+        Row: {
+          amount: number
+          correction_no: string
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          from_account: string | null
+          id: string
+          invoice_id: string | null
+          journal_id: string | null
+          kind: string
+          new_invoice_id: string | null
+          original_date: string | null
+          original_period_status: string | null
+          payment_id: string | null
+          posting_date: string
+          reason: string | null
+          reason_code: string
+          to_account: string | null
+        }
+        Insert: {
+          amount?: number
+          correction_no: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          from_account?: string | null
+          id?: string
+          invoice_id?: string | null
+          journal_id?: string | null
+          kind: string
+          new_invoice_id?: string | null
+          original_date?: string | null
+          original_period_status?: string | null
+          payment_id?: string | null
+          posting_date?: string
+          reason?: string | null
+          reason_code: string
+          to_account?: string | null
+        }
+        Update: {
+          amount?: number
+          correction_no?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          from_account?: string | null
+          id?: string
+          invoice_id?: string | null
+          journal_id?: string | null
+          kind?: string
+          new_invoice_id?: string | null
+          original_date?: string | null
+          original_period_status?: string | null
+          payment_id?: string | null
+          posting_date?: string
+          reason?: string | null
+          reason_code?: string
+          to_account?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_corrections_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_corrections_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_corrections_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_corrections_new_invoice_id_fkey"
+            columns: ["new_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_corrections_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1410,6 +1545,8 @@ export type Database = {
           mpesa_amount: number
           notes: string | null
           payment_date: string
+          reversed_at: string | null
+          status: string
         }
         Insert: {
           amount: number
@@ -1422,6 +1559,8 @@ export type Database = {
           mpesa_amount?: number
           notes?: string | null
           payment_date?: string
+          reversed_at?: string | null
+          status?: string
         }
         Update: {
           amount?: number
@@ -1434,6 +1573,8 @@ export type Database = {
           mpesa_amount?: number
           notes?: string | null
           payment_date?: string
+          reversed_at?: string | null
+          status?: string
         }
         Relationships: [
           {
@@ -2552,6 +2693,17 @@ export type Database = {
         Args: { p_customer_id: string; p_phone: string }
         Returns: number
       }
+      correct_payment_account: {
+        Args: {
+          p_amount: number
+          p_from: string
+          p_payment_id: string
+          p_reason: string
+          p_reason_code: string
+          p_to: string
+        }
+        Returns: string
+      }
       create_credit_note: {
         Args: {
           p_invoice_id: string
@@ -2606,6 +2758,7 @@ export type Database = {
         Returns: string
       }
       mark_credit_note_reprint: { Args: { p_id: string }; Returns: number }
+      next_correction_no: { Args: never; Returns: string }
       pay_supplier: {
         Args: {
           p_allocations?: Json
@@ -2625,6 +2778,7 @@ export type Database = {
         Args: { p_type: Database["public"]["Enums"]["payment_charge_type"] }
         Returns: string
       }
+      period_status_for: { Args: { p_date: string }; Returns: string }
       post_credit_note_journal: { Args: { p_cn_id: string }; Returns: string }
       post_inventory_adjustment: {
         Args: {
@@ -2653,8 +2807,34 @@ export type Database = {
       }
       post_purchase: { Args: { p_id: string }; Returns: string }
       post_supplier_return: { Args: { p_return_id: string }; Returns: string }
+      reallocate_payment: {
+        Args: {
+          p_new_invoice_id: string
+          p_payment_id: string
+          p_reason: string
+          p_reason_code: string
+        }
+        Returns: string
+      }
       reverse_expense: { Args: { p_expense_id: string }; Returns: undefined }
+      reverse_payment: {
+        Args: { p_payment_id: string; p_reason: string; p_reason_code: string }
+        Returns: string
+      }
       run_asset_depreciation: { Args: { p_period: string }; Returns: number }
+      set_accounting_period: {
+        Args: {
+          p_month: number
+          p_reason: string
+          p_status: string
+          p_year: number
+        }
+        Returns: string
+      }
+      write_off_bad_debt: {
+        Args: { p_amount: number; p_invoice_id: string; p_reason: string }
+        Returns: string
+      }
     }
     Enums: {
       adjustment_type:
