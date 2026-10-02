@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wifi as WifiIcon, DollarSign, Ticket, RefreshCw, Smartphone, TrendingUp, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, isToday, startOfMonth, endOfMonth } from "date-fns";
 import VoucherInventory from "@/components/VoucherInventory";
@@ -122,10 +122,11 @@ export default function Wifi() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard icon={DollarSign} label="Today's WiFi Revenue" value={kes(stats.todayRevenue)} sub={`${stats.todayCount} payments`} color="text-success" />
         <StatCard icon={TrendingUp} label="Last 7 Days" value={kes(stats.sevenDay)} sub="WiFi revenue" color="text-primary" />
         <StatCard icon={DollarSign} label="Monthly WiFi Collection" value={kes(stats.monthRevenue)} sub={`${stats.monthLabel} · ${stats.monthCount} payments`} color="text-success" />
+        <StatCard icon={CalendarDays} label="Last Month Total" value={kes(stats.prevRevenue)} sub={`${stats.prevLabel} revenue`} color="text-warning" />
         <StatCard icon={Ticket} label="Vouchers Today" value={String(stats.vouchersToday)} sub="assigned" color="text-warning" />
         <StatCard icon={WifiIcon} label="All-Time Revenue" value={kes(stats.totalRevenue)} sub={`${txns.length} payments`} color="text-primary" />
       </div>
