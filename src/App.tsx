@@ -30,6 +30,9 @@ import EtimsSyncQueue from "./pages/EtimsSyncQueue";
 import CreditNotes from "./pages/CreditNotes";
 import Approvals from "./pages/Approvals";
 import Accounting from "./pages/Accounting";
+import Payments from "./pages/Payments";
+import PaymentDetail from "./pages/PaymentDetail";
+import PeriodManagement from "./pages/PeriodManagement";
 import FinancialStatements from "./pages/FinancialStatements";
 import Wifi from "./pages/Wifi";
 import Mpesa from "./pages/Mpesa";
@@ -106,6 +109,9 @@ function ErpRoutes() {
         <Route path="/expenses/new" element={<ProtectedRoute adminOnly><NewExpense /></ProtectedRoute>} />
         <Route path="/finance" element={<Navigate to="/expenses" replace />} />
         <Route path="/accounting" element={<ProtectedRoute adminOnly><Accounting /></ProtectedRoute>} />
+        <Route path="/accounting/periods" element={<ProtectedRoute adminOnly><PeriodManagement /></ProtectedRoute>} />
+        <Route path="/payments" element={<ProtectedRoute adminOnly><Payments /></ProtectedRoute>} />
+        <Route path="/payments/:id" element={<ProtectedRoute adminOnly><PaymentDetail /></ProtectedRoute>} />
         <Route path="/financials" element={<ProtectedRoute adminOnly><FinancialStatements /></ProtectedRoute>} />
         <Route path="/wifi" element={<ProtectedRoute adminOnly><Wifi /></ProtectedRoute>} />
         <Route path="/mpesa" element={<ProtectedRoute adminOnly><Mpesa /></ProtectedRoute>} />

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, PackagePlus, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, HandCoins, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet, SlidersHorizontal, Truck,
+  Store, HandCoins, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet, SlidersHorizontal, Truck, CreditCard, CalendarRange,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +38,8 @@ export function AppSidebar() {
     { title: "Expenses", url: "/expenses", icon: Wallet },
     { title: "Financial Statements", url: "/financials", icon: Scale },
     { title: "Accounting", url: "/accounting", icon: BookOpen },
+    { title: "Payments", url: "/payments", icon: CreditCard },
+    { title: "Period Management", url: "/accounting/periods", icon: CalendarRange },
     { title: "WiFi Revenue", url: "/wifi", icon: Wifi },
     { title: "M-Pesa Payments", url: "/mpesa", icon: Smartphone },
   ] : [];
