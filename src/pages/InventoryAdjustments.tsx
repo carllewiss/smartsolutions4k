@@ -215,6 +215,23 @@ export default function InventoryAdjustments() {
   const meta = ADJUSTMENT_TYPES.find((t) => t.value === type)!;
   const stockables = useMemo(() => products.filter((p: any) => !p.is_service), [products]);
 
+  const filteredHistory = useMemo(() => {
+    const q = historySearch.trim().toLowerCase();
+    if (!q) return history;
+    return history.filter((a: any) => {
+      const inItems = (a.inventory_adjustment_items || []).some((it: any) =>
+        (it.products?.name || "").toLowerCase().includes(q)
+      );
+      return (
+        (a.adjustment_no || "").toLowerCase().includes(q) ||
+        (a.adjustment_type || "").toLowerCase().includes(q) ||
+        (a.reason || "").toLowerCase().includes(q) ||
+        (a.notes || "").toLowerCase().includes(q) ||
+        inItems
+      );
+    });
+  }, [historySearch, history]);
+
   const addLine = (p: any) => {
     if (lines.some((l) => l.product_id === p.id)) {
       toast.info(`${p.name} is already on this adjustment`);
@@ -467,8 +484,29 @@ export default function InventoryAdjustments() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Adjustment history</CardTitle>
+        <CardHeader className="pb-3 space-y-3">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <CardTitle className="text-base">Adjustment history</CardTitle>
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                placeholder="Search by number, type, reason or product…"
+                className="pl-10 pr-9"
+                aria-label="Search adjustment history"
+              />
+              {historySearch && (
+                <button
+                  onClick={() => setHistorySearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear adjustment search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
