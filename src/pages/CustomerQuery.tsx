@@ -428,6 +428,7 @@ export default function CustomerQuery() {
                       <TableCell className="font-mono text-xs">{p.invoice_number || "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px]">{p.source === "pos" ? "At sale" : "Debt payment"}</Badge>
+                        {p.status === "reversed" && <Badge variant="destructive" className="text-[10px] ml-1">Reversed</Badge>}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-success">+ KES {Number(p.amount).toLocaleString()}</TableCell>
                       <TableCell className="text-right text-sm">{Number(p.cash_amount).toLocaleString()}</TableCell>

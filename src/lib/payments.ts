@@ -9,6 +9,8 @@ export type UnifiedPayment = {
   notes?: string | null;
   source: "pos" | "allocation";
   invoice_number?: string | null;
+  status?: string | null;
+  reversed_at?: string | null;
 };
 
 /**
@@ -52,6 +54,8 @@ export function unifiedPayments(invoices: any[], payments: any[]): UnifiedPaymen
     notes: p.notes ?? null,
     source: "allocation",
     invoice_number: invNo.get(p.invoice_id) ?? null,
+    status: p.status ?? "posted",
+    reversed_at: p.reversed_at ?? null,
   }));
 
   return [...pos, ...allocations].sort(

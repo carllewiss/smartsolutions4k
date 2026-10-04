@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 interface StkBody {
-  invoice_id: string;
+  invoice_id?: string | null; // omit for debt payments allocated after settlement
   customer_id?: string | null;
   phone: string;
   amount: number;
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
   try {
     const body: StkBody = await req.json();
-    if (!body.invoice_id || !body.phone || !body.amount || body.amount <= 0) {
+    if ((!body.invoice_id && !body.customer_id) || !body.phone || !body.amount || body.amount <= 0) {
       return new Response(JSON.stringify({ error: "Missing invoice, phone or amount" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -55,12 +55,12 @@ Deno.serve(async (req) => {
 
     // Fetch invoice number for the STK reference
     const { data: inv } = await supabase
-      .from("invoices").select("invoice_number, customer_id").eq("id", body.invoice_id).maybeSingle();
-    const invoiceNumber = inv?.invoice_number || "INV";
+      .from("invoices").select("invoice_number, customer_id").eq("id", body.invoice_id ?? "00000000-0000-0000-0000-000000000000").maybeSingle();
+    const invoiceNumber = inv?.invoice_number || "DEBT";
 
     // Create pending transaction
     const { data: tx, error: txErr } = await supabase.from("mpesa_transactions").insert({
-      invoice_id: body.invoice_id,
+      invoice_id: body.invoice_id || null,
       customer_id: body.customer_id ?? inv?.customer_id ?? null,
       phone,
       amount,
