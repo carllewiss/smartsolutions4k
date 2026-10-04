@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit3, Trash2, ChevronRight } from "lucide-react";
+import { Plus, Edit3, Trash2, ChevronRight, Search, X } from "lucide-react";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { VirtualizedTable } from "@/components/VirtualizedTable";
 import { ColumnDef } from "@tanstack/react-table";
@@ -37,6 +37,20 @@ export default function Inventory() {
   const del = useDeleteProduct();
   const [open, setOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<any>(null);
+  const [search, setSearch] = useState("");
+
+  const q = search.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      !q
+        ? products
+        : products.filter(
+            (p: any) =>
+              p.name.toLowerCase().includes(q) ||
+              p.category.toLowerCase().includes(q)
+          ),
+    [q, products]
+  );
 
   const classifyStock = (stock: number, minStk: number) => {
     if (stock === 0) return "Dead Stock";
