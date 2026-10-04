@@ -5,8 +5,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit3, Trash2, ChevronRight } from "lucide-react";
+import { Plus, Edit3, Trash2, ChevronRight, Search, X } from "lucide-react";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { VirtualizedTable } from "@/components/VirtualizedTable";
 import { ColumnDef } from "@tanstack/react-table";
@@ -37,6 +38,20 @@ export default function Inventory() {
   const del = useDeleteProduct();
   const [open, setOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<any>(null);
+  const [search, setSearch] = useState("");
+
+  const q = search.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      !q
+        ? products
+        : products.filter(
+            (p: any) =>
+              p.name.toLowerCase().includes(q) ||
+              p.category.toLowerCase().includes(q)
+          ),
+    [q, products]
+  );
 
   const classifyStock = (stock: number, minStk: number) => {
     if (stock === 0) return "Dead Stock";
@@ -212,15 +227,42 @@ export default function Inventory() {
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Services</p><p className="text-xl font-bold">{products.filter(p => p.is_service).length}</p></CardContent></Card>
       </div>
 
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search products as you type — name or category…"
+            className="pl-10 pr-9"
+            aria-label="Search inventory"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        {q && (
+          <p className="text-xs text-muted-foreground">
+            {filtered.length} of {products.length} products
+          </p>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <VirtualizedTable<ProductRow>
-            data={products as ProductRow[]}
+            data={filtered as ProductRow[]}
             columns={columns}
             rowHeight={48}
             height="65vh"
             onRowClick={(p) => navigate(`/inventory/${p.id}`)}
-            empty="No products yet."
+            empty={q ? `No products match "${search}".` : "No products yet."}
           />
         </CardContent>
       </Card>
