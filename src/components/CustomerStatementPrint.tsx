@@ -34,7 +34,13 @@ export default function CustomerStatementPrint({
   const openingCredit = payments
     .filter((p) => new Date(p.payment_date) < fromDate)
     .reduce((s, p) => s + Number(p.amount), 0);
-  const opening = openingDebit - openingCredit;
+  const isReversed = (p: any) => p.status === "reversed";
+  const reversalDate = (p: any) => p.reversed_at || p.payment_date;
+  // Reversed payments: the original receipt stays as a credit, and the reversal is a debit on its own date
+  const openingReversals = payments
+    .filter((p) => isReversed(p) && new Date(reversalDate(p)) < fromDate)
+    .reduce((s, p) => s + Number(p.amount), 0);
+  const opening = openingDebit - openingCredit + openingReversals;
 
   const rows: Tx[] = [
     ...invoices.filter((i) => within(i.created_at)).map((i) => ({
@@ -46,10 +52,17 @@ export default function CustomerStatementPrint({
     })),
     ...payments.filter((p) => within(p.payment_date)).map((p) => ({
       date: p.payment_date,
-      desc: p.source === "pos" ? "Payment (at sale)" : "Payment Received",
+      desc: (p.source === "pos" ? "Payment (at sale)" : "Payment Received") + (isReversed(p) ? " (reversed)" : ""),
       ref: p.invoice_number || p.id?.replace("pos-", "").slice(0, 8).toUpperCase(),
       debit: 0,
       credit: Number(p.amount),
+    })),
+    ...payments.filter((p) => isReversed(p) && within(reversalDate(p))).map((p) => ({
+      date: reversalDate(p),
+      desc: "Payment Reversal",
+      ref: p.invoice_number || p.id?.slice(0, 8).toUpperCase(),
+      debit: Number(p.amount),
+      credit: 0,
     })),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 

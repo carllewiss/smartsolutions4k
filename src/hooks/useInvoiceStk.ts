@@ -17,7 +17,7 @@ export interface StkTransaction {
 export function useInitiateStk() {
   return useMutation({
     mutationFn: async (p: {
-      invoice_id: string;
+      invoice_id?: string | null;
       customer_id?: string | null;
       phone: string;
       amount: number;
