@@ -522,14 +522,18 @@ export default function InventoryAdjustments() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history.length === 0 ? (
+                {filteredHistory.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                      {isLoading ? "Loading…" : "No adjustments posted yet."}
+                      {isLoading
+                        ? "Loading…"
+                        : historySearch.trim()
+                        ? `No adjustments match "${historySearch.trim()}".`
+                        : "No adjustments posted yet."}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  history.map((a: any) => (
+                  filteredHistory.map((a: any) => (
                     <TableRow key={a.id} className="cursor-pointer" onClick={() => setDetail(a)}>
                       <TableCell className="font-bold">{a.adjustment_no}</TableCell>
                       <TableCell>{a.adjustment_date}</TableCell>
