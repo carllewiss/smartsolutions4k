@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit3, Trash2, ChevronRight, Search, X } from "lucide-react";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
