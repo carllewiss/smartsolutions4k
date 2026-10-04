@@ -226,15 +226,42 @@ export default function Inventory() {
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Services</p><p className="text-xl font-bold">{products.filter(p => p.is_service).length}</p></CardContent></Card>
       </div>
 
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search products as you type — name or category…"
+            className="pl-10 pr-9"
+            aria-label="Search inventory"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        {q && (
+          <p className="text-xs text-muted-foreground">
+            {filtered.length} of {products.length} products
+          </p>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <VirtualizedTable<ProductRow>
-            data={products as ProductRow[]}
+            data={filtered as ProductRow[]}
             columns={columns}
             rowHeight={48}
             height="65vh"
             onRowClick={(p) => navigate(`/inventory/${p.id}`)}
-            empty="No products yet."
+            empty={q ? `No products match "${search}".` : "No products yet."}
           />
         </CardContent>
       </Card>

@@ -201,6 +201,7 @@ export default function InventoryAdjustments() {
   const { data: history = [] } = useAdjustments();
   const post = usePostAdjustment();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [historySearch, setHistorySearch] = useState("");
 
   const [type, setType] = useState<AdjustmentType>("damaged");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
