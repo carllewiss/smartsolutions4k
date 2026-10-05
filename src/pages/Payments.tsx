@@ -19,16 +19,41 @@ export default function Payments() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["payments_register"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("payments")
-        .select("*, customers(name, customer_code), invoices(invoice_number)")
-        .order("payment_date", { ascending: false }).limit(2000);
-      if (error) throw error;
-      return data as any[];
+      // Fetch everything in 1000-row pages (the server caps each request at 1000)
+      const fetchAll = async (build: (from: number, to: number) => any) => {
+        const out: any[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await build(from, from + 999);
+          if (error) throw error;
+          out.push(...(data || []));
+          if (!data || data.length < 1000) break;
+        }
+        return out;
+      };
+      const sb = supabase as any;
+      const [debt, pos] = await Promise.all([
+        fetchAll((a, b) => sb.from("payments")
+          .select("*, customers(name, customer_code), invoices(invoice_number)")
+          .order("payment_date", { ascending: false }).range(a, b)),
+        // Money taken at the point of sale lives on the invoice itself, not in payments
+        fetchAll((a, b) => sb.from("invoices")
+          .select("id, invoice_number, customer_id, cash_amount, mpesa_amount, created_at, customers(name, customer_code)")
+          .or("cash_amount.gt.0,mpesa_amount.gt.0")
+          .order("created_at", { ascending: false }).range(a, b)),
+      ]);
+      const posRows = pos.map((i: any) => ({
+        id: `pos-${i.id}`, source: "pos", payment_date: i.created_at,
+        customers: i.customers, invoices: { invoice_number: i.invoice_number },
+        cash_amount: i.cash_amount, mpesa_amount: i.mpesa_amount,
+        amount: Number(i.cash_amount) + Number(i.mpesa_amount), status: "posted", notes: "Paid at point of sale",
+      }));
+      return [...debt.map((p: any) => ({ ...p, source: "allocation" })), ...posRows]
+        .sort((x, y) => new Date(y.payment_date).getTime() - new Date(x.payment_date).getTime());
     },
   });
   const rows = useMemo(() => {
     const s = q.toLowerCase();
-    return data.filter((p) => !s || [p.customers?.name, p.invoices?.invoice_number, p.notes, String(p.amount)].some((v) => v?.toLowerCase?.().includes(s)));
+    return data.filter((p) => !s || [p.customers?.name, p.customers?.customer_code, p.invoices?.invoice_number, p.notes, String(p.amount)].some((v) => v?.toLowerCase?.().includes(s)));
   }, [data, q]);
   const pageRows = rows.slice(page * PAGE, page * PAGE + PAGE);
 
@@ -53,8 +78,13 @@ export default function Payments() {
                 <TableCell>{p.invoices?.invoice_number}</TableCell>
                 <TableCell>{Number(p.mpesa_amount) > 0 && Number(p.cash_amount) > 0 ? "Cash + M-Pesa" : Number(p.mpesa_amount) > 0 ? "M-Pesa" : "Cash"}</TableCell>
                 <TableCell className="text-right font-medium">{kes(p.amount)}</TableCell>
-                <TableCell><Badge variant={p.status === "reversed" ? "destructive" : "secondary"}>{p.status?.toUpperCase()}</Badge></TableCell>
-                <TableCell><Button asChild size="sm" variant="ghost"><Link to={`/payments/${p.id}`}>Open</Link></Button></TableCell>
+                <TableCell>
+                  <Badge variant={p.status === "reversed" ? "destructive" : "secondary"}>{p.status?.toUpperCase()}</Badge>
+                  <Badge variant="outline" className="ml-1 text-[10px]">{p.source === "pos" ? "At sale" : "Debt payment"}</Badge>
+                </TableCell>
+                <TableCell>{p.source === "pos"
+                  ? <span className="text-xs text-muted-foreground">Correct via invoice / credit note</span>
+                  : <Button asChild size="sm" variant="ghost"><Link to={`/payments/${p.id}`}>Open</Link></Button>}</TableCell>
               </TableRow>
             ))}
           </TableBody>
