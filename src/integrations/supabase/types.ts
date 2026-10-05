@@ -2704,6 +2704,16 @@ export type Database = {
         }
         Returns: string
       }
+      correct_sale_payment: {
+        Args: {
+          p_cash_amount: number
+          p_invoice_id: string
+          p_mpesa_amount: number
+          p_reason: string
+          p_reason_code: string
+        }
+        Returns: string
+      }
       create_credit_note: {
         Args: {
           p_invoice_id: string

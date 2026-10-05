@@ -82,9 +82,7 @@ export default function Payments() {
                   <Badge variant={p.status === "reversed" ? "destructive" : "secondary"}>{p.status?.toUpperCase()}</Badge>
                   <Badge variant="outline" className="ml-1 text-[10px]">{p.source === "pos" ? "At sale" : "Debt payment"}</Badge>
                 </TableCell>
-                <TableCell>{p.source === "pos"
-                  ? <span className="text-xs text-muted-foreground">Correct via invoice / credit note</span>
-                  : <Button asChild size="sm" variant="ghost"><Link to={`/payments/${p.id}`}>Open</Link></Button>}</TableCell>
+                <TableCell><Button asChild size="sm" variant="ghost"><Link to={p.source === "pos" ? `/payments/sale/${p.id.replace("pos-", "")}` : `/payments/${p.id}`}>Open</Link></Button></TableCell>
               </TableRow>
             ))}
           </TableBody>
