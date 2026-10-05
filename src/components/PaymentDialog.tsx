@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useInitiateStk, useStkStatus } from "@/hooks/useInvoiceStk";
+import { Smartphone, Loader2, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +32,33 @@ export default function PaymentDialog({ open, onOpenChange, customerId, customer
   const [mpesaAmount, setMpesaAmount] = useState(0);
   const [manualAllocations, setManualAllocations] = useState<Record<string, number>>({});
   const [mode, setMode] = useState<"auto" | "manual">("auto");
+  const initiateStk = useInitiateStk();
+  const [stkPhone, setStkPhone] = useState("");
+  const [stkAmount, setStkAmount] = useState(0);
+  const [stkTxId, setStkTxId] = useState<string | null>(null);
+  const { data: stkTx } = useStkStatus(stkTxId);
+  const stkPaid = stkTx?.status === "success";
+
+  // When the M-Pesa prompt is paid, lock the amount in so it can be allocated FIFO or manually
+  useEffect(() => {
+    if (stkTx?.status === "success") {
+      const amt = Number(stkTx.amount);
+      setCashAmount(0); setMpesaAmount(amt); setTotalAmount(amt);
+      toast.success(`M-Pesa payment of KES ${amt.toLocaleString()} received — now allocate it`);
+    } else if (stkTx?.status === "failed") {
+      toast.error(stkTx.result_desc || "M-Pesa payment not completed");
+    }
+  }, [stkTx?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const sendStk = async () => {
+    if (!stkPhone.trim()) { toast.error("Enter the M-Pesa phone number"); return; }
+    if (stkAmount <= 0) { toast.error("Enter an amount"); return; }
+    try {
+      const res = await initiateStk.mutateAsync({ customer_id: customerId, phone: stkPhone.trim(), amount: stkAmount, created_by: user?.id });
+      setStkTxId(res.transaction_id);
+      toast.success("M-Pesa prompt sent to customer's phone");
+    } catch (e: any) { toast.error(e.message || "Failed to send M-Pesa prompt"); }
+  };
 
   const unpaidInvoices = invoices
     .filter(i => i.customer_id === customerId && Number(i.balance) > 0)
@@ -109,6 +138,7 @@ export default function PaymentDialog({ open, onOpenChange, customerId, customer
     setCashAmount(0);
     setMpesaAmount(0);
     setManualAllocations({});
+    setStkTxId(null); setStkAmount(0); setStkPhone("");
   };
 
   return (
@@ -119,9 +149,26 @@ export default function PaymentDialog({ open, onOpenChange, customerId, customer
           <p className="text-sm text-muted-foreground">Outstanding: <span className="font-bold text-destructive">KES {currentBalance.toLocaleString()}</span></p>
         </DialogHeader>
 
+        <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+          <p className="text-sm font-medium flex items-center gap-2"><Smartphone className="h-4 w-4 text-success" /> M-Pesa Prompt (STK)</p>
+          {!stkTxId || stkTx?.status === "failed" ? (
+            <div className="grid grid-cols-[1fr_120px_auto] gap-2">
+              <Input placeholder="0722 123 456" inputMode="tel" value={stkPhone} onChange={e => setStkPhone(e.target.value)} />
+              <Input type="number" placeholder="Amount" value={stkAmount || ""} onChange={e => setStkAmount(Number(e.target.value))} />
+              <Button onClick={sendStk} disabled={initiateStk.isPending} className="bg-success hover:bg-success/90 text-success-foreground">
+                {initiateStk.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
+              </Button>
+            </div>
+          ) : stkPaid ? (
+            <p className="text-sm text-success flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Paid KES {Number(stkTx?.amount).toLocaleString()}{stkTx?.mpesa_receipt_number ? ` · ${stkTx.mpesa_receipt_number}` : ""} — choose FIFO or Manual below to allocate.</p>
+          ) : (
+            <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Waiting for the customer to enter their PIN…</p>
+          )}
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
-          <div><Label className="text-xs">Cash</Label><Input type="number" value={cashAmount} onChange={e => { setCashAmount(Number(e.target.value)); setTotalAmount(Number(e.target.value) + mpesaAmount); }} /></div>
-          <div><Label className="text-xs">M-Pesa</Label><Input type="number" value={mpesaAmount} onChange={e => { setMpesaAmount(Number(e.target.value)); setTotalAmount(cashAmount + Number(e.target.value)); }} /></div>
+          <div><Label className="text-xs">Cash</Label><Input type="number" disabled={stkPaid} value={cashAmount} onChange={e => { setCashAmount(Number(e.target.value)); setTotalAmount(Number(e.target.value) + mpesaAmount); }} /></div>
+          <div><Label className="text-xs">M-Pesa</Label><Input type="number" disabled={stkPaid} value={mpesaAmount} onChange={e => { setMpesaAmount(Number(e.target.value)); setTotalAmount(cashAmount + Number(e.target.value)); }} /></div>
           <div><Label className="text-xs">Total</Label><Input type="number" value={totalAmount} readOnly className="bg-muted font-bold" /></div>
         </div>
 
