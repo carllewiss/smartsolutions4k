@@ -47,6 +47,7 @@ function since(ts: string | null | undefined) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  return new Response(JSON.stringify({ paused: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   try {
     const erp = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
