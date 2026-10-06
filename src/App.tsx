@@ -111,6 +111,7 @@ function ErpRoutes() {
         <Route path="/accounting" element={<ProtectedRoute adminOnly><Accounting /></ProtectedRoute>} />
         <Route path="/accounting/periods" element={<ProtectedRoute adminOnly><PeriodManagement /></ProtectedRoute>} />
         <Route path="/payments" element={<ProtectedRoute adminOnly><Payments /></ProtectedRoute>} />
+        <Route path="/payments/sale/:id" element={<ProtectedRoute adminOnly><SalePaymentDetail /></ProtectedRoute>} />
         <Route path="/payments/:id" element={<ProtectedRoute adminOnly><PaymentDetail /></ProtectedRoute>} />
         <Route path="/financials" element={<ProtectedRoute adminOnly><FinancialStatements /></ProtectedRoute>} />
         <Route path="/wifi" element={<ProtectedRoute adminOnly><Wifi /></ProtectedRoute>} />
