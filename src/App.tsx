@@ -32,6 +32,7 @@ import Approvals from "./pages/Approvals";
 import Accounting from "./pages/Accounting";
 import Payments from "./pages/Payments";
 import PaymentDetail from "./pages/PaymentDetail";
+import SalePaymentDetail from "./pages/SalePaymentDetail";
 import PeriodManagement from "./pages/PeriodManagement";
 import FinancialStatements from "./pages/FinancialStatements";
 import Wifi from "./pages/Wifi";
