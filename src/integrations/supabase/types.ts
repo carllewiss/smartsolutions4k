@@ -251,6 +251,48 @@ export type Database = {
           },
         ]
       }
+      backup_history: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error: string | null
+          file_name: string
+          id: string
+          kind: string
+          row_count: number | null
+          size_bytes: number | null
+          status: string
+          table_count: number | null
+          target: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          file_name: string
+          id?: string
+          kind: string
+          row_count?: number | null
+          size_bytes?: number | null
+          status?: string
+          table_count?: number | null
+          target: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          file_name?: string
+          id?: string
+          kind?: string
+          row_count?: number | null
+          size_bytes?: number | null
+          status?: string
+          table_count?: number | null
+          target?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -2688,6 +2730,16 @@ export type Database = {
         Args: { p_cat: Database["public"]["Enums"]["asset_category"] }
         Returns: string
       }
+      backup_manifest: {
+        Args: { p_user_id: string }
+        Returns: {
+          columns: Json
+          restore_order: number
+          row_estimate: number
+          table_name: string
+        }[]
+      }
+      cleanup_wifi_backfill_step: { Args: never; Returns: number }
       convert_po_to_invoice: { Args: { p_po_id: string }; Returns: string }
       convert_walkin_to_customer: {
         Args: { p_customer_id: string; p_phone: string }
@@ -2825,6 +2877,10 @@ export type Database = {
           p_reason_code: string
         }
         Returns: string
+      }
+      restore_triggers: {
+        Args: { p_disable: boolean; p_user_id: string }
+        Returns: number
       }
       reverse_expense: { Args: { p_expense_id: string }; Returns: undefined }
       reverse_payment: {
