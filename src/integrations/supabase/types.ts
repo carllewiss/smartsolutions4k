@@ -2688,6 +2688,7 @@ export type Database = {
         Args: { p_cat: Database["public"]["Enums"]["asset_category"] }
         Returns: string
       }
+      cleanup_wifi_backfill_step: { Args: never; Returns: number }
       convert_po_to_invoice: { Args: { p_po_id: string }; Returns: string }
       convert_walkin_to_customer: {
         Args: { p_customer_id: string; p_phone: string }
