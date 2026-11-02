@@ -15,6 +15,13 @@
       "when": 1793592938971,
       "tag": "0001_cleanup_wifi_backfill_job",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793593006745,
+      "tag": "0002_backup_system",
+      "breakpoints": true
     }
   ]
 }
