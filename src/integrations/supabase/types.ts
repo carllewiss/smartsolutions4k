@@ -14,6 +14,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      _orphan_wifi_entries: {
+        Row: {
+          id: string | null
+        }
+        Insert: {
+          id?: string | null
+        }
+        Update: {
+          id?: string | null
+        }
+        Relationships: []
+      }
       accounting_periods: {
         Row: {
           closed_at: string | null
