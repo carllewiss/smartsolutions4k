@@ -14,6 +14,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      _orphan_wifi_entries: {
+        Row: {
+          id: string | null
+        }
+        Insert: {
+          id?: string | null
+        }
+        Update: {
+          id?: string | null
+        }
+        Relationships: []
+      }
       accounting_periods: {
         Row: {
           closed_at: string | null
@@ -2882,6 +2894,7 @@ export type Database = {
         Args: { p_disable: boolean; p_user_id: string }
         Returns: number
       }
+      restore_truncate: { Args: { p_tables: string }; Returns: undefined }
       reverse_expense: { Args: { p_expense_id: string }; Returns: undefined }
       reverse_payment: {
         Args: { p_payment_id: string; p_reason: string; p_reason_code: string }
