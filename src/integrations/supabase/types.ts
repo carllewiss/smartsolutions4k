@@ -2894,6 +2894,7 @@ export type Database = {
         Args: { p_disable: boolean; p_user_id: string }
         Returns: number
       }
+      restore_truncate: { Args: { p_tables: string }; Returns: undefined }
       reverse_expense: { Args: { p_expense_id: string }; Returns: undefined }
       reverse_payment: {
         Args: { p_payment_id: string; p_reason: string; p_reason_code: string }
