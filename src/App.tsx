@@ -34,6 +34,7 @@ import Payments from "./pages/Payments";
 import PaymentDetail from "./pages/PaymentDetail";
 import SalePaymentDetail from "./pages/SalePaymentDetail";
 import PeriodManagement from "./pages/PeriodManagement";
+import AdminBackup from "./pages/AdminBackup";
 import FinancialStatements from "./pages/FinancialStatements";
 import Wifi from "./pages/Wifi";
 import Mpesa from "./pages/Mpesa";
