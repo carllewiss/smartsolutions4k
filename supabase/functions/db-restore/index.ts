@@ -1,5 +1,7 @@
 // db-restore: admin-only database restore from a backup run stored in the `backups` bucket.
-// Actions: plan | clear | table | finish
+// Actions: plan | clear | table | finish | fail
+// Tables were exported as CSV part files (<table>.csv.part-000001, …); this reads them
+// in order and inserts the rows back in batches of 500.
 // WARNING: replaces ALL rows in the application tables with the backup contents.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
@@ -48,7 +50,7 @@ function parseCsv(text: string): string[][] {
   return rows
 }
 
-function decodeField(s: string, cols: { name: string; type: string }[], idx: number): unknown {
+function decodeField(s: string): unknown {
   if (s === '') return null
   try {
     return JSON.parse(s)
@@ -78,17 +80,20 @@ async function loadManifest(admin: ReturnType<typeof createClient>, runId: strin
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   try {
-    const { admin, user, authHeader } = await requireAdmin(req)
+    const { admin, user } = await requireAdmin(req)
     const body = await req.json()
 
     if (body.action === 'plan') {
       const runId = String(body.run_id ?? '')
       if (!/^[a-zA-Z0-9._-]+$/.test(runId)) throw new Error('Invalid run id')
       const manifest = await loadManifest(admin, runId)
-      const { data: files, error: listErr } = await admin.storage.from('backups').list(runId)
+      const { data: files, error: listErr } = await admin.storage.from('backups').list(runId, { limit: 10000 })
       if (listErr) throw new Error('Could not list backup files: ' + listErr.message)
-      const present = new Set((files ?? []).map((f) => f.name))
-      const missing = manifest.tables.filter((t) => !present.has(`${t.table}.csv`)).map((t) => t.table)
+      const present = new Set<string>()
+      for (const f of files ?? []) {
+        if (f.name.endsWith('.csv.part-000001')) present.add(f.name.split('.csv.part-')[0])
+      }
+      const missing = manifest.tables.filter((t) => !present.has(t.table)).map((t) => t.table)
       return new Response(JSON.stringify({ ok: true, run_id: runId, created_at: manifest.created_at, tables: manifest.tables, missing }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -111,27 +116,38 @@ Deno.serve(async (req) => {
       const runId = String(body.run_id ?? '')
       const table = String(body.table ?? '')
       if (!/^[a-zA-Z0-9_]+$/.test(table)) throw new Error('Invalid table name')
+      if (!/^[a-zA-Z0-9._-]+$/.test(runId)) throw new Error('Invalid run id')
       const manifest = await loadManifest(admin, runId)
       const entry = manifest.tables.find((t) => t.table === table)
       if (!entry) throw new Error('Table not in manifest')
-      const dl = await admin.storage.from('backups').download(`${runId}/${table}.csv`)
-      if (dl.error) throw new Error(`Could not read ${table}.csv: ` + dl.error.message)
-      const rows = parseCsv(await dl.data.text())
-      if (rows.length === 0) return new Response(JSON.stringify({ ok: true, table, rows: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-      const header = rows[0]
-      const colTypes = new Map(entry.columns.map((c, i) => [c.name, i]))
+
+      // Collect this table's part files in order
+      const { data: files, error: listErr } = await admin.storage.from('backups').list(runId, { limit: 10000 })
+      if (listErr) throw new Error('Could not list backup files: ' + listErr.message)
+      const parts = (files ?? [])
+        .filter((f) => f.name.startsWith(`${table}.csv.part-`))
+        .map((f) => f.name)
+        .sort()
+      if (parts.length === 0) return new Response(JSON.stringify({ ok: true, table, rows: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
       const insertRows: Record<string, unknown>[] = []
-      for (let r = 1; r < rows.length; r++) {
-        const raw = rows[r]
-        if (raw.length === 1 && raw[0] === '') continue
-        const obj: Record<string, unknown> = {}
-        for (let c = 0; c < header.length; c++) {
-          const name = header[c]
-          const idx = colTypes.get(name)
-          obj[name] = decodeField(raw[c] ?? '', entry.columns, idx ?? c)
+      for (const partName of parts) {
+        const dl = await admin.storage.from('backups').download(`${runId}/${partName}`)
+        if (dl.error) throw new Error(`Could not read ${partName}: ` + dl.error.message)
+        const rows = parseCsv(await dl.data.text())
+        if (rows.length === 0) continue
+        const header = rows[0]
+        for (let r = 1; r < rows.length; r++) {
+          const raw = rows[r]
+          if (raw.length === 1 && raw[0] === '') continue
+          const obj: Record<string, unknown> = {}
+          for (let c = 0; c < header.length; c++) {
+            obj[header[c]] = decodeField(raw[c] ?? '')
+          }
+          insertRows.push(obj)
         }
-        insertRows.push(obj)
       }
+
       let inserted = 0
       const BATCH = 500
       for (let i = 0; i < insertRows.length; i += BATCH) {
