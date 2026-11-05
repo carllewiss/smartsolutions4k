@@ -34,6 +34,7 @@ import Payments from "./pages/Payments";
 import PaymentDetail from "./pages/PaymentDetail";
 import SalePaymentDetail from "./pages/SalePaymentDetail";
 import PeriodManagement from "./pages/PeriodManagement";
+import AdminBackup from "./pages/AdminBackup";
 import FinancialStatements from "./pages/FinancialStatements";
 import Wifi from "./pages/Wifi";
 import Mpesa from "./pages/Mpesa";
@@ -120,6 +121,7 @@ function ErpRoutes() {
         <Route path="/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
         <Route path="/etims" element={<ProtectedRoute adminOnly><EtimsSyncQueue /></ProtectedRoute>} />
+        <Route path="/admin/backup" element={<ProtectedRoute adminOnly><AdminBackup /></ProtectedRoute>} />
         <Route path="/admin/shop-orders" element={<ProtectedRoute adminOnly><AdminShopOrders /></ProtectedRoute>} />
         <Route path="/admin/inquiries" element={<ProtectedRoute adminOnly><AdminInquiries /></ProtectedRoute>} />
         <Route path="/admin/services" element={<ProtectedRoute adminOnly><AdminServices /></ProtectedRoute>} />

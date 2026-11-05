@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, PackagePlus, ShoppingCart, Receipt, TrendingUp, UserCog, Settings, ShieldCheck,
-  Store, HandCoins, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet, SlidersHorizontal, Truck, CreditCard, CalendarRange,
+  Store, HandCoins, MessageSquare, Newspaper, Undo2, BookOpen, ClipboardCheck, Wrench, Wifi, Smartphone, Scale, Wallet, SlidersHorizontal, Truck, CreditCard, CalendarRange, DatabaseBackup,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +51,7 @@ export function AppSidebar() {
     { title: "Blog Posts", url: "/admin/blog", icon: Newspaper },
     { title: "eTIMS Sync", url: "/etims", icon: ShieldCheck },
     { title: "User Management", url: "/users", icon: UserCog },
+    { title: "Backup & Restore", url: "/admin/backup", icon: DatabaseBackup },
     { title: "Settings", url: "/settings", icon: Settings },
   ] : [];
 

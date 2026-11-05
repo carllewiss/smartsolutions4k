@@ -110,8 +110,18 @@ export default function AdminBackup() {
       for (let i = 0; i < start.tables.length; i++) {
         const t = start.tables[i];
         setProgress({ done: i, total: start.tables.length, current: t.table });
-        const res = await invokeFn<{ rows: number }>("db-backup", { action: "table", run_id: start.run_id, table: t.table });
-        totalRows += res.rows;
+        let afterId: string | null = null;
+        let part = 1;
+        for (;;) {
+          const res = await invokeFn<{ rows: number; done: boolean; last_id: string | null; part: number }>(
+            "db-backup",
+            { action: "table", run_id: start.run_id, table: t.table, after_id: afterId, part }
+          );
+          totalRows += res.rows;
+          if (res.done || !res.last_id) break;
+          afterId = res.last_id;
+          part = res.part + 1;
+        }
       }
       setProgress({ done: start.tables.length, total: start.tables.length, current: "finalizing" });
       await invokeFn("db-backup", { action: "finish", run_id: start.run_id, row_count: totalRows });
