@@ -103,6 +103,34 @@ Deno.serve(async (req) => {
       })
     }
 
+    if (body.action === 'secrets') {
+      // Export integration credentials (Daraja/M-Pesa etc.) so a restore can re-provision them.
+      // Project-intrinsic keys (SUPABASE_*) are excluded on purpose.
+      const names = [
+        'MPESA_CONSUMER_KEY', 'MPESA_CONSUMER_SECRET', 'MPESA_PASSKEY', 'MPESA_PAYBILL', 'MPESA_SHORTCODE',
+        'MPESA_ENV', 'MPESA_CALLBACK_BASE_URL', 'DARAJA_CONSUMER_KEY', 'DARAJA_CONSUMER_SECRET',
+        'DARAJA_PASSKEY', 'DARAJA_SHORTCODE', 'PORTAL1_SERVICE_ROLE_KEY', 'PORTAL2_SERVICE_ROLE_KEY',
+        'PORTAL1_URL', 'PORTAL2_URL', 'GOOGLE_DRIVE_REFRESH_TOKEN', 'FTP_HOST', 'FTP_USER', 'FTP_PASSWORD',
+      ]
+      const found: Record<string, string> = {}
+      for (const n of names) {
+        const v = Deno.env.get(n)
+        if (v) found[n] = v
+      }
+      const runId = String(body.run_id ?? '')
+      if (!/^[a-zA-Z0-9._-]+$/.test(runId)) throw new Error('Invalid run id')
+      const { error: upErr } = await admin.storage
+        .from('backups')
+        .upload(`${runId}/secrets.json`, JSON.stringify({ exported_at: new Date().toISOString(), secrets: found }), {
+          contentType: 'application/json',
+          upsert: true,
+        })
+      if (upErr) throw new Error('Could not save secrets: ' + upErr.message)
+      return new Response(JSON.stringify({ ok: true, secrets: Object.keys(found).length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     if (body.action === 'finish') {
       const runId = String(body.run_id ?? '')
       if (!/^[a-zA-Z0-9._-]+$/.test(runId)) throw new Error('Invalid run id')
